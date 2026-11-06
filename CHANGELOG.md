@@ -13,3 +13,7 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 - `session start | status | end` per profile and `session list`: the webhook address read hidden or from stdin,
   checked against the portal, kept in the keyring under `bitrix24-cli`; `session status --check` says whose rights
   the webhook carries.
+- `list` and `show` for `deals`, `leads`, `people` (contacts), `organizations` (companies), `pipelines`, `stages`
+  (with each stage's outcome), `products` and `users`, live from the portal. A list takes a query that becomes the
+  portal's own filter; a free word in it matches part of a title or name. A name two records share is refused with
+  both as candidates.

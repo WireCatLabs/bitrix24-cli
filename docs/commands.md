@@ -117,6 +117,342 @@ b24 session list
 
 **Example:** `b24 session list`, `b24 session list --json`
 
+## `b24 deals`
+
+read the portal's deals
+
+### `b24 deals list`
+
+list deals on the portal, newest first
+
+```sh
+b24 deals list [query] [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+| Option | What it does |
+|---|---|
+| `--limit <n>` | how many to show. |
+| `--page <n>` | which page, starting at 1. |
+| `--all` | every row, no paging. |
+
+**Returns:** deal — id, title, pipeline_id, stage_id, outcome, amount, currency, assigned_to, and 7 more; every field: b24 commands info deals list
+
+**Example:** `b24 work deals list`, `b24 work deals list outcome:open pipeline_id:1 amount>=10000`
+
+### `b24 deals show`
+
+show one of the deals on the portal
+
+```sh
+b24 deals show <id-or-name>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `id-or-name` | required | the id-or-name as list prints it. |
+
+**Returns:** deal — id, title, pipeline_id, stage_id, outcome, amount, currency, assigned_to, and 7 more; every field: b24 commands info deals show
+
+**Example:** `b24 work deals show 42`, `b24 work deals show 42 --json`
+
+## `b24 leads`
+
+read the portal's leads
+
+### `b24 leads list`
+
+list leads on the portal, newest first
+
+```sh
+b24 leads list [query] [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+| Option | What it does |
+|---|---|
+| `--limit <n>` | how many to show. |
+| `--page <n>` | which page, starting at 1. |
+| `--all` | every row, no paging. |
+
+**Returns:** lead — id, title, name, organization_name, stage_id, outcome, amount, currency, and 10 more; every field: b24 commands info leads list
+
+**Example:** `b24 work leads list`, `b24 work leads list outcome:open updated_at>=7d`
+
+### `b24 leads show`
+
+show one of the leads on the portal
+
+```sh
+b24 leads show <id-or-name>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `id-or-name` | required | the id-or-name as list prints it. |
+
+**Returns:** lead — id, title, name, organization_name, stage_id, outcome, amount, currency, and 10 more; every field: b24 commands info leads show
+
+**Example:** `b24 work leads show 42`, `b24 work leads show 42 --json`
+
+## `b24 people`
+
+read the portal's contacts
+
+### `b24 people list`
+
+list contacts on the portal, newest first
+
+```sh
+b24 people list [query] [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+| Option | What it does |
+|---|---|
+| `--limit <n>` | how many to show. |
+| `--page <n>` | which page, starting at 1. |
+| `--all` | every row, no paging. |
+
+**Returns:** crm person — id, name, first_name, last_name, position, organization_ids, assigned_to, created_at, and 5 more; every field: b24 commands info people list
+
+**Example:** `b24 work people list`, `b24 work people list name:ivan*`
+
+### `b24 people show`
+
+show one of the contacts on the portal
+
+```sh
+b24 people show <id-or-name>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `id-or-name` | required | the id-or-name as list prints it. |
+
+**Returns:** crm person — id, name, first_name, last_name, position, organization_ids, assigned_to, created_at, and 5 more; every field: b24 commands info people show
+
+**Example:** `b24 work people show 42`, `b24 work people show 42 --json`
+
+## `b24 organizations`
+
+read the portal's companies
+
+### `b24 organizations list`
+
+list companies on the portal, newest first
+
+```sh
+b24 organizations list [query] [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+| Option | What it does |
+|---|---|
+| `--limit <n>` | how many to show. |
+| `--page <n>` | which page, starting at 1. |
+| `--all` | every row, no paging. |
+
+**Returns:** crm organization — id, name, type_id, industry_id, revenue, currency, person_ids, assigned_to, and 6 more; every field: b24 commands info organizations list
+
+**Example:** `b24 work organizations list`, `b24 work organizations list name:acme*`
+
+### `b24 organizations show`
+
+show one of the companies on the portal
+
+```sh
+b24 organizations show <id-or-name>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `id-or-name` | required | the id-or-name as list prints it. |
+
+**Returns:** crm organization — id, name, type_id, industry_id, revenue, currency, person_ids, assigned_to, and 6 more; every field: b24 commands info organizations show
+
+**Example:** `b24 work organizations show 42`, `b24 work organizations show 42 --json`
+
+## `b24 pipelines`
+
+read the portal's deal pipelines
+
+### `b24 pipelines list`
+
+list deal pipelines on the portal, newest first
+
+```sh
+b24 pipelines list [query] [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms; this list filters by none yet. |
+
+| Option | What it does |
+|---|---|
+| `--limit <n>` | how many to show. |
+| `--page <n>` | which page, starting at 1. |
+| `--all` | every row, no paging. |
+
+**Returns:** pipeline — id, name, is_default, sort; every field: b24 commands info pipelines list
+
+**Example:** `b24 work pipelines list`, `b24 work pipelines list --json`
+
+### `b24 pipelines show`
+
+show one of the deal pipelines on the portal
+
+```sh
+b24 pipelines show <id-or-name>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `id-or-name` | required | the id-or-name as list prints it. |
+
+**Returns:** pipeline — id, name, is_default, sort; every field: b24 commands info pipelines show
+
+**Example:** `b24 work pipelines show 42`, `b24 work pipelines show 42 --json`
+
+## `b24 stages`
+
+read the stages of the portal's deal pipelines and leads
+
+### `b24 stages list`
+
+list deal and lead stages, each with its outcome on the portal, newest first
+
+```sh
+b24 stages list [query] [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+| Option | What it does |
+|---|---|
+| `--limit <n>` | how many to show. |
+| `--page <n>` | which page, starting at 1. |
+| `--all` | every row, no paging. |
+
+**Returns:** stage — id, name, entity, pipeline_id, outcome, sort, color; every field: b24 commands info stages list
+
+**Example:** `b24 work stages list`, `b24 work stages list entity:leads`
+
+### `b24 stages show`
+
+show one of the deal and lead stages, each with its outcome on the portal
+
+```sh
+b24 stages show <id-or-name>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `id-or-name` | required | the id-or-name as list prints it. |
+
+**Returns:** stage — id, name, entity, pipeline_id, outcome, sort, color; every field: b24 commands info stages show
+
+**Example:** `b24 work stages show 42`, `b24 work stages show 42 --json`
+
+## `b24 products`
+
+read the portal's product catalog
+
+### `b24 products list`
+
+list catalog products on the portal, newest first
+
+```sh
+b24 products list [query] [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+| Option | What it does |
+|---|---|
+| `--limit <n>` | how many to show. |
+| `--page <n>` | which page, starting at 1. |
+| `--all` | every row, no paging. |
+
+**Returns:** product — id, name, price, currency, active, section_id; every field: b24 commands info products list
+
+**Example:** `b24 work products list`, `b24 work products list active:true name:chair*`
+
+### `b24 products show`
+
+show one of the catalog products on the portal
+
+```sh
+b24 products show <id>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `id` | required | the id as list prints it. |
+
+**Returns:** product — id, name, price, currency, active, section_id; every field: b24 commands info products show
+
+**Example:** `b24 work products show 42`, `b24 work products show 42 --json`
+
+## `b24 users`
+
+read the portal's employees
+
+### `b24 users list`
+
+list employees on the portal, newest first
+
+```sh
+b24 users list [query] [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+| Option | What it does |
+|---|---|
+| `--limit <n>` | how many to show. |
+| `--page <n>` | which page, starting at 1. |
+| `--all` | every row, no paging. |
+
+**Returns:** user — id, name, email, position, active, department_ids; every field: b24 commands info users list
+
+**Example:** `b24 work users list`, `b24 work users list active:true`
+
+### `b24 users show`
+
+show one of the employees on the portal
+
+```sh
+b24 users show <id>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `id` | required | the id as list prints it. |
+
+**Returns:** user — id, name, email, position, active, department_ids; every field: b24 commands info users show
+
+**Example:** `b24 work users show 42`, `b24 work users show 42 --json`
+
 ## `b24 doctor`
 
 check this installation: version, paths, config, profiles; no keyring or network
