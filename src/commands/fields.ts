@@ -34,7 +34,7 @@ const typeOf = (kind: string): ItemType<never>["type"] => {
   const type = KINDS[kind]
   if (!type)
     throw new CliError("validation_error", `fields are listed for ${Object.keys(KINDS).join(", ")}; got ${kind}`, {
-      reason: "fields.unknown-kind",
+      reason: "field.unknown-kind",
       allowed: Object.keys(KINDS),
     })
   return type

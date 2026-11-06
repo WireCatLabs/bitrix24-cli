@@ -71,6 +71,10 @@ describe("fields list", () => {
     const fake = portal()
     const ran = await b24(["work", "fields", "list", "products", "--json"], { portal: fake })
     expect(ran.code).toBe(2)
+    expect(ran.json().error).toMatchObject({
+      reason: "field.unknown-kind",
+      details: { allowed: ["deals", "leads", "people", "organizations"] },
+    })
     expect(fake.calls).toHaveLength(0)
   })
 })

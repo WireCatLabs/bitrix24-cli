@@ -24,6 +24,7 @@ const OWN: [reason: string, code: string, message: string][] = [
   ["method.unknown", "not_found", "Bitrix24 does not know this method, or the webhook has no scope for it"],
   ["operation.reused", "conflict", "this operation id was already used for a different request"],
   ["query.bad-value", "validation_error", "a query term takes an id or a number"],
+  ["field.unknown-kind", "validation_error", "fields are listed for deals, leads, people and organizations"],
   ...NAMED,
 ]
 
