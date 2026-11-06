@@ -2,6 +2,14 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Changed — may break callers
+
+- `show` for deals, leads, people and organizations gives each custom field its title on the portal:
+  `provider_metadata` maps the field's code to `{ "label", "value" }`. `label` is `null` when the portal has no title
+  for it or does not answer the request for titles; `show` still answers then.
+
 ## 0.2.0 — 06.11.2026
 
 ### Fixed

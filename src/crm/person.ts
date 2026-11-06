@@ -4,10 +4,10 @@ import type { ItemType } from "./items.js"
 import {
   contactSchema,
   contacts,
-  customFields,
   fullName,
   id,
   ids,
+  type Metadata,
   metadataSchema,
   nullableTime,
   type Raw,
@@ -41,7 +41,7 @@ export const PERSON_FIELDS: Record<string, FieldMap> = {
   updated_at: { field: "updatedTime", kind: "time" },
 }
 
-export const fromBitrixPerson = (raw: Raw, custom?: Raw): Person => {
+export const fromBitrixPerson = (raw: Raw, metadata?: Metadata): Person => {
   const companies = ids(raw.companiesId)
   const first = id(raw.companyId)
   return {
@@ -57,7 +57,7 @@ export const fromBitrixPerson = (raw: Raw, custom?: Raw): Person => {
     created_at: time(raw.createdTime),
     updated_at: time(raw.updatedTime),
     url: text(raw.url),
-    ...(custom && Object.keys(customFields(custom)).length ? { provider_metadata: customFields(custom) } : {}),
+    ...(metadata ? { provider_metadata: metadata } : {}),
   }
 }
 

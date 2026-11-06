@@ -1,6 +1,6 @@
 import { memoryKeyring } from "@wirecat/cli-base"
 import { describe, expect, it } from "vitest"
-import { fakePortal, ok, type PortalCall } from "../testing/fake-portal.js"
+import { FAKE_SECRET, fakePortal, ok, type PortalCall, type Reply } from "../testing/fake-portal.js"
 import { b24 } from "../testing/harness.js"
 
 const deal = (id: number, more: Record<string, unknown> = {}) => ({
@@ -115,8 +115,8 @@ describe("deals", () => {
     expect((await b24(["work", "deals", "list", "assigned_to:abc"])).code).toBe(2)
   })
 
-  it("show reads one deal with the portal's custom fields under provider_metadata", async () => {
-    const portal = fakePortal({
+  const withCustomFields = (labels: Reply) =>
+    fakePortal({
       "crm.deal.get": ok({ item: deal(42) }),
       "crm.item.get": ok({
         item: {
@@ -130,13 +130,65 @@ describe("deals", () => {
           title: "x",
         },
       }),
+      "crm.deal.field.list": labels,
     })
+
+  it("show reads one deal with the portal's custom fields and their labels under provider_metadata", async () => {
+    const portal = withCustomFields(
+      items([
+        { name: "title", title: "Name" },
+        { name: "UF_CRM_1_SIZE", title: "Size" },
+        { name: "UF_CRM_1_SIZE_data", title: "Size" },
+        { name: "UF_CRM_2_PAID", title: "Paid" },
+      ]),
+    )
     const ran = await b24(["work", "deals", "show", "42", "--json"], { portal })
     expect((ran.json().item as Record<string, unknown>).provider_metadata).toEqual({
-      UF_CRM_1_SIZE: "large",
-      UF_CRM_2_PAID: false,
+      UF_CRM_1_SIZE: { label: "Size", value: "large" },
+      UF_CRM_2_PAID: { label: "Paid", value: false },
     })
     expect(portal.calls[1]?.body).toEqual({ entityTypeId: 2, id: 42, useOriginalUfNames: "Y" })
+    expect(portal.calls[2]).toMatchObject({
+      api: 3,
+      method: "crm.deal.field.list",
+      body: { select: ["name", "title"] },
+    })
+    expect(portal.calls).toHaveLength(3)
+  })
+
+  it("show gives a custom field the portal has no label for a null label", async () => {
+    const portal = withCustomFields(items([{ name: "UF_CRM_1_SIZE", title: "Size" }]))
+    const ran = await b24(["work", "deals", "show", "42", "--json"], { portal })
+    expect((ran.json().item as Record<string, unknown>).provider_metadata).toEqual({
+      UF_CRM_1_SIZE: { label: "Size", value: "large" },
+      UF_CRM_2_PAID: { label: null, value: false },
+    })
+  })
+
+  it("show still answers, with null labels, when the portal refuses the labels", async () => {
+    const portal = withCustomFields({
+      status: 403,
+      body: { error: { code: "BITRIX_REST_V3_EXCEPTION_ACCESSDENIEDEXCEPTION", message: "Access denied" } },
+    })
+    const ran = await b24(["work", "deals", "show", "42", "--json"], { portal })
+    expect(ran.code).toBe(0)
+    expect((ran.json().item as Record<string, unknown>).provider_metadata).toEqual({
+      UF_CRM_1_SIZE: { label: null, value: "large" },
+      UF_CRM_2_PAID: { label: null, value: false },
+    })
+    expect(ran.err).toBe("")
+    expect(ran.out + ran.err).not.toContain(FAKE_SECRET)
+  })
+
+  it("show asks for labels only when a custom field holds a value, and list never does", async () => {
+    const portal = fakePortal({
+      "crm.deal.get": ok({ item: deal(42) }),
+      "crm.item.get": ok({ item: { UF_CRM_3_NOTE: null } }),
+      "crm.deal.list": items([deal(1)]),
+    })
+    await b24(["work", "deals", "show", "42", "--json"], { portal })
+    await b24(["work", "deals", "list", "--json"], { portal })
+    expect(portal.calls.map((call) => call.method)).toEqual(["crm.deal.get", "crm.item.get", "crm.deal.list"])
   })
 
   it("show finds a deal by its exact title, and refuses two with candidates", async () => {

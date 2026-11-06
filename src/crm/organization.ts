@@ -4,9 +4,9 @@ import type { ItemType } from "./items.js"
 import {
   contactSchema,
   contacts,
-  customFields,
   id,
   ids,
+  type Metadata,
   metadataSchema,
   nullableTime,
   number,
@@ -44,7 +44,7 @@ export const ORGANIZATION_FIELDS: Record<string, FieldMap> = {
   updated_at: { field: "updatedTime", kind: "time" },
 }
 
-export const fromBitrixOrganization = (raw: Raw, custom?: Raw): Organization => ({
+export const fromBitrixOrganization = (raw: Raw, metadata?: Metadata): Organization => ({
   id: id(raw.id) ?? "",
   name: text(raw.title),
   type_id: text(raw.typeId),
@@ -58,7 +58,7 @@ export const fromBitrixOrganization = (raw: Raw, custom?: Raw): Organization => 
   created_at: time(raw.createdTime),
   updated_at: time(raw.updatedTime),
   url: text(raw.url),
-  ...(custom && Object.keys(customFields(custom)).length ? { provider_metadata: customFields(custom) } : {}),
+  ...(metadata ? { provider_metadata: metadata } : {}),
 })
 
 export const ORGANIZATION: ItemType<Organization> = {

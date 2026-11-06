@@ -1,7 +1,7 @@
-import { CliError } from "@wirecat/cli-base"
+import { CliError, isCliError } from "@wirecat/cli-base"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { type Condition, needsRest2, rest2Filter, rest3Filter } from "./conditions.js"
-import { customFields, type Raw } from "./values.js"
+import { customFields, type Metadata, type Raw, text } from "./values.js"
 import { type Window, walk } from "./walk.js"
 
 /** A CRM object REST 3.0 serves as `crm.<type>.*`, and REST 2 as `crm.item.*` with its `entityTypeId`. */
@@ -14,7 +14,7 @@ export interface ItemType<T> {
   /** The fields a free word in a list query, or a name in `show`, is matched against. */
   words: readonly string[]
   nameOf: (item: T) => string | null
-  map: (raw: Raw, custom?: Raw) => T
+  map: (raw: Raw, metadata?: Metadata) => T
 }
 
 const REST3_PAGE = 1000
@@ -71,7 +71,32 @@ export const getItem = async <T>(portal: BitrixTransport, type: ItemType<T>, id:
     id: Number(id),
     useOriginalUfNames: "Y",
   })
-  return type.map(item, customFields((full.result as { item?: Raw })?.item))
+  const custom = customFields((full.result as { item?: Raw })?.item)
+  if (!Object.keys(custom).length) return type.map(item)
+  const labels = await labelsOf(portal, type.type)
+  return type.map(
+    item,
+    Object.fromEntries(
+      Object.entries(custom).map(([code, value]) => [code, { label: labels.get(code) ?? null, value }]),
+    ),
+  )
+}
+
+/**
+ * Titles by field code. `field.list` needs only read rights, where `field.custom.list` answers empty without the right
+ * to edit CRM settings. Labels are extra, so a failed call leaves them out rather than failing `show`.
+ */
+const labelsOf = async (
+  portal: BitrixTransport,
+  type: ItemType<unknown>["type"],
+): Promise<Map<string, string | null>> => {
+  try {
+    const answer = await portal.call(`crm.${type}.field.list`, { select: ["name", "title"] })
+    return new Map(itemsOf(answer.result).map((field) => [String(field.name), text(field.title)]))
+  } catch (error) {
+    if (isCliError(error) && error.code === "cancelled") throw error
+    return new Map()
+  }
 }
 
 const folded = (value: string | null) => value?.trim().toLocaleLowerCase() ?? ""
