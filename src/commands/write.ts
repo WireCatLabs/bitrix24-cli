@@ -49,7 +49,16 @@ export interface Write {
  */
 export const write = async (
   command: Command,
-  { key, assignee, extra: also = [], defaults = permissions.defaults, keyed = true, operationId: given, prepare, act }: Write,
+  {
+    key,
+    assignee,
+    extra: also = [],
+    defaults = permissions.defaults,
+    keyed = true,
+    operationId: given,
+    prepare,
+    act,
+  }: Write,
 ) => {
   const { env, settings, run } = contextOf(command)
   const lock = readOnlyLockOf(IDENTITY, env)
