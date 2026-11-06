@@ -14,6 +14,17 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 - `show` gives a list field's value by its option's label, not its id; the id moves to `option_id` beside it. A field
   that holds several options gives both as arrays.
 
+### Fixed
+
+- A `deny` in a profile stops a read command again. `b24` handed cli-core only `resolveSettings`, so cli-core never
+  saw b24's permission table: `deals.list: deny` did not stop `deals list`, over MCP too, and with any b24 key in the
+  config every `--dry-run` failed with "names no command".
+- `api.crm.<type>.add` and `api.crm.<type>.update` now hold on `deals`, `leads`, `people` and `organizations`
+  `create`, `update` and `move`, as the command keys already held on `api call`. `--dry-run` names them beside the
+  command's own key.
+- `api call --dry-run` names every key the call checks with its level, such as `api.crm.deal.delete` at `ask`, instead
+  of "no key, allowed".
+
 ## 0.3.0 — 06.11.2026
 
 ### Changed — may break callers

@@ -762,6 +762,7 @@ b24 api call <method> [options]
 |---|---|
 | `--body <json>` | the method's parameters, as a JSON object. |
 | `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
+| `--dry-run` | show every permission this call checks, with its level, and call nothing. |
 
 **Returns:** call one Bitrix24 method by name with JSON parameters
 

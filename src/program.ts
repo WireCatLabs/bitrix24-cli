@@ -38,7 +38,8 @@ const update = appUpdate({
 
 export const definition = (): ProgramDefinition => ({
   app: IDENTITY,
-  configuration: { resolveSettings: configuration.resolveSettings },
+  // The whole object: cli-core refuses a command by its key only when it gets the permission table too.
+  configuration,
   commands: () => [
     commandsCommand(IDENTITY),
     sessionCommand(),

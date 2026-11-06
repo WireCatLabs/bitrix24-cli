@@ -1,5 +1,5 @@
 import { type Configuration, commandPathKey, commandPermissions, settingsFor } from "@wirecat/cli-core/cli"
-import { API_DEFAULTS, API_KEYS } from "./api-keys.js"
+import { API_DEFAULTS, API_KEYS, apiKeysOf } from "./api-keys.js"
 import { IDENTITY } from "./identity.js"
 
 /**
@@ -14,6 +14,7 @@ const keyOf = (path: readonly string[]) =>
 
 export const permissions = commandPermissions({
   keyOf,
+  alsoChecks: apiKeysOf,
   extra: [ASSIGN_KEY, ...API_KEYS],
   defaults: { [ASSIGN_KEY]: "deny", ...API_DEFAULTS },
 })
