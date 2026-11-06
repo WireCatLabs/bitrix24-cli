@@ -2,6 +2,18 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Added
+
+- `fields list <deals|leads|people|organizations>` lists the portal's custom fields of that kind: code, label, type,
+  whether it holds several values, whether a list can filter by it, and a list field's options with their ids.
+
+### Changed — may break callers
+
+- `show` gives a list field's value by its option's label, not its id; the id moves to `option_id` beside it. A field
+  that holds several options gives both as arrays.
+
 ## 0.3.0 — 06.11.2026
 
 ### Changed — may break callers

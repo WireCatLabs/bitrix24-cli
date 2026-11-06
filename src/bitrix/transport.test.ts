@@ -74,6 +74,8 @@ describe("methodOf", () => {
     expect(methodOf("crm.contact.delete")).toMatchObject({ api: 3, effect: "destructive" })
     expect(methodOf("crm.lead.update")).toMatchObject({ api: 3, effect: "write" })
     expect(methodOf("crm.status.list")).toMatchObject({ api: 2, effect: "read" })
+    expect(methodOf("crm.deal.userfield.list")).toMatchObject({ api: 2, effect: "read" })
+    expect(methodOf("crm.deal.field.list")).toMatchObject({ api: 3, effect: "read" })
     expect(methodOf("user.current")).toMatchObject({ api: 2, effect: "read", scope: "user" })
     expect(methodOf("profile")).toMatchObject({ api: 2, scope: "basic" })
     expect(KNOWN_METHODS.length).toBeGreaterThan(20)
