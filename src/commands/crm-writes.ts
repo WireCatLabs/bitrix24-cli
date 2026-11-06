@@ -2,6 +2,7 @@ import { CliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
 import { REMOTE_WRITE } from "@wirecat/cli-core/cli"
 import { Command } from "commander"
+import { apiKeysOf } from "../api-keys.js"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { DEAL } from "../crm/deal.js"
 import type { ItemType } from "../crm/items.js"
@@ -161,6 +162,7 @@ const createCommand = (kind: Kind) =>
       const fields = fieldsOf(options)
       await write(this, {
         key: `${kind.noun}.create`,
+        extra: apiKeysOf([kind.noun, "create"]),
         assignee: assigneeOf(fields),
         operationId: options.operationId,
         act: async (portal, operationId) => {
@@ -186,6 +188,7 @@ const updateCommand = (kind: Kind) =>
       if (Object.keys(fields).length === 0) throw new CliError("validation_error", "nothing to change: name a field")
       await write(this, {
         key: `${kind.noun}.update`,
+        extra: apiKeysOf([kind.noun, "update"]),
         assignee: assigneeOf(fields),
         operationId: options.operationId,
         act: async (portal, operationId) => {
@@ -206,6 +209,7 @@ const moveCommand = (kind: Kind) =>
         throw new CliError("validation_error", `${kind.noun} move takes the ${kind.type.word}'s id`)
       await write(this, {
         key: `${kind.noun}.move`,
+        extra: apiKeysOf([kind.noun, "move"]),
         operationId: options.operationId,
         act: async (portal, operationId) => {
           const stage = findStage(await listStages(portal, await stageDirectory(kind, portal, id)), options.stage ?? "")

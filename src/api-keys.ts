@@ -53,6 +53,19 @@ export const commandKeysOf = (method: string, body: Record<string, unknown> = {}
   return keys
 }
 
+const METHODS_OF_COMMANDS: Record<string, string> = { create: "add", update: "update", move: "update" }
+
+/**
+ * The other way round: the `api.*` key a CRM write command's own request checks, so `api.crm.deal.update: deny` holds
+ * on `deals update` too. Both the run and its `--dry-run` preview read it.
+ */
+export const apiKeysOf = (path: readonly string[]): string[] => {
+  const [noun, command, ...rest] = path
+  const type = Object.keys(NOUNS).find((one) => NOUNS[one] === noun)
+  const method = METHODS_OF_COMMANDS[command ?? ""]
+  return type && method && rest.length === 0 ? [apiKey(`crm.${type}.${method}`)] : []
+}
+
 /** The keys `permissions` may name for `api`: the known methods and the denied families. */
 export const API_KEYS = [...KNOWN_METHODS.map((one) => apiKey(one.name)), ...DENIED_FAMILIES.map(apiKey)]
 
