@@ -27,7 +27,8 @@ contact and company writes, which also check the command's own key (`api call cr
 checks `deals.update`). A delete asks. Every other method asks too, and is refused without a terminal unless you pass
 `--yes`. Methods that message people, publish or send data out are refused until you allow them: `im`,
 `imopenlines`, `imbot`, `imconnector`, `log.blogpost`, SMS, mail, telephony, workflows, CRM activities, tasks,
-`user.add`, public file links, `event.bind` and `batch`. `api show <method>` names a method's level. `api call` is
+`user.add`, public file links, `event.bind` and `batch`. Their reads are refused too, since they hold messages,
+e-mails and tasks. `api show <method>` names a method's level. `api call` is
 not offered over MCP.
 
 A write that got no answer is not sent again: it is `outcome_unknown` with its `operation_id`. Check the portal, and

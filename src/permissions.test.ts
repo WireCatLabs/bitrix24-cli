@@ -300,3 +300,16 @@ it("pipeline_id:0 filters the default pipeline", async () => {
   expect((await b24(["work", "deals", "list", "pipeline_id:0", "--json"], { portal: fake })).code).toBe(0)
   expect(JSON.stringify(fake.calls[0]?.body)).toContain('"categoryId"')
 })
+
+describe("a denied family stays denied for reads", () => {
+  it.each(["crm.activity.list", "crm.automation.trigger.list", "im.dialog.messages.get", "tasks.task.list"])(
+    "%s is refused with --yes, and api show says deny",
+    async (method) => {
+      const fake = fakePortal({ [method]: ok([]) })
+      expect((await b24(call(method, {}, "--yes"), { portal: fake })).code).toBe(5)
+      expect(fake.calls).toHaveLength(0)
+      const shown = await b24(["api", "show", method, "--json"])
+      expect((shown.json().item as Record<string, unknown>).default_level).toBe("deny")
+    },
+  )
+})
