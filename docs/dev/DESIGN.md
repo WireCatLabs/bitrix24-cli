@@ -114,6 +114,23 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
   `deals.move` and `leads.move` to `ask` or `deny`.
 - There is no delete command in slice 1.
 
+### Custom fields
+
+- **Definitions.** `fields list <kind>` and every lookup read two calls that need only read rights: REST 3.0
+  `crm.<type>.field.list` (title, filterable) and REST 2 `crm.<type>.userfield.list` (the real type and a list
+  field's options). `field.list` alone shows a list field as `int` with no options. They are read once per command
+  run, only when a command needs them, and never kept.
+- **A list field's value** is its option's label, with the id beside it: `{ "label", "value": "Wholesale",
+  "option_id": "45" }`, both arrays for a multiple field. Every other field keeps `{ label, value }`.
+- **Names.** A custom field is named by its code or its whole label, ignoring case, spaces and underscores, so
+  `lead_source` is `Lead source`. Two fields with one label are refused with their codes, never guessed. The query
+  language has no quoted field name, so a label with spaces is `lead_source:web` or `Lead\ source:web`.
+- **Lists** filter only by the fields the portal marks `filterable`. `--json=…,provider_metadata.<code>` adds a
+  custom field to each item, and `provider_metadata` alone adds all. A bare code in `--json` is refused by cli-core's
+  field check before `b24` runs.
+- **Writes** (pending cli-base#485 for the flag's name): `--set "<label or code>=<value>"` sets custom fields only.
+  `--body` comes first, `--set` over it, and the named options over both.
+
 ### The portal's limits
 
 - Bitrix24 allows 2 requests a second with a burst of 50 per portal (5 and 250 on Enterprise), shared by every app
