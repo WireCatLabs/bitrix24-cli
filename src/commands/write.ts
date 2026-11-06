@@ -8,7 +8,7 @@ import {
   renderAnswer,
   terminalAsker,
 } from "@wirecat/cli-core/cli"
-import { guardedWrite, guardFor, keyedGuard, levelFor, newOperationId } from "@wirecat/cli-core/sends"
+import { guardedWrite, guardFor, keyedGuard, type Level, levelFor, newOperationId } from "@wirecat/cli-core/sends"
 import type { Command } from "commander"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { ASSIGN_KEY, permissions } from "../config.js"
@@ -35,6 +35,8 @@ export interface Write {
   keyed?: boolean
   /** Keys checked beside `key`, such as the command key a raw `api call` does the same as. */
   extra?: readonly string[]
+  /** The built-in levels, when the call adds its own key's (`callDefaults`). */
+  defaults?: Readonly<Record<string, Level>>
   operationId?: string | undefined
   act: (portal: BitrixTransport, operationId: string) => Promise<Record<string, unknown>>
 }
@@ -45,7 +47,7 @@ export interface Write {
  */
 export const write = async (
   command: Command,
-  { key, assignee, extra: also = [], keyed = true, operationId: given, act }: Write,
+  { key, assignee, extra: also = [], defaults = permissions.defaults, keyed = true, operationId: given, act }: Write,
 ) => {
   const { env, settings, run } = contextOf(command)
   const lock = readOnlyLockOf(IDENTITY, env)
@@ -54,13 +56,13 @@ export const write = async (
   const webhook = webhookOf(command)
   const self = webhook.userId
   const extra = [...also, ...(assignee !== undefined && assignee !== self ? [ASSIGN_KEY] : [])]
-  const levelOf = (one: string) => levelFor(settings.permissions, one, permissions.defaults).level
+  const levelOf = (one: string) => levelFor(settings.permissions, one, defaults).level
   const guard = keyedGuard(
     (ask) =>
       guardFor(
         IDENTITY,
         // The portal limits its own rate; the guard is here for the levels and the journal, not a send limit.
-        { ...settings, sendsPerHour: Number.MAX_SAFE_INTEGER, permissionDefaults: permissions.defaults },
+        { ...settings, sendsPerHour: Number.MAX_SAFE_INTEGER, permissionDefaults: defaults },
         outputFor(command).renderer.warn,
         environmentOf(command).env ?? process.env,
         ask,
@@ -80,8 +82,8 @@ export const write = async (
     if (keyed && error instanceof CliError && error.code === "outcome_unknown")
       throw new CliError(
         "outcome_unknown",
-        `${error.message} — repeat it with --operation-id ${operationId}: Bitrix24 answers a repeat from its record ` +
-          "instead of running it again",
+        `${error.message} — check the portal, and repeat it with --operation-id ${operationId} only if it is not ` +
+          "there: Bitrix24's documentation says a repeat with that key is answered from its record, not run again",
         { ...error.details, operation_id: operationId },
       )
     throw error

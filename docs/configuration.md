@@ -19,8 +19,7 @@ the permissions say.
 
 ## Run records
 
-A command that fails is kept as a run, for `b24 runs list` and `runs show`. A command you add that does its work
-in `context.run` is kept when it succeeds too, unless `record` is `false` (then only failures) or it ran with
-`--no-record`. The skeleton's own commands only read local files and open no run. `record_input` decides whether a run
-keeps the words you typed; it is `true` unless you set it to `false`. Secrets are masked either way; see
+A command that fails is kept as a run, for `b24 runs list` and `runs show`. A command that calls the portal is kept
+when it succeeds too, with the requests it made, unless `record` is `false` (then only failures) or it ran with
+`--no-record`. `record_input` decides whether a run keeps the words you typed; it is `true` unless you set it to `false`. Secrets are masked either way; see
 [Security](security.md).

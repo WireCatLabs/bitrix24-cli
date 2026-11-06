@@ -136,15 +136,25 @@ describe("BitrixTransport", () => {
     expect(leaks(error)).toBe(false)
   })
 
-  it("repeats a keyed REST 3.0 write with the same key, and says it may be repeated once it gives up", async () => {
+  it("sends a keyed REST 3.0 write once, and a lost answer is outcome_unknown", async () => {
     const portal = fakePortal({ "crm.deal.update": new TypeError("socket hang up") })
     const error = await failureOf(
       transportOf(portal).transport.call("crm.deal.update", { id: 1, fields: {} }, { idempotencyKey: "op-9" }),
     )
     expect(error.code).toBe("outcome_unknown")
-    expect(error.details.retryable).toBe(true)
-    expect(portal.calls).toHaveLength(4)
-    expect(new Set(portal.calls.map((call) => call.headers["Idempotency-Key"]))).toEqual(new Set(["op-9"]))
+    expect(error.details.retryable).toBe(false)
+    expect(error.message).not.toContain("check before repeating")
+    expect(portal.calls).toHaveLength(1)
+    expect(portal.calls[0]?.headers["Idempotency-Key"]).toBe("op-9")
+  })
+
+  it("does not repeat a keyed write on a 429", async () => {
+    const portal = fakePortal({
+      "crm.deal.add": { status: 429, body: { error: "QUERY_LIMIT_EXCEEDED", error_description: "Too many requests" } },
+    })
+    const error = await failureOf(transportOf(portal).transport.call("crm.deal.add", {}, { idempotencyKey: "op-1" }))
+    expect(error.code).toBe("rate_limited")
+    expect(portal.calls).toHaveLength(1)
   })
 
   it("does not repeat a write without a key on a 429", async () => {

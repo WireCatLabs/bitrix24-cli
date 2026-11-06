@@ -18,6 +18,10 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 
 - `show` gives a list field's value by its option's label, not its id; the id moves to `option_id` beside it. A field
   that holds several options gives both as arrays.
+- `api call` works from an allow list. The CRM, catalog and user reads and the four CRM types' writes are allowed as
+  before. Any other method asks, so it needs `--yes` without a terminal, and the families that message people, publish
+  or send data out are denied: `imconnector`, `log.blogpost`, public file links and `event.bind` join `im`,
+  `imopenlines` and the rest. `api show` names each method's level.
 
 ### Fixed
 
@@ -29,6 +33,17 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   command's own key.
 - `api call --dry-run` names every key the call checks with its level, such as `api.crm.deal.delete` at `ask`, instead
   of "no key, allowed".
+- `api call crm.item.add|update|delete` with `entityTypeId` 1 to 4 checks the lead, deal, contact or company command
+  key, as `crm.deal.update` already did: `deals.delete: deny` now stops `crm.item.delete` for a deal.
+- Every method whose name ends in `delete` asks, not only the listed ones. A method name in capitals or with a `.json`
+  suffix is read as its plain name, so it no longer gets round a key.
+- A write that sets a stage checks `deals.move` or `leads.move`: `update` and `create` with `stageId` in `--body`, over
+  MCP too, and `api call` with `STAGE_ID` or a lead's `STATUS_ID`. `ASSIGNED_BY_ID` checks `crm.assign-others` like
+  `assignedById`.
+- A write is sent once. A REST 3.0 write that got no answer was sent up to three more times with the same
+  `Idempotency-Key`, which is not yet checked on a live portal; it is now `outcome_unknown` at once, and its message
+  names `--operation-id` once.
+- `pipeline_id:0`, the default pipeline, is accepted by `deals list` and `stages list`.
 
 ## 0.3.0 — 06.11.2026
 

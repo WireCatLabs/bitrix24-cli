@@ -2,7 +2,7 @@ import { CliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
 import { REMOTE_WRITE } from "@wirecat/cli-core/cli"
 import { Command } from "commander"
-import { apiKeysOf } from "../api-keys.js"
+import { apiKeysOf, assigneeOf, stageKeysOf } from "../api-keys.js"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { DEAL } from "../crm/deal.js"
 import type { ItemType } from "../crm/items.js"
@@ -67,9 +67,6 @@ const fieldsOf = (options: Options): Raw => {
 }
 
 /** Who the write assigns the record to, when it does: the guard compares it with the webhook's own user. */
-const assigneeOf = (fields: Raw): string | undefined =>
-  fields.assignedById === undefined || fields.assignedById === null ? undefined : String(fields.assignedById)
-
 /** The pipeline a deal is in, so `--stage` is read among that pipeline's stages. */
 const dealPipeline = async (portal: BitrixTransport, id: string) => {
   const answer = await portal.call("crm.deal.get", { id: Number(id), select: ["id", "categoryId"] })
@@ -162,7 +159,7 @@ const createCommand = (kind: Kind) =>
       const fields = fieldsOf(options)
       await write(this, {
         key: `${kind.noun}.create`,
-        extra: apiKeysOf([kind.noun, "create"]),
+        extra: [...apiKeysOf([kind.noun, "create"]), ...stageKeysOf(kind.noun, fields)],
         assignee: assigneeOf(fields),
         operationId: options.operationId,
         act: async (portal, operationId) => {
@@ -188,7 +185,7 @@ const updateCommand = (kind: Kind) =>
       if (Object.keys(fields).length === 0) throw new CliError("validation_error", "nothing to change: name a field")
       await write(this, {
         key: `${kind.noun}.update`,
-        extra: apiKeysOf([kind.noun, "update"]),
+        extra: [...apiKeysOf([kind.noun, "update"]), ...stageKeysOf(kind.noun, fields)],
         assignee: assigneeOf(fields),
         operationId: options.operationId,
         act: async (portal, operationId) => {
