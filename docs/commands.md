@@ -53,6 +53,70 @@ b24 commands info [path]
 
 **Example:** `b24 commands info commands`
 
+## `b24 session`
+
+keep this profile's Bitrix24 webhook in the OS keyring
+
+### `b24 session start`
+
+sign this profile in: the incoming webhook's address (Bitrix24 → Developer resources → Other → Incoming webhook) is asked hidden or read from stdin, checked against the portal, and only then kept in the keyring, or in a private file when the keyring fails; the webhook acts with the rights of the employee who made it
+
+**Changes something on this computer only.**
+
+```sh
+b24 session start [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--credential-storage <storage>` | where the address is kept: keyring (the default, which falls back to a private file by itself when no keyring works), or file, not recommended. Default: `keyring`. |
+
+**Returns:** sign in with a Bitrix24 incoming webhook
+
+**Example:** `b24 work session start`, `b24 work session start --json`
+
+### `b24 session status`
+
+show where this profile's webhook address comes from: B24_TOKEN, the keyring or a file; never the address. --check asks the portal whose rights it carries: the user's id, name and whether they are an admin
+
+```sh
+b24 session status [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--check` | ask the portal whether the webhook still works, and as whom. |
+
+**Returns:** show where the webhook comes from, and with --check as whom it acts
+
+**Example:** `b24 work session status`, `b24 work session status --check --json`
+
+### `b24 session end`
+
+forget this profile's webhook address on this computer; the webhook itself stays in Bitrix24
+
+**Changes something on this computer only.**
+
+```sh
+b24 session end
+```
+
+**Returns:** forget this profile's webhook address on this computer
+
+**Example:** `b24 work session end`
+
+### `b24 session list`
+
+list the profiles on this computer and whether each has a webhook; picks none
+
+```sh
+b24 session list
+```
+
+**Returns:** list the profiles here and whether each is signed in
+
+**Example:** `b24 session list`, `b24 session list --json`
+
 ## `b24 doctor`
 
 check this installation: version, paths, config, profiles; no keyring or network

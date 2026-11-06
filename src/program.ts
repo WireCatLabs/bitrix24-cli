@@ -17,6 +17,7 @@ import { appUpdate } from "@wirecat/cli-core/update"
 import type { Command } from "commander"
 import { doctorCommand } from "./commands/doctor.js"
 import { mcpCommand } from "./commands/mcp.js"
+import { sessionCommand } from "./commands/session.js"
 import { configuration } from "./config.js"
 import { IDENTITY, PACKAGE, SKILL } from "./identity.js"
 
@@ -36,6 +37,7 @@ export const definition = (): ProgramDefinition => ({
   configuration: { resolveSettings: configuration.resolveSettings },
   commands: () => [
     commandsCommand(IDENTITY),
+    sessionCommand(),
     doctorCommand(),
     skillCommand(IDENTITY, SKILL),
     mcpCommand(),

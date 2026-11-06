@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "rule": "list-without-query",
+    "target": "session list",
+    "reason": "Lists the few profiles on this computer, every one at once by design (WC-ACCT-12), as gcal-cli's session list does; a filter would let a caller narrow it to one and read that as the only profile.",
+    "owner": "@WireCatLabs",
+    "review_after": "2027-02-06"
+  }
+]
