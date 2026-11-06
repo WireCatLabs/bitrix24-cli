@@ -1,4 +1,5 @@
 import { type Configuration, commandPathKey, commandPermissions, settingsFor } from "@wirecat/cli-core/cli"
+import { API_DEFAULTS, API_KEYS } from "./api-keys.js"
 import { IDENTITY } from "./identity.js"
 
 /**
@@ -7,10 +8,14 @@ import { IDENTITY } from "./identity.js"
  */
 export const ASSIGN_KEY = "crm.assign-others"
 
+/** `api list` and `show` never reach the portal; `api call` names its method only in its arguments and checks it itself. */
+const keyOf = (path: readonly string[]) =>
+  path[0] === "api" && ["call", "list", "show"].includes(path[1] ?? "") ? null : commandPathKey(path)
+
 export const permissions = commandPermissions({
-  keyOf: commandPathKey,
-  extra: [ASSIGN_KEY],
-  defaults: { [ASSIGN_KEY]: "deny" },
+  keyOf,
+  extra: [ASSIGN_KEY, ...API_KEYS],
+  defaults: { [ASSIGN_KEY]: "deny", ...API_DEFAULTS },
 })
 
 export const configuration: Configuration = settingsFor(IDENTITY, { permissions })

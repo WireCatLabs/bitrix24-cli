@@ -681,6 +681,65 @@ b24 users show <id>
 
 **Example:** `b24 work users show 42`, `b24 work users show 42 --json`
 
+## `b24 api`
+
+see and call the Bitrix24 REST methods directly
+
+### `b24 api list`
+
+list the Bitrix24 methods b24's own commands call, with the REST version and permission of each
+
+```sh
+b24 api list [query]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+**Returns:** api method — name, rest, effect, scope, permission, default_level, also_checks; every field: b24 commands info api list
+
+**Example:** `b24 personal api list`, `b24 personal api list scope:crm effect:write`
+
+### `b24 api show`
+
+show which REST version a method goes to, what it does and the permissions it checks; calls nothing
+
+```sh
+b24 api show <method>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `method` | required | the Bitrix24 method, such as crm.deal.list. |
+
+**Returns:** show a method's REST version and permissions; calls nothing
+
+**Example:** `b24 personal api show crm.deal.update --json`
+
+### `b24 api call`
+
+call one Bitrix24 method by name with its parameters as JSON; it checks api.<method>, and the command key a deal, lead, contact or company write does the same as
+
+**Changes something in the service.**
+
+```sh
+b24 api call <method> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `method` | required | the Bitrix24 method, such as crm.deal.list. |
+
+| Option | What it does |
+|---|---|
+| `--body <json>` | the method's parameters, as a JSON object. |
+| `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
+
+**Returns:** call one Bitrix24 method by name with JSON parameters
+
+**Example:** `b24 work api call crm.deal.list --body '{"select":["id","title"],"pagination":{"limit":5}}'`, `b24 work api call crm.status.list --body '{"filter":{"ENTITY_ID":"STATUS"}}'`
+
 ## `b24 doctor`
 
 check this installation: version, paths, config, profiles; no keyring or network

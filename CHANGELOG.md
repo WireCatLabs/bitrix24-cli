@@ -21,3 +21,6 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   write answers its `operation_id`, which Bitrix24 receives as the `Idempotency-Key`, so `--operation-id` repeats a
   write safely; `--dry-run` previews; assigning a record to another employee is denied until allowed
   (`crm.assign-others`).
+- `api list`, `api show <method>` and `api call <method> --body <json>`: any Bitrix24 method, on the REST version it
+  lives on, checking `api.<method>` and the command key it does the same as; messaging, automation, tasks and
+  `batch` writes are denied until allowed.

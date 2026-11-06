@@ -31,6 +31,10 @@ export interface Write {
   key: string
   /** The employee the record is assigned to, when the write sets one. */
   assignee?: string | undefined
+  /** False for a REST 2 write, which Bitrix24 does not answer from a record when it is repeated. */
+  keyed?: boolean
+  /** Keys checked beside `key`, such as the command key a raw `api call` does the same as. */
+  extra?: readonly string[]
   operationId?: string | undefined
   act: (portal: BitrixTransport, operationId: string) => Promise<Record<string, unknown>>
 }
@@ -39,14 +43,17 @@ export interface Write {
  * Every write's one path, as gcal-cli's `api call` (src/commands/api.ts): the read-only lock, the profile's levels,
  * one question for every key at `ask`, the send journal, and an `operation_id` in the answer (WC-PERM-13, WC-OUT-10).
  */
-export const write = async (command: Command, { key, assignee, operationId: given, act }: Write) => {
+export const write = async (
+  command: Command,
+  { key, assignee, extra: also = [], keyed = true, operationId: given, act }: Write,
+) => {
   const { env, settings } = contextOf(command)
   const lock = readOnlyLockOf(IDENTITY, env)
   if (lock) throw readOnlyRefusal(lock, "change the Bitrix24 portal")
   const operationId = operationIdOf(given)
   const portal = portalOf(command)
   const self = portal.userId
-  const extra = assignee !== undefined && assignee !== self ? [ASSIGN_KEY] : []
+  const extra = [...also, ...(assignee !== undefined && assignee !== self ? [ASSIGN_KEY] : [])]
   const levelOf = (one: string) => levelFor(settings.permissions, one, permissions.defaults).level
   const guard = keyedGuard(
     (ask) =>
@@ -68,7 +75,7 @@ export const write = async (command: Command, { key, assignee, operationId: give
   try {
     done = await guardedWrite(guard, request, () => act(portal, operationId))
   } catch (error) {
-    if (error instanceof CliError && error.code === "outcome_unknown")
+    if (keyed && error instanceof CliError && error.code === "outcome_unknown")
       throw new CliError(
         "outcome_unknown",
         `${error.message} — repeat it with --operation-id ${operationId}: Bitrix24 answers a repeat from its record ` +
