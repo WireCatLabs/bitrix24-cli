@@ -38,6 +38,8 @@ export interface Write {
   /** The built-in levels, when the call adds its own key's (`callDefaults`). */
   defaults?: Readonly<Record<string, Level>>
   operationId?: string | undefined
+  /** A lookup the write needs, in its own run before the write is checked and sent, as gcal-cli's `api call` reads. */
+  prepare?: (portal: BitrixTransport) => Promise<void>
   act: (portal: BitrixTransport, operationId: string) => Promise<Record<string, unknown>>
 }
 
@@ -47,7 +49,7 @@ export interface Write {
  */
 export const write = async (
   command: Command,
-  { key, assignee, extra: also = [], defaults = permissions.defaults, keyed = true, operationId: given, act }: Write,
+  { key, assignee, extra: also = [], defaults = permissions.defaults, keyed = true, operationId: given, prepare, act }: Write,
 ) => {
   const { env, settings, run } = contextOf(command)
   const lock = readOnlyLockOf(IDENTITY, env)
@@ -73,6 +75,7 @@ export const write = async (
   )
   const request = { chatId: null, kind: "edit" as const, key, operationId }
   guard.refuse(request)
+  if (prepare) await run((events) => prepare(transportFor(command, webhook, events)))
   let done: Record<string, unknown>
   try {
     done = await guardedWrite(guard, request, () =>

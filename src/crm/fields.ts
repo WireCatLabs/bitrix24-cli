@@ -138,3 +138,35 @@ export const optionOf = (field: Field, value: string): string => {
     })
   return found.id
 }
+
+/** `--set` as typed, split at the first `=`. */
+export const setsOf = (typed: readonly string[]): [string, string][] =>
+  typed.map((one) => {
+    const at = one.indexOf("=")
+    if (at <= 0 || one.slice(0, at).trim() === "")
+      throw new CliError("validation_error", `--set takes <field>=<value>; got ${one}`, { param: "--set" })
+    return [one.slice(0, at), one.slice(at + 1)]
+  })
+
+/**
+ * The custom values to write, by code, as typed: a list field's options as their ids, numbers as `field.list` types
+ * them (`int`), and a multiple field's values as an array.
+ */
+export const customValues = (fields: readonly Field[], sets: readonly [string, string][]): Raw => {
+  const values = new Map<Field, (string | number)[]>()
+  for (const [name, value] of sets) {
+    const field = findField(fields, name)
+    values.set(field, [...(values.get(field) ?? []), field.options ? Number(optionOf(field, value)) : value])
+  }
+  return Object.fromEntries(
+    [...values].map(([field, all]) => {
+      if (field.multiple) return [field.code, all]
+      if (all.length > 1)
+        throw new CliError("validation_error", `${field.label ?? field.code} holds one value; --set it once`, {
+          param: "--set",
+          field: field.code,
+        })
+      return [field.code, all[0]]
+    }),
+  )
+}
