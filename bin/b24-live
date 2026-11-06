@@ -5,7 +5,8 @@
 #
 #   pnpm build
 #   bin/b24-live                       # reads only
-#   bin/b24-live --write               # also creates one lead "WireCat test …", moves it, deletes it by id
+#   bin/b24-live --write               # also creates one lead "WireCat test …", with one custom string field when
+#                                      # the portal has one, moves it, deletes it by id
 #   B24_KEYRING_ACCOUNT=other bin/b24-live
 set -euo pipefail
 
@@ -35,11 +36,39 @@ step people list --limit 3 --json=id,name
 step organizations list --limit 3 --json=id,name
 step products list --limit 3
 step users list --limit 3 --json=id,name
+step fields list deals --all
+step fields list leads --all
+
+# Picks a custom field from `fields list` at run time, so no portal's own codes are written here:
+# `list` prints `<code>:<option id>` of a list field a list can filter by, `string` the code of a one-value text field.
+pick() {
+  b24 fields list "$1" --all --json 2>/dev/null | node -e '
+    let s = ""
+    process.stdin.on("data", (d) => (s += d)).on("end", () => {
+      let items = []
+      try { items = JSON.parse(s).items ?? [] } catch {}
+      const kind = process.argv[1]
+      const f = kind === "list"
+        ? items.find((one) => one.filterable && one.options?.length)
+        : items.find((one) => one.type === "string" && !one.multiple)
+      if (f) console.log(kind === "list" ? `${f.code}:${f.options[0].id}` : f.code)
+    })' "$2" || true
+}
+
+term=$(pick deals list)
+if [ -n "$term" ]; then
+  step deals list "$term" --limit 3 --json=id,title
+else
+  echo "no list field on deals that a list can filter by — skipped the filtered deals list"
+fi
 
 [ "${1:-}" = "--write" ] || exit 0
 
 title="WireCat test $(date +%Y-%m-%dT%H:%M)"
-id=$(b24 leads create --title "$title" --json=id | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).item.id))')
+custom=$(pick leads string)
+field=()
+if [ -n "$custom" ]; then field=(--field "$custom=$title"); else echo "no one-value string field on leads — no --field"; fi
+id=$(b24 leads create --title "$title" "${field[@]}" --json=id | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).item.id))')
 echo "created lead $id: $title"
 step leads show "$id"
 step leads move "$id" --stage IN_PROCESS --json=id,stage_id
