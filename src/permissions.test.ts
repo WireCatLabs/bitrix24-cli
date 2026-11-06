@@ -92,9 +92,9 @@ describe("--dry-run", () => {
   })
 })
 
-const overMcp = (portal: ReturnType<typeof fakePortal>) =>
+const overMcp = (portal: ReturnType<typeof fakePortal>, flags: string[] = []) =>
   mcpOverStdio((streams) =>
-    run(["work", "mcp", "serve"], {
+    run(["work", "mcp", "serve", ...flags], {
       tty: false,
       streams: { data: () => {}, diagnostic: () => {} },
       keyring: signedIn(),
@@ -141,6 +141,29 @@ it("an MCP update to another stage checks deals.move, and a stage set as a custo
         arguments: { ref: ref("deals", 102), field: ["stageId=NEW"] },
       })
       expect(JSON.stringify(aliased)).toContain("validation_error")
+    } finally {
+      await mcp.close()
+    }
+  })
+  expect(calls()).toBe(before)
+})
+
+it.each([
+  ["deals.move=deny", { stage: "New" }],
+  ["deals.close=deny", { stage: "Won" }],
+  ["api.crm.deal.update=deny", { title: "Example renamed" }],
+  ["crm.assign-others=deny", { owner: "9" }],
+])("mcp serve --permission %s holds on the keys a deal write checks inside itself", async (level, typed) => {
+  const { portal, ref, calls } = await synced()
+  const before = calls()
+  await withPermissions({ "crm.assign-others": "allow" }, async () => {
+    const mcp = await overMcp(portal, ["--permission", level])
+    try {
+      const answer = await mcp.call("b24_write", {
+        command: "deals update",
+        arguments: { ref: ref("deals", 102), ...typed },
+      })
+      expect(JSON.stringify(answer)).toContain("permission_error")
     } finally {
       await mcp.close()
     }

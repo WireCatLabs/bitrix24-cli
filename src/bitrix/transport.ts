@@ -183,7 +183,7 @@ export class BitrixTransport {
           throw failure
         }
         end({ status: response.status, errorCode: "invalid_response" })
-        if (!response.ok) throw bitrixError(method, response.status, undefined)
+        if (!response.ok) throw this.#refused(method, bitrixError(method, response.status, undefined), run.reads)
         throw new CliError("invalid_response", `Bitrix24 answered ${method} with something that is not JSON`, {
           operation: method,
           status: response.status,
@@ -200,7 +200,7 @@ export class BitrixTransport {
           errorCode: refusal.code,
           providerError: String(refusal.details.provider_error ?? ""),
         })
-        throw refusal
+        throw this.#refused(method, refusal, run.reads)
       }
       end({ status: response.status })
       return {
@@ -211,6 +211,15 @@ export class BitrixTransport {
     } finally {
       clearTimeout(timer)
     }
+  }
+
+  /** A gateway or server failure may come after a write was made; only a refusal says it was not. */
+  #refused(method: string, refusal: CliError, reads: boolean): CliError {
+    if (reads || refusal.code !== "provider_unavailable") return refusal
+    return new CliError("outcome_unknown", `Bitrix24 failed on ${method}; it may or may not have carried it out`, {
+      ...refusal.details,
+      retryable: false,
+    })
   }
 
   #unanswered(method: string, error: unknown, run: { reads: boolean; key: string | undefined }): CliError {

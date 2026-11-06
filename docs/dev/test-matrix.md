@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**187 ✅ · 24 ⛔ · 0 ❌** — 64 commands, 147 options.
+**188 ✅ · 23 ⛔ · 0 ❌** — 64 commands, 147 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -156,7 +156,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `skill install` | `--for` | ✅ |  |
 | `skill status` |  | ✅ |  |
 | `mcp serve` |  | ✅ |  |
-| `mcp serve` | `--permission` | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and src/permissions.test.ts run b24's own server |
+| `mcp serve` | `--permission` | ✅ |  |
 | `mcp serve` | `--profiles` | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and src/permissions.test.ts run b24's own server |
 | `mcp serve` | `--http` | ✅ |  |
 | `mcp serve` | `--port` | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and src/permissions.test.ts run b24's own server |

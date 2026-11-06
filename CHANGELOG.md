@@ -36,6 +36,12 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 - `mcp` and `doctor` are cli-core's shared commands: `mcp` adds `config`, `add` and `check`, and `--profiles` and
   `--permission` on `serve`; `doctor` adds `--online`.
 
+### Fixed
+
+- A write answered with a server or gateway failure (500, 502, 504) is `outcome_unknown`, not `provider_unavailable`:
+  the portal may have made it. A write a cancel cuts is `outcome_unknown` too, never `cancelled`.
+- Stages are read page by page: a directory past REST 2's first 50 rows lost its later stages.
+
 ## 0.4.0 — 06.11.2026
 
 ### Added

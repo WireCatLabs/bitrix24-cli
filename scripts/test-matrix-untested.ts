@@ -4,7 +4,7 @@ const SHARED_MCP =
 const LONG_RUNNING = `starts an HTTP server or a background process that runs until stopped; ${SHARED_MCP}`
 
 export const UNTESTED: { command: string; option?: string; reason: string }[] = [
-  ...["--port", "--public-url", "--permission", "--profiles"].map((option) => ({
+  ...["--port", "--public-url", "--profiles"].map((option) => ({
     command: "mcp serve",
     option,
     reason: LONG_RUNNING,

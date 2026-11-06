@@ -193,6 +193,17 @@ describe("BitrixTransport", () => {
     expect(error.code).toBe("cancelled")
   })
 
+  it("a write answered 502 or 504 is outcome_unknown, sent once; a read's is provider_unavailable", async () => {
+    const portal = fakePortal({
+      "crm.deal.update": { status: 504, text: "<html>" },
+      "crm.deal.add": { status: 502, body: { error: "INTERNAL_SERVER_ERROR" } },
+    })
+    const { transport } = transportOf(portal)
+    for (const method of ["crm.deal.update", "crm.deal.add"])
+      expect((await failureOf(transport.call(method, {}, { idempotencyKey: "op-1" }))).code).toBe("outcome_unknown")
+    expect(portal.calls).toHaveLength(2)
+  })
+
   it("a write a cancel cuts is outcome_unknown, never cancelled, and is not sent again", async () => {
     const stop = new AbortController()
     const portal = fakePortal({

@@ -5,7 +5,8 @@
 #
 #   pnpm build
 #   bin/b24-live            # syncs into the throwaway store and reads; changes nothing on the portal
-#   bin/b24-live --write    # also creates one lead and one deal "WireCat test …", changes, moves and deletes each
+#   bin/b24-live --write    # also creates one lead (twice with one operation id) and one deal "WireCat test …",
+#                           # changes, moves and deletes each, then syncs again
 #   B24_KEYRING_ACCOUNT=other bin/b24-live
 set -euo pipefail
 
@@ -83,9 +84,16 @@ title="WireCat test $(date +%Y-%m-%dT%H:%M)"
 custom=$(pick leads string)
 field=()
 if [ -n "$custom" ]; then field=(--field "$custom=$title"); else echo "no one-value string field on leads — no --field"; fi
-lead=$(b24 leads create --title "$title" "${field[@]}" --json | value item.lead.ref)
+# The create is sent twice with one operation id: Bitrix24 must answer the second from its record, with the same lead.
+made="wirecat-live-create-$(date +%s)"
+lead=$(b24 leads create --title "$title" "${field[@]}" --operation-id "$made" --json | value item.lead.ref)
 [ -n "$lead" ] || { echo "!! leads create gave no ref"; exit 1; }
 echo "created $lead: $title"
+again=$(b24 leads create --title "$title" "${field[@]}" --operation-id "$made" --json | value item.lead.ref)
+if [ "$again" = "$lead" ]; then echo "ok: the repeated create answered $lead from the record"; else
+  echo "!! the repeated create answered '$again', not $lead — Idempotency-Key is not honoured"
+  [ -z "$again" ] || step leads delete "$again" --yes --json=ref,removed
+fi
 step leads show "$lead" --json=ref,title,stage,status
 op="wirecat-live-$(date +%s)"
 step leads update "$lead" --title "$title (renamed)" --operation-id "$op" --json=operation_id,lead.title
@@ -112,3 +120,12 @@ step deals update "$deal" --close-date "$(date -d '+30 days' +%Y-%m-%d)" --json=
 if [ -n "$next" ]; then step deals move "$deal" "$next" --json=deal.stage,deal.status; else echo "one open stage only — no move"; fi
 step deals delete "$deal" --yes --json=ref,removed
 echo "deleted $deal"
+
+# A sync from the cursor (the updatedTime filter), then a rescan with the id pass: neither brings the deleted ones back.
+step sync --json=state,synced,issues
+step sync --rescan --json=state,synced,issues
+for ref in "$lead" "$deal"; do
+  if b24 --offline "${ref%%:*}s" show "$ref" --json >/dev/null 2>&1; then echo "!! $ref is still in the store"; else
+    echo "ok: $ref is gone from the store"
+  fi
+done

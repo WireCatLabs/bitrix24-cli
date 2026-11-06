@@ -1,6 +1,6 @@
 import { CliError } from "@wirecat/cli-base"
 import { metaOf } from "@wirecat/cli-base/commands"
-import { type GlobalFlags, outputFor } from "@wirecat/cli-core/cli"
+import { outputFor } from "@wirecat/cli-core/cli"
 import type { CrmRun } from "@wirecat/cli-core/crm/cli"
 import { addCrmCommands } from "@wirecat/cli-core/crm/cli"
 import { levelFor } from "@wirecat/cli-core/sends"
@@ -8,7 +8,7 @@ import type { AccountKey, MessageStore } from "@wirecat/cli-core/store"
 import { Command } from "commander"
 import { apiKeysOf } from "../api-keys.js"
 import { parseWebhook } from "../bitrix/webhook.js"
-import { configuration, permissions } from "../config.js"
+import { permissions } from "../config.js"
 import { BITRIX_WRITES } from "../crm/capabilities.js"
 import { IDENTITY } from "../identity.js"
 import { contextOf, signInWords, transportFor, webhookOf } from "../portal.js"
@@ -57,9 +57,8 @@ const storeFor = async (
  * an `ask` on the api key is not asked.
  */
 const refuseApiKeys = (command: Command) => {
-  const settings = configuration.resolveSettings(command.optsWithGlobals<GlobalFlags>(), {
-    env: contextOf(command).env,
-  })
+  // contextOf, not resolveSettings: it carries the levels `mcp serve --permission` tightened.
+  const { settings } = contextOf(command)
   for (const key of apiKeysOf(pathOf(command))) {
     const { level } = levelFor(settings.permissions, key, permissions.defaults)
     if (level === "deny" || level === "readonly")
@@ -105,7 +104,7 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
         warn: outputFor(command).renderer.warn,
         // The portal limits its own rate; the guard is here for the levels and the journal, not a send limit.
         settings: () => ({
-          ...configuration.resolveSettings(command.optsWithGlobals<GlobalFlags>(), { env }),
+          ...contextOf(command).settings,
           sendsPerHour: Number.MAX_SAFE_INTEGER,
           permissionDefaults: permissions.defaults,
         }),
@@ -127,7 +126,8 @@ class InRun extends Command {
 
   override action(fn: (this: Command, ...args: unknown[]) => void | Promise<void>): this {
     return super.action(function (this: Command, ...args: unknown[]) {
-      if (metaOf(this).effects?.remote === undefined) return fn.apply(this, args)
+      const remote = metaOf(this).effects?.remote
+      if (remote === undefined || remote === "none") return fn.apply(this, args)
       return contextOf(this).run(async () => {
         await fn.apply(this, args)
       })

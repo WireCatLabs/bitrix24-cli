@@ -100,9 +100,11 @@ clears the field. A field that names a stage, a pipeline or an owner is refused:
 For `people` and `organizations`, `--field "<label or code>=<value>"` takes the label too, and a field that holds
 several values takes `--field` once per value; `--body` takes the other fields in Bitrix24's own REST 3.0 names.
 
-Each write answers an `operation_id`. If a write ends with `outcome_unknown`, repeat it with
-`--operation-id <that id>`: Bitrix24 then answers from its record of the first try instead of doing it again.
-`--dry-run` shows what a write would do and sends nothing. Assigning a record to another employee is refused until
+Each write answers an `operation_id`, which Bitrix24 receives as its `Idempotency-Key`. If a write ends with
+`outcome_unknown`, look at the record first (`sync`, then `show`). Bitrix24's documentation says a repeat with
+`--operation-id <that id>` is answered from its record of the first try instead of done again; that is not yet checked
+on a live portal. `--dry-run` sends nothing and names the command's own permission keys; the keys its options add (a
+stage's move and close keys, `crm.assign-others` for another owner) are checked only when it runs. Assigning a record to another employee is refused until
 you allow it, because Bitrix24 tells that employee: `b24 work config set permissions.crm.assign-others allow`.
 
 `b24 work api call <method> --body <json>` calls any other Bitrix24 method. It checks the same permissions as the
