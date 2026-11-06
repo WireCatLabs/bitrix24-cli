@@ -2,7 +2,7 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
-## Unreleased
+## 0.3.0 — 06.11.2026
 
 ### Changed — may break callers
 
