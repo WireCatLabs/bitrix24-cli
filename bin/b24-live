@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Runs this checkout's build of `b24` against the owner's live portal, read-only by default.
+# The webhook address comes from the keyring and reaches b24 only as B24_TOKEN; it is never printed.
+# Config, state and the store are a throwaway folder: a branch build must not migrate the owner's real store.
+#
+#   pnpm build
+#   bin/b24-live                       # reads only
+#   bin/b24-live --write               # also creates one lead "WireCat test …", moves it, deletes it by id
+#   B24_KEYRING_ACCOUNT=other bin/b24-live
+set -euo pipefail
+
+root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
+[ -f "$root/dist/bin/b24.js" ] || { echo "no build in $root — run pnpm build first" >&2; exit 1; }
+account=${B24_KEYRING_ACCOUNT:-burobiz_hook}
+
+B24_TOKEN=$(secret-tool lookup service bitrix24 account "$account" 2>/dev/null) || true
+[ -n "$B24_TOKEN" ] || { echo "no keyring entry: service bitrix24 account $account" >&2; exit 1; }
+export B24_TOKEN
+
+sandbox=$(mktemp -d)
+trap 'rm -rf "$sandbox"' EXIT
+b24() {
+  HOME="$sandbox" XDG_CONFIG_HOME="$sandbox/config" XDG_DATA_HOME="$sandbox/data" XDG_STATE_HOME="$sandbox/state" \
+    XDG_CACHE_HOME="$sandbox/cache" MESSAGING_STORE="$sandbox/wirecat.db" DBUS_SESSION_BUS_ADDRESS=disabled: \
+    node "$root/dist/bin/b24.js" live "$@"
+}
+step() { printf '\n== b24 live %s\n' "$*"; b24 "$@" || echo "!! exit $?"; }
+
+step session status --check
+step pipelines list
+step stages list
+step deals list --limit 3 --json=id,title,stage,amount,currency
+step leads list --limit 3 --json=id,title,stage
+step people list --limit 3 --json=id,name
+step organizations list --limit 3 --json=id,name
+step products list --limit 3
+step users list --limit 3 --json=id,name
+
+[ "${1:-}" = "--write" ] || exit 0
+
+title="WireCat test $(date +%Y-%m-%dT%H:%M)"
+id=$(b24 leads create --title "$title" --json=id | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).item.id))')
+echo "created lead $id: $title"
+step leads show "$id"
+step leads move "$id" --stage IN_PROCESS --json=id,stage
+step api call crm.lead.delete --body "{\"id\":$id}" --yes
+echo "deleted lead $id"
