@@ -214,15 +214,16 @@ export class BitrixTransport {
   }
 
   #unanswered(method: string, error: unknown, run: { reads: boolean; key: string | undefined }): CliError {
-    if (this.#signal?.aborted && (this.#signal.reason as { name?: string })?.name !== "TimeoutError")
-      return new CliError("cancelled", `${method} was cancelled`, { operation: method })
-    // A keyed write's caller names how to repeat it; a REST 2 write has no key to repeat it safely with.
+    // A cut write may have reached the portal: never "cancelled", which a caller would repeat (WC-LIFE-9). A keyed
+    // write's caller names how to repeat it; a REST 2 write has no key to repeat it safely with.
     if (!run.reads)
       return new CliError(
         "outcome_unknown",
         `${method} got no answer; Bitrix24 may or may not have carried it out${run.key ? "" : " — check before repeating it"}`,
         { operation: method, retryable: false },
       )
+    if (this.#signal?.aborted && (this.#signal.reason as { name?: string })?.name !== "TimeoutError")
+      return new CliError("cancelled", `${method} was cancelled`, { operation: method })
     const timedOut = (error as { name?: string })?.name === "TimeoutError"
     return new CliError(
       timedOut ? "timeout" : "network_error",

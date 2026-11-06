@@ -51,12 +51,16 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
 
 ### Storing, indexing, syncing and deleting
 
-1. **Kept locally.** Nothing in slice 1. From slice 2: pipelines, stages, deals and leads as CRM records in cli-core;
+1. **Kept locally.** Pipelines, stages, deals and leads as CRM records in cli-core, read by cli-core's shared
+   `deals`, `leads`, `pipelines` and `stages` commands (`addCrmCommands`);
    contacts as `people` identities, joined to a person only by an exact email (WC-ACCT-11); companies as
    organizations through the records mapping, where a same-name match is only a candidate for review (WC-DATA-1,
-   WC-DATA-2). Custom fields go under `provider_metadata` with their labels.
-2. **How it syncs.** On demand, with `sync`: changed records by their update time, with an overlap, then an id-only
-   pass that finds deletions. Bitrix24 sends events only to an installed app, and a webhook cannot install one, so
+   WC-DATA-2). Custom fields of deals, leads and companies go into the record's metadata with their labels; cli-core's
+   answer does not show them yet. A lead stands in one pipeline b24 makes, `Leads` (`0`), since Bitrix24's leads
+   have none.
+2. **How it syncs.** On demand, with cli-core's `sync` over b24's `CrmSource` (`src/crm/source.ts`): REST 3.0 lists
+   by id (keyset paging, so a record changed mid-round shifts nothing), changes from `updatedTime` at the last
+   round's start less ten minutes, then cli-core's daily id-only pass that finds deletions. Bitrix24 sends events only to an installed app, and a webhook cannot install one, so
    there is no change token to follow. `store status` shows where the sync stands.
 3. **When the portal deletes something.** The local copy is marked deleted and kept, never wiped, and only after a
    full id pass has finished (WC-DATA-7).
@@ -70,7 +74,9 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
    matches part of a title.
 2. **`search all` and `memo context <person>`.** Yes, once cli-core has a `crm` kind for providers and search
    (slice 2).
-3. **Without a network.** Nothing in slice 1. From slice 2, every list and show with `--offline`.
+3. **Without a network.** `deals`, `leads`, `pipelines`, `stages` and `store status` read the store, with
+   `--offline` too; `sync`, the writes and the portal's own reads (`people`, `organizations`, `products`, `users`,
+   `fields`, `api`) refuse `--offline`.
 
 ### Security
 
@@ -90,7 +96,9 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
    - `api call <method>` checks `api.<method>` and also the key of the command that does the same thing, so
      `api call crm.deal.update` cannot get round `deals.update: deny`. `crm.item.*` with `entityTypeId` 1 to 4 is
      the lead, deal, contact or company. A create or update that sets a stage (`stageId` in any letter case, a
-     lead's `STATUS_ID`) also checks `deals.move` or `leads.move`, on the commands too. The method name is
+     lead's `STATUS_ID`) also checks `deals.move` and `deals.close`, or the leads' keys, since the stage may be won or
+     lost. The other way round, `api.crm.deal.update: deny` stops `deals update`, `move` and `close` before any
+     request; cli-core's write guard takes no further keys, so at `ask` it asks only on `api call`. The method name is
      lowercased and loses a `.json` suffix before any key is read.
    - `api call` defaults come from an allow list: the reads `b24` makes (`crm`, `catalog`, `user`, `profile` and
      the method listings) and the four CRM types' create and update are `allow`; a method whose name ends in
@@ -108,16 +116,18 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
 
 ### Writes
 
-- `create` and `update` take the vocabulary's flags where it has one (`--title`, `--name`, `--first-name`,
-  `--last-name`) and every other field through `--body`, a JSON object in Bitrix24's REST 3.0 field names. cli-base
-  has no flags for an amount, a currency, a stage, a pipeline, a phone or an email yet; when it has, they replace the
-  matching `--body` keys.
-- `move` takes `--stage` by id or name, read among the record's own pipeline's stages. Its flag lives on a lint
-  override until cli-base has a stage flag.
+- Deals and leads are written through cli-core's write port (`CrmWriter`, `src/crm/writer.ts`): `create`, `update`,
+  `move`, `close`, `delete`, with the operation id as REST 3.0's `Idempotency-Key`, sent once, then read back whole
+  into the store. `close` goes to the first won or lost stage of the record's pipeline; Bitrix24 keeps no close
+  reason, so `--reason` is refused. A `--field` that names a standard field (`stageId`, `categoryId`,
+  `assignedById`, a lead's `STATUS_ID`, in any letter case) is refused before any request.
+- `people` and `organizations` keep b24's own `create` and `update`, with the vocabulary's flags (`--name`,
+  `--first-name`, `--last-name`), `--field` by label or code, and `--body` in Bitrix24's REST 3.0 field names.
 - A stage change can start the portal's own automation (robots, business processes), which may write to clients.
   That is the portal owner's set-up, not `b24`'s; `move` stays `allow` by WC-PERM-22, and the owner can set
   `deals.move` and `leads.move` to `ask` or `deny`.
-- There is no delete command in slice 1.
+- `deals delete` and `leads delete` ask first (cli-core's `CRM_WRITE_DEFAULTS`); `people` and `organizations` have no
+  delete.
 
 ### Custom fields
 

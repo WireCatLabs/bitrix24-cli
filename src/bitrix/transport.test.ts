@@ -193,6 +193,20 @@ describe("BitrixTransport", () => {
     expect(error.code).toBe("cancelled")
   })
 
+  it("a write a cancel cuts is outcome_unknown, never cancelled, and is not sent again", async () => {
+    const stop = new AbortController()
+    const portal = fakePortal({
+      "crm.deal.update": () => {
+        stop.abort()
+        return new DOMException("aborted", "AbortError")
+      },
+    })
+    const { transport } = transportOf(portal, { signal: stop.signal })
+    const error = await failureOf(transport.call("crm.deal.update", { id: 1, fields: {} }, { idempotencyKey: "op-1" }))
+    expect(error.code).toBe("outcome_unknown")
+    expect(portal.calls).toHaveLength(1)
+  })
+
   it("times out a read that never answers and tries it again", async () => {
     const portal = fakePortal({ "user.current": new DOMException("timed out", "TimeoutError") })
     const error = await failureOf(transportOf(portal).transport.call("user.current"))

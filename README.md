@@ -7,9 +7,10 @@ incoming webhooks and acts with the rights of the employee who made it.
 ```sh
 npm install -g @wirecat/bitrix24-cli
 b24 work session start            # paste the webhook address; it is kept in the keyring
-b24 work deals list outcome:open
-b24 work leads list updated_at>=7d --json
-b24 work deals move 42 --stage "Contract signed"
+b24 work sync                     # copies pipelines, companies, contacts, deals and leads into the local store
+b24 work deals list status:open
+b24 work leads list stage:"In progress" --json
+b24 work deals move deal:42 "Contract signed"
 ```
 
 Every command answers JSON with `--json`, every write answers an `operation_id` and can be previewed with

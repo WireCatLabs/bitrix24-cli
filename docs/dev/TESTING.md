@@ -12,6 +12,12 @@ How the tests run, and what they never touch. The rules are the handbook's
 - Each run logs the command lines the tests drove (`coverage/argv.jsonl`). `pnpm test:matrix` turns that log into
   [test-matrix.md](test-matrix.md); a command or option no test drives needs a reason in
   `scripts/test-matrix-untested.ts`.
+- `src/testing/fake-crm.ts` is a portal's CRM in memory that refuses what the real one refuses: a REST 3.0 field name
+  its reference does not document (`src/crm/rest3-fields.ts`, the one list the adapter and the fake share), a stage
+  of another pipeline, and an `Idempotency-Key` reused for another request; it answers a repeated key from its
+  record. `src/crm/contracts.test.ts` runs cli-core's `crmSourceContract`, `crmSyncContract` and
+  `crmWriteContract` against it, and `src/testing/sandbox.ts` gives each test its own state folder and store, since
+  the portal's pace and a sync's cursor live there.
 - `pnpm contracts:check` runs the built CLI against `contracts/plan.json`: help, discovery, errors and the MCP tool
   list. `pnpm exec cli-contract contracts/plan.json --update` rewrites the snapshots; review the diff.
 - `pnpm contracts:upgrade` does not exist yet, and `.github/workflows/ci.yml` skips the step. It needs both local
