@@ -1,4 +1,35 @@
+const SHARED_MCP =
+  "cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and " +
+  "src/permissions.test.ts run b24's own server"
+const LONG_RUNNING = `starts an HTTP server or a background process that runs until stopped; ${SHARED_MCP}`
+
 export const UNTESTED: { command: string; option?: string; reason: string }[] = [
+  ...["--port", "--public-url", "--permission", "--profiles"].map((option) => ({
+    command: "mcp serve",
+    option,
+    reason: LONG_RUNNING,
+  })),
+  ...[undefined, "--profiles"].map((option) => ({
+    command: "mcp server status",
+    ...(option ? { option } : {}),
+    reason: LONG_RUNNING,
+  })),
+  { command: "mcp revoke", option: "--profiles", reason: SHARED_MCP },
+  ...[undefined, "--permission", "--profiles"].map((option) => ({
+    command: "mcp config",
+    ...(option ? { option } : {}),
+    reason: `prints the settings an agent pastes; ${SHARED_MCP}`,
+  })),
+  ...[undefined, "--allow-writes", "--permission"].map((option) => ({
+    command: "mcp add",
+    ...(option ? { option } : {}),
+    reason: `writes Codex's or Claude Code's own MCP settings; ${SHARED_MCP}`,
+  })),
+  ...[undefined, "--permission"].map((option) => ({
+    command: "mcp check",
+    ...(option ? { option } : {}),
+    reason: `starts the installed b24 as a child process, as the agent would; ${SHARED_MCP}`,
+  })),
   {
     command: "",
     option: "--help-all",

@@ -1,7 +1,6 @@
 import { CliError } from "@wirecat/cli-base"
 import type { Predicate } from "@wirecat/cli-base/query"
 import { timeBounds } from "@wirecat/cli-core/cli"
-import { semanticsOf } from "./values.js"
 
 export type Operator = "=" | ">" | ">=" | "<" | "<=" | "like"
 
@@ -15,7 +14,7 @@ export interface Condition {
 /** How one query field reaches the portal: its Bitrix24 name, and how its values read. */
 export interface FieldMap {
   field: string
-  kind: "id" | "number" | "time" | "text" | "outcome" | "word"
+  kind: "id" | "number" | "time" | "text" | "word"
 }
 
 const bare = (value: string) => value.replace(/^\*+|\*+$/g, "")
@@ -29,7 +28,6 @@ const valueFor = (kind: FieldMap["kind"], raw: string, name: string): string | n
       })
     return found
   }
-  if (kind === "outcome") return semanticsOf(raw.toLowerCase())
   return raw
 }
 

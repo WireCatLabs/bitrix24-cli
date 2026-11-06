@@ -117,13 +117,48 @@ b24 session list
 
 **Example:** `b24 session list`, `b24 session list --json`
 
+## `b24 sync`
+
+bring the CRM's copy in the local store up to date: pipelines, companies, contacts, deals and leads that changed since the last sync, or everything with --rescan; a run stops before its deadline or --max-pages and the next one goes on from there
+
+**Changes something on this computer only.**
+
+```sh
+b24 sync [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--rescan` | list everything again, every id too, dropping a round in progress. |
+| `--max-pages <pages>` | at most this many requests to the CRM in this run. |
+
+**Returns:** crm sync — provider, account, pipelines, synced, issues, complete, state, progress, and 2 more; every field: b24 commands info sync
+
+**Example:** `b24 work sync`, `b24 work sync --rescan`, `b24 work sync --max-pages 20`
+
+## `b24 store`
+
+the local copy of the CRM
+
+### `b24 store status`
+
+how far each kind's sync is: rows saved, partial or complete, when it last moved, how many are stored
+
+```sh
+b24 store status
+```
+
+**Returns:** crm sync progress — kind, round, id_pass, stored, job, profile, done, total, and 5 more; every field: b24 commands info store status
+
+**Example:** `b24 work store status --json`
+
 ## `b24 deals`
 
-read the portal's deals
+the CRM's deals as last synced: stage, status, amount and the people on them
 
 ### `b24 deals list`
 
-list deals on the portal, newest first
+deals copied from the CRM, newest first; run sync to bring them up to date
 
 ```sh
 b24 deals list [query] [options]
@@ -135,33 +170,32 @@ b24 deals list [query] [options]
 
 | Option | What it does |
 |---|---|
-| `--limit <n>` | how many to show. |
-| `--page <n>` | which page, starting at 1. |
-| `--all` | every row, no paging. |
+| `--limit <n>` | deals per page, 1–500. Default: `50`. |
+| `--page <n>` | which page, starting at 1. Default: `1`. |
 
-**Returns:** deal — id, title, pipeline_id, stage_id, outcome, amount, currency, assigned_to, and 7 more; every field: b24 commands info deals list
+**Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 22 more; every field: b24 commands info deals list
 
-**Example:** `b24 work deals list`, `b24 work deals list outcome:open pipeline_id:1 amount>=10000`
+**Example:** `b24 work deals list status:open --json`, `b24 work deals list stage:"Quote sent"`
 
 ### `b24 deals show`
 
-show one of the deals on the portal
+one deal with its pipeline, stage, status, amount and the people on it
 
 ```sh
-b24 deals show <id-or-name>
+b24 deals show <ref>
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `id-or-name` | required | the id-or-name as list prints it. |
+| `ref` | required | deal:<id>, as a list shows it. |
 
-**Returns:** deal — id, title, pipeline_id, stage_id, outcome, amount, currency, assigned_to, and 7 more; every field: b24 commands info deals show
+**Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 22 more; every field: b24 commands info deals show
 
-**Example:** `b24 work deals show 42`, `b24 work deals show 42 --json`
+**Example:** `b24 work deals show deal:12`
 
 ### `b24 deals create`
 
-create one deal on the portal
+make a deal in the CRM, then store the CRM's copy of it
 
 **Changes something in the service.**
 
@@ -171,70 +205,126 @@ b24 deals create [options]
 
 | Option | What it does |
 |---|---|
-| `--title <title>` | the title. |
-| `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
-| `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
-| `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
+| `--operation-id <id>` | the operation_id a write that ended in outcome_unknown named: the CRM answers the repeat from its record. |
+| `--title <title>` | the deal's title. |
+| `--pipeline <pipeline>` | pipeline:<id>, or a name only one of the CRM's pipelines has. |
+| `--stage <stage>` | a stage of its pipeline, by the CRM's id or name; checks the move key too, and the close key for a won or lost stage. |
+| `--amount <decimal>` | the expected sum, such as 1500.50, with --currency. |
+| `--currency <code>` | an ISO 4217 code, such as EUR. |
+| `--close-date <date>` | the day it is expected to close, YYYY-MM-DD. |
+| `--owner <user>` | the CRM user it is assigned to; anyone but the sign-in's own user checks crm.assign-others. |
+| `--field <key=value>` | one of the CRM's own fields, by its code; repeat for more, empty clears it. Default: ``. |
 
-**Returns:** create one deal on the portal
+**Returns:** crm write — operation_id, untrusted, deal, lead; every field: b24 commands info deals create
 
-**Example:** `b24 work deals create --title "Kitchen for Acme" --body '{"opportunity":15000,"currencyId":"EUR"}'`
+**Example:** `b24 work deals create --title "Example kitchen" --amount 15000 --currency EUR`, `b24 work deals create --title "Example office" --pipeline Sales --stage "Quote sent" --field UF_CRM_SOURCE=web`
 
 ### `b24 deals update`
 
-change one deal on the portal; options left out keep their values
+change a deal in the CRM; what is left out keeps its value; the CRM's copy is stored again
 
 **Changes something in the service.**
 
 ```sh
-b24 deals update <id> [options]
+b24 deals update <ref> [options]
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `id` | required | the deal's id. |
+| `ref` | required | deal:<id>, as a list shows it. |
 
 | Option | What it does |
 |---|---|
-| `--title <title>` | the title. |
-| `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
-| `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
-| `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
+| `--operation-id <id>` | the operation_id a write that ended in outcome_unknown named: the CRM answers the repeat from its record. |
+| `--title <title>` | the deal's title. |
+| `--pipeline <pipeline>` | pipeline:<id>, or a name only one of the CRM's pipelines has. |
+| `--stage <stage>` | a stage of its pipeline, by the CRM's id or name; checks the move key too, and the close key for a won or lost stage. |
+| `--amount <decimal>` | the expected sum, such as 1500.50, with --currency. |
+| `--currency <code>` | an ISO 4217 code, such as EUR. |
+| `--close-date <date>` | the day it is expected to close, YYYY-MM-DD. |
+| `--owner <user>` | the CRM user it is assigned to; anyone but the sign-in's own user checks crm.assign-others. |
+| `--field <key=value>` | one of the CRM's own fields, by its code; repeat for more, empty clears it. Default: ``. |
 
-**Returns:** change one deal on the portal; options left out keep their values
+**Returns:** crm write — operation_id, untrusted, deal, lead; every field: b24 commands info deals update
 
-**Example:** `b24 work deals update 42 --body '{"opportunity":18000}'`
+**Example:** `b24 work deals update deal:12 --amount 18000`, `b24 work deals update deal:12 --field UF_CRM_SOURCE=`
 
 ### `b24 deals move`
 
-move one deal to another stage
+move a deal to another stage of its pipeline; a won or lost stage checks the close key too
 
 **Changes something in the service.**
 
 ```sh
-b24 deals move <id> [options]
+b24 deals move <ref> <stage> [options]
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `id` | required | the deal's id. |
+| `ref` | required | deal:<id>, as a list shows it. |
+| `stage` | required | the stage, by the CRM's id or a name only one stage of its pipeline has. |
 
 | Option | What it does |
 |---|---|
-| `--stage <stage>` | the stage, by id or name, as `stages list` prints it. |
-| `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
+| `--operation-id <id>` | the operation_id a write that ended in outcome_unknown named: the CRM answers the repeat from its record. |
 
-**Returns:** move one deal to another stage
+**Returns:** crm write — operation_id, untrusted, deal, lead; every field: b24 commands info deals move
 
-**Example:** `b24 work deals move 42 --stage "Contract signed"`
+**Example:** `b24 work deals move deal:12 "Quote sent"`
+
+### `b24 deals close`
+
+mark a deal won or lost, the CRM's own way
+
+**Changes something in the service.**
+
+```sh
+b24 deals close <ref> <outcome> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `ref` | required | deal:<id>, as a list shows it. |
+| `outcome` | required | how it ended. One of: `won`, `lost`. |
+
+| Option | What it does |
+|---|---|
+| `--operation-id <id>` | the operation_id a write that ended in outcome_unknown named: the CRM answers the repeat from its record. |
+| `--reason <text>` | why, in a few words; kept with it. |
+
+**Returns:** crm write — operation_id, untrusted, deal, lead; every field: b24 commands info deals close
+
+**Example:** `b24 work deals close deal:12 won`, `b24 work deals close deal:12 lost --reason "Example: chose another supplier"`
+
+### `b24 deals delete`
+
+delete a deal in the CRM; asks first unless allowed
+
+**Changes something in the service.**
+
+```sh
+b24 deals delete <ref> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `ref` | required | deal:<id>, as a list shows it. |
+
+| Option | What it does |
+|---|---|
+| `--operation-id <id>` | the operation_id a write that ended in outcome_unknown named: the CRM answers the repeat from its record. |
+
+**Returns:** crm removal — operation_id, ref, removed; every field: b24 commands info deals delete
+
+**Example:** `b24 work deals delete deal:12`
 
 ## `b24 leads`
 
-read the portal's leads
+the CRM's leads as last synced
 
 ### `b24 leads list`
 
-list leads on the portal, newest first
+leads copied from the CRM, newest first; run sync to bring them up to date
 
 ```sh
 b24 leads list [query] [options]
@@ -246,33 +336,32 @@ b24 leads list [query] [options]
 
 | Option | What it does |
 |---|---|
-| `--limit <n>` | how many to show. |
-| `--page <n>` | which page, starting at 1. |
-| `--all` | every row, no paging. |
+| `--limit <n>` | leads per page, 1–500. Default: `50`. |
+| `--page <n>` | which page, starting at 1. Default: `1`. |
 
-**Returns:** lead — id, title, name, organization_name, stage_id, outcome, amount, currency, and 10 more; every field: b24 commands info leads list
+**Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 22 more; every field: b24 commands info leads list
 
-**Example:** `b24 work leads list`, `b24 work leads list outcome:open updated_at>=7d`
+**Example:** `b24 work leads list status:open --json`, `b24 work leads list stage:"Quote sent"`
 
 ### `b24 leads show`
 
-show one of the leads on the portal
+one lead with its pipeline, stage, status, amount and the people on it
 
 ```sh
-b24 leads show <id-or-name>
+b24 leads show <ref>
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `id-or-name` | required | the id-or-name as list prints it. |
+| `ref` | required | lead:<id>, as a list shows it. |
 
-**Returns:** lead — id, title, name, organization_name, stage_id, outcome, amount, currency, and 10 more; every field: b24 commands info leads show
+**Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 22 more; every field: b24 commands info leads show
 
-**Example:** `b24 work leads show 42`, `b24 work leads show 42 --json`
+**Example:** `b24 work leads show lead:12`
 
 ### `b24 leads create`
 
-create one lead on the portal
+make a lead in the CRM, then store the CRM's copy of it
 
 **Changes something in the service.**
 
@@ -282,66 +371,204 @@ b24 leads create [options]
 
 | Option | What it does |
 |---|---|
-| `--title <title>` | the title. |
-| `--first-name <name>` | the person's first name. |
-| `--last-name <name>` | the person's last name. |
-| `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
-| `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
-| `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
+| `--operation-id <id>` | the operation_id a write that ended in outcome_unknown named: the CRM answers the repeat from its record. |
+| `--title <title>` | the lead's title. |
+| `--pipeline <pipeline>` | pipeline:<id>, or a name only one of the CRM's pipelines has. |
+| `--stage <stage>` | a stage of its pipeline, by the CRM's id or name; checks the move key too, and the close key for a won or lost stage. |
+| `--amount <decimal>` | the expected sum, such as 1500.50, with --currency. |
+| `--currency <code>` | an ISO 4217 code, such as EUR. |
+| `--close-date <date>` | the day it is expected to close, YYYY-MM-DD. |
+| `--owner <user>` | the CRM user it is assigned to; anyone but the sign-in's own user checks crm.assign-others. |
+| `--field <key=value>` | one of the CRM's own fields, by its code; repeat for more, empty clears it. Default: ``. |
 
-**Returns:** create one lead on the portal
+**Returns:** crm write — operation_id, untrusted, deal, lead; every field: b24 commands info leads create
 
-**Example:** `b24 work leads create --title "Website form" --first-name Ivan`
+**Example:** `b24 work leads create --title "Example kitchen" --amount 15000 --currency EUR`, `b24 work leads create --title "Example office" --pipeline Sales --stage "Quote sent" --field UF_CRM_SOURCE=web`
 
 ### `b24 leads update`
 
-change one lead on the portal; options left out keep their values
+change a lead in the CRM; what is left out keeps its value; the CRM's copy is stored again
 
 **Changes something in the service.**
 
 ```sh
-b24 leads update <id> [options]
+b24 leads update <ref> [options]
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `id` | required | the lead's id. |
+| `ref` | required | lead:<id>, as a list shows it. |
 
 | Option | What it does |
 |---|---|
-| `--title <title>` | the title. |
-| `--first-name <name>` | the person's first name. |
-| `--last-name <name>` | the person's last name. |
-| `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
-| `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
-| `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
+| `--operation-id <id>` | the operation_id a write that ended in outcome_unknown named: the CRM answers the repeat from its record. |
+| `--title <title>` | the lead's title. |
+| `--pipeline <pipeline>` | pipeline:<id>, or a name only one of the CRM's pipelines has. |
+| `--stage <stage>` | a stage of its pipeline, by the CRM's id or name; checks the move key too, and the close key for a won or lost stage. |
+| `--amount <decimal>` | the expected sum, such as 1500.50, with --currency. |
+| `--currency <code>` | an ISO 4217 code, such as EUR. |
+| `--close-date <date>` | the day it is expected to close, YYYY-MM-DD. |
+| `--owner <user>` | the CRM user it is assigned to; anyone but the sign-in's own user checks crm.assign-others. |
+| `--field <key=value>` | one of the CRM's own fields, by its code; repeat for more, empty clears it. Default: ``. |
 
-**Returns:** change one lead on the portal; options left out keep their values
+**Returns:** crm write — operation_id, untrusted, deal, lead; every field: b24 commands info leads update
 
-**Example:** `b24 work leads update 7 --field Source=Website --field Tags=Hot --field Tags=Repeat`
+**Example:** `b24 work leads update lead:12 --amount 18000`, `b24 work leads update lead:12 --field UF_CRM_SOURCE=`
 
 ### `b24 leads move`
 
-move one lead to another stage
+move a lead to another stage of its pipeline; a won or lost stage checks the close key too
 
 **Changes something in the service.**
 
 ```sh
-b24 leads move <id> [options]
+b24 leads move <ref> <stage> [options]
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `id` | required | the lead's id. |
+| `ref` | required | lead:<id>, as a list shows it. |
+| `stage` | required | the stage, by the CRM's id or a name only one stage of its pipeline has. |
 
 | Option | What it does |
 |---|---|
-| `--stage <stage>` | the stage, by id or name, as `stages list` prints it. |
-| `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
+| `--operation-id <id>` | the operation_id a write that ended in outcome_unknown named: the CRM answers the repeat from its record. |
 
-**Returns:** move one lead to another stage
+**Returns:** crm write — operation_id, untrusted, deal, lead; every field: b24 commands info leads move
 
-**Example:** `b24 work leads move 7 --stage IN_PROCESS`
+**Example:** `b24 work leads move lead:12 "Quote sent"`
+
+### `b24 leads close`
+
+mark a lead won or lost, the CRM's own way
+
+**Changes something in the service.**
+
+```sh
+b24 leads close <ref> <outcome> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `ref` | required | lead:<id>, as a list shows it. |
+| `outcome` | required | how it ended. One of: `won`, `lost`. |
+
+| Option | What it does |
+|---|---|
+| `--operation-id <id>` | the operation_id a write that ended in outcome_unknown named: the CRM answers the repeat from its record. |
+| `--reason <text>` | why, in a few words; kept with it. |
+
+**Returns:** crm write — operation_id, untrusted, deal, lead; every field: b24 commands info leads close
+
+**Example:** `b24 work leads close lead:12 won`, `b24 work leads close lead:12 lost --reason "Example: chose another supplier"`
+
+### `b24 leads delete`
+
+delete a lead in the CRM; asks first unless allowed
+
+**Changes something in the service.**
+
+```sh
+b24 leads delete <ref> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `ref` | required | lead:<id>, as a list shows it. |
+
+| Option | What it does |
+|---|---|
+| `--operation-id <id>` | the operation_id a write that ended in outcome_unknown named: the CRM answers the repeat from its record. |
+
+**Returns:** crm removal — operation_id, ref, removed; every field: b24 commands info leads delete
+
+**Example:** `b24 work leads delete lead:12`
+
+## `b24 pipelines`
+
+the CRM's pipelines and their stages, as last synced
+
+### `b24 pipelines list`
+
+pipelines copied from the CRM, with their stages in order and how many are open in each
+
+```sh
+b24 pipelines list [query]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+**Returns:** pipeline — id, ref, name, kind, account, external_id, stages, created_at, and 3 more; every field: b24 commands info pipelines list
+
+**Example:** `b24 work pipelines list --json`, `b24 work pipelines list kind:lead`
+
+### `b24 pipelines show`
+
+one pipeline with its funnel: how many reached each stage, how many went on, and the win rate
+
+```sh
+b24 pipelines show <pipeline>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `pipeline` | required | pipeline:<id>, or a name only one of the CRM's pipelines has. |
+
+**Returns:** pipeline — id, ref, name, kind, account, external_id, stages, created_at, and 3 more; every field: b24 commands info pipelines show
+
+**Example:** `b24 work pipelines show pipeline:3`
+
+## `b24 stages`
+
+the stages of the CRM's pipelines, as last synced
+
+### `b24 stages list`
+
+every stage of the CRM's pipelines in order, with its outcome and how many are open in it
+
+```sh
+b24 stages list [query]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+**Returns:** stage — name, position, outcome, external_id, open, pipeline, pipeline_name, kind, and 3 more; every field: b24 commands info stages list
+
+**Example:** `b24 work stages list --json`, `b24 work stages list kind:lead`
+
+## `b24 search`
+
+search what the local store holds
+
+### `b24 search all`
+
+search the CRM's deals and leads by the words of their title, and messages, notes and calendar events other WireCat tools stored — best match first. Use it when you do not know where something was written
+
+```sh
+b24 search all <query> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | required | words and "phrases"; deals and leads match the words of their title. |
+
+| Option | What it does |
+|---|---|
+| `--only <resources>` | only these resources, separated by commas: crm, messages, notes, events; meetings when --source names a meeting account. |
+| `--source <accounts>` | only these accounts, separated by commas: provider:account as a hit shows it, a provider, a kind or group:<name>; each resource reads the ones of its kind, and meetings only when it names one. |
+| `--max-meetings <n>` | how many of the meeting account's meetings to look through, newest first, or all for every one (default 100). |
+| `--limit <n>` | how many. |
+| `--page <n>` | which page, starting at 1. |
+| `--exact` | bare words and quotes match their exact form only, as exact:word does. |
+| `--timezone <zone>` | the IANA timezone for calendar date boundaries. |
+
+**Returns:** hit — kind, ref, provider, account, title, timestamp, excerpt, url, and 13 more; every field: b24 commands info search all
+
+**Example:** `b24 work search all Example LLC`, `b24 work search all website --only crm --json`
 
 ## `b24 people`
 
@@ -521,90 +748,6 @@ b24 organizations update <id> [options]
 
 **Example:** `b24 work organizations update 9 --name "Acme Ltd"`
 
-## `b24 pipelines`
-
-read the portal's deal pipelines
-
-### `b24 pipelines list`
-
-list deal pipelines on the portal, newest first
-
-```sh
-b24 pipelines list [query] [options]
-```
-
-| Argument | | What it is |
-|---|---|---|
-| `query` | optional | field:value terms; this list filters by none yet. |
-
-| Option | What it does |
-|---|---|
-| `--limit <n>` | how many to show. |
-| `--page <n>` | which page, starting at 1. |
-| `--all` | every row, no paging. |
-
-**Returns:** pipeline — id, name, is_default, sort; every field: b24 commands info pipelines list
-
-**Example:** `b24 work pipelines list`, `b24 work pipelines list --json`
-
-### `b24 pipelines show`
-
-show one of the deal pipelines on the portal
-
-```sh
-b24 pipelines show <id-or-name>
-```
-
-| Argument | | What it is |
-|---|---|---|
-| `id-or-name` | required | the id-or-name as list prints it. |
-
-**Returns:** pipeline — id, name, is_default, sort; every field: b24 commands info pipelines show
-
-**Example:** `b24 work pipelines show 42`, `b24 work pipelines show 42 --json`
-
-## `b24 stages`
-
-read the stages of the portal's deal pipelines and leads
-
-### `b24 stages list`
-
-list deal and lead stages, each with its outcome on the portal, newest first
-
-```sh
-b24 stages list [query] [options]
-```
-
-| Argument | | What it is |
-|---|---|---|
-| `query` | optional | field:value terms that narrow the list — the fields are below. |
-
-| Option | What it does |
-|---|---|
-| `--limit <n>` | how many to show. |
-| `--page <n>` | which page, starting at 1. |
-| `--all` | every row, no paging. |
-
-**Returns:** stage — id, name, entity, pipeline_id, outcome, sort, color; every field: b24 commands info stages list
-
-**Example:** `b24 work stages list`, `b24 work stages list entity:leads`
-
-### `b24 stages show`
-
-show one of the deal and lead stages, each with its outcome on the portal
-
-```sh
-b24 stages show <id-or-name>
-```
-
-| Argument | | What it is |
-|---|---|---|
-| `id-or-name` | required | the id-or-name as list prints it. |
-
-**Returns:** stage — id, name, entity, pipeline_id, outcome, sort, color; every field: b24 commands info stages show
-
-**Example:** `b24 work stages show 42`, `b24 work stages show 42 --json`
-
 ## `b24 products`
 
 read the portal's product catalog
@@ -778,13 +921,17 @@ b24 api call <method> [options]
 
 ## `b24 doctor`
 
-check this installation: version, paths, config, profiles; no keyring or network
+the state this installation is in, without connecting unless --online
 
 ```sh
-b24 doctor
+b24 doctor [options]
 ```
 
-**Returns:** check this installation: version, paths, config, profiles; no keyring or network
+| Option | What it does |
+|---|---|
+| `--online` | also connect once and read the account; sends nothing. |
+
+**Returns:** the state this installation is in, without connecting unless --online
 
 **Example:** `b24 doctor`, `b24 doctor --json`
 
@@ -840,11 +987,11 @@ b24 skill status
 
 ## `b24 mcp`
 
-serve this profile's commands to an agent over MCP — `claude mcp add b24 -- b24 personal mcp serve`
+serve this profile to an agent over MCP and set it up — `claude mcp add b24 -- b24 <profile> mcp serve`
 
 ### `b24 mcp serve`
 
-serve this profile's commands to an agent over MCP, on stdin and stdout, writes included; the profile's permissions decide — `claude mcp add b24 -- b24 personal mcp serve`
+serve this profile to an agent over MCP, on stdin and stdout — `claude mcp add b24 -- b24 <profile> mcp serve`; `b24 mcp serve --profiles a,b` or `--profiles all` serves those profiles from one server and each tool asks which
 
 **Changes something in the service.**
 
@@ -854,27 +1001,33 @@ b24 mcp serve [options]
 
 | Option | What it does |
 |---|---|
+| `--permission <key=level>` | make a permission stricter for this server only, like deals.delete=deny; it never loosens the profile; repeat for more keys. |
+| `--profiles <names\|all>` | serve several profiles from one server instead of one: names, comma-separated, or all for every profile. |
 | `--http` | serve over HTTP on 127.0.0.1 for ChatGPT and Claude in the browser, behind your tunnel; the profile's permissions decide. |
 | `--port <port>` | the local port for --http (default 8765). |
-| `--public-url <url>` | the tunnel's https address the browser apps use, e.g. https://<name>.ts.net. |
+| `--public-url <url>` | the tunnel's https address the browser apps use, e.g. https://<name>.ts.net or https://<name>.ts.net/tg. |
 
 **Returns:** serve this profile's commands to an AI agent
 
-**Example:** `b24 personal mcp serve`, `b24 personal mcp serve --http --public-url https://laptop.example.ts.net`
+**Example:** `b24 personal mcp serve`, `b24 mcp serve --profiles work,personal`, `b24 personal mcp serve --http --public-url https://laptop.example.ts.net`
 
 ### `b24 mcp revoke`
 
-forget every login `mcp serve --http` gave a browser app; each must log in again
+forget every login `mcp serve --http` gave a browser app, of this profile or of the server `--profiles` names; each app must log in again
 
 **Changes something on this computer only.**
 
 ```sh
-b24 mcp revoke
+b24 mcp revoke [options]
 ```
+
+| Option | What it does |
+|---|---|
+| `--profiles <names\|all>` | serve several profiles from one server instead of one: names, comma-separated, or all for every profile. |
 
 **Returns:** forget every login given to a browser app
 
-**Example:** `b24 personal mcp revoke`
+**Example:** `b24 personal mcp revoke`, `b24 mcp revoke --profiles all`
 
 ### `b24 mcp server`
 
@@ -894,6 +1047,8 @@ b24 mcp server start [options]
 |---|---|
 | `--port <port>` | the local port (default 8765). |
 | `--public-url <url>` | the tunnel's https address the browser apps use, e.g. https://<name>.ts.net or https://<name>.ts.net/tg. |
+| `--permission <key=level>` | make a permission stricter for this server only; repeat for more keys. |
+| `--profiles <names\|all>` | the server of several profiles that `mcp serve --profiles` serves: names, comma-separated, or all. |
 
 **Returns:** start the HTTP MCP server in the background
 
@@ -906,8 +1061,12 @@ stop `mcp serve --http` — only one that `mcp server start` started
 **Changes something on this computer only.**
 
 ```sh
-b24 mcp server stop
+b24 mcp server stop [options]
 ```
+
+| Option | What it does |
+|---|---|
+| `--profiles <names\|all>` | the server of several profiles that `mcp serve --profiles` serves: names, comma-separated, or all. |
 
 **Returns:** stop the background HTTP MCP server
 
@@ -918,12 +1077,72 @@ b24 mcp server stop
 whether `mcp serve --http` runs, on which port and address, the login code for a new browser app, and the apps logged in
 
 ```sh
-b24 mcp server status
+b24 mcp server status [options]
 ```
+
+| Option | What it does |
+|---|---|
+| `--profiles <names\|all>` | the server of several profiles that `mcp serve --profiles` serves: names, comma-separated, or all. |
 
 **Returns:** whether the HTTP MCP server runs, its login code and the apps logged in
 
 **Example:** `b24 personal mcp server status --json`
+
+### `b24 mcp config`
+
+print the mcpServers entry for Claude Desktop, Cursor and others, with full paths; writes nothing
+
+```sh
+b24 mcp config [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--permission <key=level>` | make a permission stricter for this server only, like deals.delete=deny; it never loosens the profile; repeat for more keys. |
+| `--profiles <names\|all>` | serve several profiles from one server instead of one: names, comma-separated, or all for every profile. |
+
+**Returns:** print the local MCP configuration of this profile, or of those --profiles names
+
+**Example:** `b24 personal mcp config`, `b24 mcp config --profiles all`
+
+### `b24 mcp add`
+
+add this profile's local MCP server to Codex or Claude Code
+
+**Changes something on this computer only.**
+
+```sh
+b24 mcp add <client> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `client` | required | codex or claude-code. |
+
+| Option | What it does |
+|---|---|
+| `--allow-writes` | acknowledge that this profile offers writing tools. |
+| `--permission <key=level>` | make a permission stricter for this server only, like deals.delete=deny; it never loosens the profile; repeat for more keys. |
+
+**Returns:** add this profile's local MCP server to Codex or Claude Code
+
+**Example:** `b24 personal mcp add codex --allow-writes`
+
+### `b24 mcp check`
+
+check this profile's local MCP handshake and tool list
+
+```sh
+b24 mcp check [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--permission <key=level>` | make a permission stricter for this server only, like deals.delete=deny; it never loosens the profile; repeat for more keys. |
+
+**Returns:** check this profile's local MCP handshake and tool list
+
+**Example:** `b24 personal mcp check`
 
 ## `b24 upgrade`
 
