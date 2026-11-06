@@ -4,11 +4,6 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 
 ## Unreleased
 
-### Changed
-
-- `@wirecat/cli-core` 0.586.0 and `@wirecat/cli-base` 0.79.0, whose vocabulary has `deals`, `leads`, `pipelines`,
-  `stages`, `products` and `users`.
-
 ### Added
 
 - Started from `@wirecat/cli-template` 0.14.0.
