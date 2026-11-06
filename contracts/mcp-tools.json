@@ -18,7 +18,7 @@
           "type": "object"
         },
         "command": {
-          "description": "a command b24_tools_search returned: \"runs list\"",
+          "description": "a command b24_tools_search returned: \"session list\"",
           "minLength": 1,
           "type": "string"
         }
@@ -542,7 +542,7 @@
           "type": "object"
         },
         "command": {
-          "description": "a command b24_tools_search returned: \"runs list\"",
+          "description": "a command b24_tools_search returned: \"session list\"",
           "minLength": 1,
           "type": "string"
         }
