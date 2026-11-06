@@ -94,8 +94,10 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
 2. **Permissions** follow WC-PERM-22:
    - reads, and an ordinary `create`, `update` and `move`, are `allow`;
    - a delete is `ask`;
-   - a write that tells employees something by itself is its own key, `deny` until the owner allows it; which
-     writes do is checked against the portal while the write commands are built, and written here;
+   - a write that tells employees something by itself is its own key, `deny` until the owner allows it:
+     `crm.assign-others`, checked when a create or update sets `assignedById` to someone other than the webhook's own
+     user, whom Bitrix24 then tells they are responsible. The notification is how Bitrix24 is known to behave, not
+     yet seen on the owner's portal;
    - `B24_READ_ONLY` refuses every write;
    - `api call <method>` checks `api.<method>` and also the key of the command that does the same thing, so
      `api call crm.deal.update` cannot get round `deals.update: deny`.
@@ -105,6 +107,19 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
    journalled (WC-OUT-10, WC-PERM-13). On REST 3.0 the `operation_id` is sent as the `Idempotency-Key` header, so a
    retry with `--operation-id` does not create a second record. A write that got no answer is `outcome_unknown` and
    is never retried by `b24` itself.
+
+### Writes
+
+- `create` and `update` take the vocabulary's flags where it has one (`--title`, `--name`, `--first-name`,
+  `--last-name`) and every other field through `--body`, a JSON object in Bitrix24's REST 3.0 field names. cli-base
+  has no flags for an amount, a currency, a stage, a pipeline, a phone or an email yet; when it has, they replace the
+  matching `--body` keys.
+- `move` takes `--stage` by id or name, read among the record's own pipeline's stages. Its flag lives on a lint
+  override until cli-base has a stage flag.
+- A stage change can start the portal's own automation (robots, business processes), which may write to clients.
+  That is the portal owner's set-up, not `b24`'s; `move` stays `allow` by WC-PERM-22, and the owner can set
+  `deals.move` and `leads.move` to `ask` or `deny`.
+- There is no delete command in slice 1.
 
 ### The portal's limits
 

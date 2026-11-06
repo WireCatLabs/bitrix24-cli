@@ -89,6 +89,11 @@ export class BitrixTransport {
     this.#random = options.random ?? Math.random
   }
 
+  /** The employee the webhook acts as. */
+  get userId(): string {
+    return this.#webhook.userId
+  }
+
   /**
    * Reads are tried again on a refused rate or a lost answer. A write is tried again only on REST 3.0 with an
    * `Idempotency-Key`, which Bitrix24 answers from its store instead of running twice; any other write that got no

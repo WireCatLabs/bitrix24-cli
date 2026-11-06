@@ -17,3 +17,7 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   (with each stage's outcome), `products` and `users`, live from the portal. A list takes a query that becomes the
   portal's own filter; a free word in it matches part of a title or name. A name two records share is refused with
   both as candidates.
+- `create` and `update` for `deals`, `leads`, `people` and `organizations`, and `move` for deals and leads: each
+  write answers its `operation_id`, which Bitrix24 receives as the `Idempotency-Key`, so `--operation-id` repeats a
+  write safely; `--dry-run` previews; assigning a record to another employee is denied until allowed
+  (`crm.assign-others`).
