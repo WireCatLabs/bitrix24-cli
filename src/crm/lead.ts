@@ -4,10 +4,10 @@ import type { ItemType } from "./items.js"
 import {
   contactSchema,
   contacts,
-  customFields,
   fullName,
   id,
   ids,
+  type Metadata,
   metadataSchema,
   nullableTime,
   number,
@@ -55,7 +55,7 @@ export const LEAD_FIELDS: Record<string, FieldMap> = {
 }
 
 /** Phones and emails come from REST 3.0 only; REST 2's crm.item.list leaves them out, so they are left out here too. */
-export const fromBitrixLead = (raw: Raw, custom?: Raw): Lead => ({
+export const fromBitrixLead = (raw: Raw, metadata?: Metadata): Lead => ({
   id: id(raw.id) ?? "",
   title: text(raw.title),
   name: fullName(raw.name, raw.secondName, raw.lastName),
@@ -73,7 +73,7 @@ export const fromBitrixLead = (raw: Raw, custom?: Raw): Lead => ({
   created_at: time(raw.createdTime),
   updated_at: time(raw.updatedTime),
   url: text(raw.url),
-  ...(custom && Object.keys(customFields(custom)).length ? { provider_metadata: customFields(custom) } : {}),
+  ...(metadata ? { provider_metadata: metadata } : {}),
 })
 
 export const LEAD: ItemType<Lead> = {

@@ -76,4 +76,8 @@ export const customFields = (raw: Raw | undefined): Record<string, unknown> =>
 
 export const contactSchema = v.strictObject({ type: v.nullable(v.string()), value: v.string() })
 export const nullableTime = v.nullable(isoTime)
-export const metadataSchema = v.optional(v.record(v.string(), v.unknown()))
+/** A custom field's value with its title on the portal; `label` is null when the portal did not give one. */
+export const metadataSchema = v.optional(
+  v.record(v.string(), v.strictObject({ label: v.nullable(v.string()), value: v.unknown() })),
+)
+export type Metadata = NonNullable<v.InferOutput<typeof metadataSchema>>

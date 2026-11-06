@@ -2,9 +2,9 @@ import * as v from "valibot"
 import type { FieldMap } from "./conditions.js"
 import type { ItemType } from "./items.js"
 import {
-  customFields,
   id,
   ids,
+  type Metadata,
   metadataSchema,
   nullableTime,
   number,
@@ -49,7 +49,7 @@ export const DEAL_FIELDS: Record<string, FieldMap> = {
 }
 
 /** Bitrix24 ⇄ neutral for a deal. */
-export const fromBitrixDeal = (raw: Raw, custom?: Raw): Deal => ({
+export const fromBitrixDeal = (raw: Raw, metadata?: Metadata): Deal => ({
   id: id(raw.id) ?? "",
   title: text(raw.title),
   pipeline_id: text(raw.categoryId),
@@ -64,7 +64,7 @@ export const fromBitrixDeal = (raw: Raw, custom?: Raw): Deal => ({
   created_at: time(raw.createdTime),
   updated_at: time(raw.updatedTime),
   url: text(raw.url),
-  ...(custom && Object.keys(customFields(custom)).length ? { provider_metadata: customFields(custom) } : {}),
+  ...(metadata ? { provider_metadata: metadata } : {}),
 })
 
 export const DEAL: ItemType<Deal> = {
