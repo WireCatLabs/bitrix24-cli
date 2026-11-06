@@ -27,12 +27,12 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `deals create` |  | ✅ |  |
 | `deals create` | `--title` | ✅ |  |
 | `deals create` | `--body` | ✅ |  |
-| `deals create` | `--set` | ✅ |  |
+| `deals create` | `--field` | ✅ |  |
 | `deals create` | `--operation-id` | ✅ |  |
 | `deals update` |  | ✅ |  |
 | `deals update` | `--title` | ✅ |  |
 | `deals update` | `--body` | ✅ |  |
-| `deals update` | `--set` | ✅ |  |
+| `deals update` | `--field` | ✅ |  |
 | `deals update` | `--operation-id` | ✅ |  |
 | `deals move` |  | ✅ |  |
 | `deals move` | `--stage` | ✅ |  |
@@ -47,14 +47,14 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `leads create` | `--first-name` | ✅ |  |
 | `leads create` | `--last-name` | ✅ |  |
 | `leads create` | `--body` | ✅ |  |
-| `leads create` | `--set` | ✅ |  |
+| `leads create` | `--field` | ✅ |  |
 | `leads create` | `--operation-id` | ✅ |  |
 | `leads update` |  | ✅ |  |
 | `leads update` | `--title` | ✅ |  |
 | `leads update` | `--first-name` | ✅ |  |
 | `leads update` | `--last-name` | ✅ |  |
 | `leads update` | `--body` | ✅ |  |
-| `leads update` | `--set` | ✅ |  |
+| `leads update` | `--field` | ✅ |  |
 | `leads update` | `--operation-id` | ✅ |  |
 | `leads move` |  | ✅ |  |
 | `leads move` | `--stage` | ✅ |  |
@@ -68,13 +68,13 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `people create` | `--first-name` | ✅ |  |
 | `people create` | `--last-name` | ✅ |  |
 | `people create` | `--body` | ✅ |  |
-| `people create` | `--set` | ✅ |  |
+| `people create` | `--field` | ✅ |  |
 | `people create` | `--operation-id` | ✅ |  |
 | `people update` |  | ✅ |  |
 | `people update` | `--first-name` | ✅ |  |
 | `people update` | `--last-name` | ✅ |  |
 | `people update` | `--body` | ✅ |  |
-| `people update` | `--set` | ✅ |  |
+| `people update` | `--field` | ✅ |  |
 | `people update` | `--operation-id` | ✅ |  |
 | `organizations list` |  | ✅ |  |
 | `organizations list` | `--limit` | ✅ |  |
@@ -84,12 +84,12 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `organizations create` |  | ✅ |  |
 | `organizations create` | `--name` | ✅ |  |
 | `organizations create` | `--body` | ✅ |  |
-| `organizations create` | `--set` | ✅ |  |
+| `organizations create` | `--field` | ✅ |  |
 | `organizations create` | `--operation-id` | ✅ |  |
 | `organizations update` |  | ✅ |  |
 | `organizations update` | `--name` | ✅ |  |
 | `organizations update` | `--body` | ✅ |  |
-| `organizations update` | `--set` | ✅ |  |
+| `organizations update` | `--field` | ✅ |  |
 | `organizations update` | `--operation-id` | ✅ |  |
 | `pipelines list` |  | ✅ |  |
 | `pipelines list` | `--limit` | ✅ |  |
