@@ -6,9 +6,9 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 
 ### Added
 
-- `create` and `update` for deals, leads, people and organizations take `--set "<label or code>=<value>"`, repeated
+- `create` and `update` for deals, leads, people and organizations take `--field "<label or code>=<value>"`, repeated
   for more fields or for each value of a multiple field. The label is looked up on the portal; two fields with that
-  label are refused with their codes. A list field takes its option's label or id. `--set` wins over `--body` for the
+  label are refused with their codes. A list field takes its option's label or id. `--field` wins over `--body` for the
   same field, and `--title`, `--name`, `--first-name` and `--last-name` win over both. Other values go to the portal as
   typed. `--dry-run` does not look the names up.
 - `list` for deals, leads, people and organizations filters by the portal's own fields: `<code or label>:<value>`,

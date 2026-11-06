@@ -225,10 +225,10 @@ const customFields = (type: string) => ({
   ]),
 })
 
-describe("--set", () => {
+describe("--field", () => {
   const portal = () => fakePortal({ ...customFields("deal"), "crm.deal.update": ok({ result: true }) })
-  const update = (fake: ReturnType<typeof portal>, ...sets: string[]) =>
-    b24(["work", "deals", "update", "42", ...sets.flatMap((one) => ["--set", one]), "--json"], { portal: fake })
+  const update = (fake: ReturnType<typeof portal>, ...pairs: string[]) =>
+    b24(["work", "deals", "update", "42", ...pairs.flatMap((one) => ["--field", one]), "--json"], { portal: fake })
 
   it("names a custom field by label or code, a list option by label or id, a multiple field by repeating", async () => {
     const fake = portal()
@@ -256,7 +256,7 @@ describe("--set", () => {
         "42",
         "--body",
         '{"UF_CRM_1_SOURCE":"45","title":"body","opportunity":1}',
-        "--set",
+        "--field",
         "Source=Website",
         "--title",
         "named",
@@ -310,7 +310,7 @@ describe("--set", () => {
 
   it("--dry-run looks nothing up", async () => {
     const fake = portal()
-    const ran = await b24(["work", "deals", "update", "42", "--set", "Source=Website", "--dry-run", "--json"], {
+    const ran = await b24(["work", "deals", "update", "42", "--field", "Source=Website", "--dry-run", "--json"], {
       portal: fake,
     })
     expect(ran.code).toBe(0)
@@ -337,7 +337,7 @@ describe("every write takes its options", () => {
         ...(NAMES[noun] ?? []),
         "--body",
         '{"comments":"x"}',
-        "--set",
+        "--field",
         "Source=Fair",
         "--operation-id",
         `op-${noun}`,

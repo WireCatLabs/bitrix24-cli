@@ -5,7 +5,7 @@ import { Command } from "commander"
 import { apiKeysOf, assigneeOf, stageKeysOf } from "../api-keys.js"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { DEAL } from "../crm/deal.js"
-import { customValues, loadFields, setsOf } from "../crm/fields.js"
+import { customValues, fieldPairsOf, loadFields } from "../crm/fields.js"
 import type { ItemType } from "../crm/items.js"
 import { LEAD } from "../crm/lead.js"
 import { ORGANIZATION } from "../crm/organization.js"
@@ -24,7 +24,7 @@ interface Options {
   firstName?: string
   lastName?: string
   body?: string
-  set?: string[]
+  field?: string[]
   stage?: string
   operationId?: string
 }
@@ -56,12 +56,12 @@ const bodyOf = (raw: string | undefined): Raw => {
   return parsed as Raw
 }
 
-const SET =
+const FIELD =
   "a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its " +
   "option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the " +
   "same field; --dry-run does not look the names up"
 
-/** The fields to send: `--body`, then the custom fields `--set` names, then the named options over both. */
+/** The fields to send: `--body`, then the custom fields `--field` names, then the named options over both. */
 const fieldsOf = (options: Options, custom: Raw = {}): Raw => {
   const fields = { ...bodyOf(options.body), ...custom }
   const set = (key: string, value: string | undefined) => {
@@ -113,7 +113,7 @@ const KINDS: Kind[] = [
     moves: true,
     examples: {
       create: `${B24} work leads create --title "Website form" --first-name Ivan`,
-      update: `${B24} work leads update 7 --set Source=Website --set Tags=Hot --set Tags=Repeat`,
+      update: `${B24} work leads update 7 --field Source=Website --field Tags=Hot --field Tags=Repeat`,
       move: `${B24} work leads move 7 --stage IN_PROCESS`,
     },
   },
@@ -141,11 +141,11 @@ const KINDS: Kind[] = [
   },
 ]
 
-/** Reads the portal's custom fields once, and hands back every field to send with `--set`'s values in. */
-const withSets =
-  (kind: Kind, options: Options, sets: [string, string][], take: (fields: Raw) => void) =>
+/** Reads the portal's custom fields once, and hands back every field to send with `--field`'s values in. */
+const withFieldPairs =
+  (kind: Kind, options: Options, pairs: [string, string][], take: (fields: Raw) => void) =>
   async (portal: BitrixTransport) => {
-    take(fieldsOf(options, customValues(await loadFields(portal, kind.type.type), sets)))
+    take(fieldsOf(options, customValues(await loadFields(portal, kind.type.type), pairs)))
   }
 
 const flagOf = (option: Option) => `--${option.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`
@@ -154,7 +154,7 @@ const withOptions = (command: Command, options: Option[]) => {
   for (const option of options) OPTIONS[option](command)
   return command
     .option("--body <json>", BODY)
-    .option("--set <field=value>", SET, (one: string, all: string[] = []) => [...all, one])
+    .option("--field <key=value>", FIELD, (one: string, all: string[] = []) => [...all, one])
     .option("--operation-id <id>", "the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice")
 }
 
@@ -171,14 +171,14 @@ const createCommand = (kind: Kind) =>
     .action(async function (this: Command, options: Options) {
       if (!kind.needs.some((one) => options[one] !== undefined))
         throw new CliError("validation_error", `a new ${kind.type.word} needs ${kind.needs.map(flagOf).join(" or ")}`)
-      const sets = setsOf(options.set ?? [])
+      const pairs = fieldPairsOf(options.field ?? [])
       let fields = fieldsOf(options)
       await write(this, {
         key: `${kind.noun}.create`,
         extra: [...apiKeysOf([kind.noun, "create"]), ...stageKeysOf(kind.noun, fields)],
         assignee: assigneeOf(fields),
         operationId: options.operationId,
-        ...(sets.length ? { prepare: withSets(kind, options, sets, (all) => (fields = all)) } : {}),
+        ...(pairs.length ? { prepare: withFieldPairs(kind, options, pairs, (all) => (fields = all)) } : {}),
         act: async (portal, operationId) => {
           const answer = await portal.call(`crm.${kind.type.type}.add`, { fields }, { idempotencyKey: operationId })
           const id = String((answer.result as { id?: unknown })?.id ?? "")
@@ -198,16 +198,16 @@ const updateCommand = (kind: Kind) =>
     .action(async function (this: Command, id: string, options: Options) {
       if (!/^[1-9]\d*$/.test(id))
         throw new CliError("validation_error", `${kind.noun} update takes the ${kind.type.word}'s id`)
-      const sets = setsOf(options.set ?? [])
+      const pairs = fieldPairsOf(options.field ?? [])
       let fields = fieldsOf(options)
-      if (Object.keys(fields).length === 0 && sets.length === 0)
+      if (Object.keys(fields).length === 0 && pairs.length === 0)
         throw new CliError("validation_error", "nothing to change: name a field")
       await write(this, {
         key: `${kind.noun}.update`,
         extra: [...apiKeysOf([kind.noun, "update"]), ...stageKeysOf(kind.noun, fields)],
         assignee: assigneeOf(fields),
         operationId: options.operationId,
-        ...(sets.length ? { prepare: withSets(kind, options, sets, (all) => (fields = all)) } : {}),
+        ...(pairs.length ? { prepare: withFieldPairs(kind, options, pairs, (all) => (fields = all)) } : {}),
         act: async (portal, operationId) => {
           await portal.call(`crm.${kind.type.type}.update`, { id: Number(id), fields }, { idempotencyKey: operationId })
           return { id, updated: Object.keys(fields) }
