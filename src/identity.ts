@@ -8,7 +8,7 @@ export const IDENTITY: AppIdentity = {
   command: "b24",
   appName: "bitrix24-cli",
   envPrefix: "B24",
-  description: "a new WireCat CLI, started from cli-template",
+  description: "read and change a Bitrix24 portal's CRM",
   version: VERSION,
   issues: "https://github.com/WireCatLabs/bitrix24-cli/issues/new",
   messenger: false,

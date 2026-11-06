@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "dev.wirecat/bitrix24-cli",
   "title": "WireCat b24",
-  "description": "b24 for agents over MCP. Set up a profile with the b24 CLI first.",
+  "description": "A Bitrix24 portal's CRM for agents over MCP. Sign in with the b24 CLI first.",
   "websiteUrl": "https://wirecat.dev/en/docs/b24",
   "repository": {
     "url": "https://github.com/WireCatLabs/bitrix24-cli",

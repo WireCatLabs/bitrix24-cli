@@ -1,15 +1,18 @@
 # b24
 
-`b24` is a WireCat command-line tool, started from
-[cli-template](https://github.com/WireCatLabs/cli-template). Its design is in
-[docs/dev/DESIGN.md](docs/dev/DESIGN.md).
-
-## Quick start
+`b24` reads and changes a Bitrix24 portal's sales data from the terminal, from scripts and from AI agents: deals,
+leads, contacts, companies, pipelines and their stages, products and employees. It signs in with one of the portal's
+incoming webhooks and acts with the rights of the employee who made it.
 
 ```sh
-pnpm install
-pnpm build
-node dist/bin/b24.js doctor
+npm install -g @wirecat/bitrix24-cli
+b24 work session start            # paste the webhook address; it is kept in the keyring
+b24 work deals list outcome:open
+b24 work leads list updated_at>=7d --json
+b24 work deals move 42 --stage "Contract signed"
 ```
 
-`doctor` needs no profile. Every command that uses an account starts with one, a name you choose: `b24 personal config show`.
+Every command answers JSON with `--json`, every write answers an `operation_id` and can be previewed with
+`--dry-run`, and `b24 work mcp serve` gives the same commands to an agent. Start with
+[installation](docs/installation.md), then [usage](docs/usage.md). The design is in
+[docs/dev/DESIGN.md](docs/dev/DESIGN.md).

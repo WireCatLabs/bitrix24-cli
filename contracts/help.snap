@@ -1,4 +1,4 @@
-b24 — a new WireCat CLI, started from cli-template
+b24 — read and change a Bitrix24 portal's CRM
 
 Usage: b24 <profile> <command> [options]
 Account commands start with your profile, a name you choose; none is ever assumed.
