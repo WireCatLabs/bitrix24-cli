@@ -1,15 +1,11 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
-import { Client } from "@modelcontextprotocol/client"
-import { InMemoryTransport } from "@modelcontextprotocol/server"
-import { describeProgram } from "@wirecat/cli-base/commands"
-import { changesAuthorityAt } from "@wirecat/cli-core/cli"
-import { afterEach, describe, expect, it } from "vitest"
-import { configuration } from "./config.js"
-import { createMcpServer } from "./mcp.js"
-import { createProgram, run } from "./program.js"
+import { mcpOverStdio } from "@wirecat/cli-core/testing"
+import { describe, expect, it } from "vitest"
+import { run } from "./program.js"
+import { seededCrm } from "./testing/fake-crm.js"
 import { fakePortal, ok } from "./testing/fake-portal.js"
-import { b24, signedIn } from "./testing/harness.js"
+import { b24, signedIn, synced } from "./testing/harness.js"
 
 const withPermissions = async (permissions: Record<string, string>, body: () => Promise<void>) => {
   const dir = process.env.B24_CONFIG_DIR ?? ""
@@ -22,33 +18,38 @@ const withPermissions = async (permissions: Record<string, string>, body: () => 
   }
 }
 
-const deals = () => fakePortal({ "crm.deal.list": ok({ items: [] }), "crm.deal.update": ok({ result: true }) })
-
 describe("a denied command key", () => {
   it("stops a read before any request", async () => {
-    const portal = deals()
-    await withPermissions({ "deals.list": "deny" }, async () => {
-      const ran = await b24(["work", "deals", "list", "--json"], { portal })
-      expect(ran.code).toBe(5)
-      expect(ran.json().error).toMatchObject({ code: "permission_error" })
+    const portal = seededCrm()
+    await withPermissions({ "deals.list": "deny", "people.list": "deny", sync: "deny" }, async () => {
+      for (const argv of [["deals", "list"], ["people", "list"], ["sync"]]) {
+        const ran = await b24(["work", ...argv, "--json"], { portal })
+        expect(ran.code).toBe(5)
+        expect(ran.json().error).toMatchObject({ code: "permission_error" })
+      }
     })
     expect(portal.calls).toHaveLength(0)
   })
 
-  it("api.crm.deal.update: deny stops deals update before any request", async () => {
-    const portal = deals()
+  it("api.crm.deal.update: deny stops deals update, move and close before any request", async () => {
+    const { ref, calls } = await synced()
+    const before = calls()
     await withPermissions({ "api.crm.deal.update": "deny" }, async () => {
-      expect((await b24(["work", "deals", "update", "5", "--title", "x"], { portal })).code).toBe(5)
-      expect((await b24(["work", "deals", "move", "5", "--stage", "WON"], { portal })).code).toBe(5)
+      for (const argv of [
+        ["update", ref("deals", 102), "--title", "x"],
+        ["move", ref("deals", 102), "New"],
+        ["close", ref("deals", 102), "won"],
+      ])
+        expect((await b24(["work", "deals", ...argv, "--json"])).code).toBe(5)
     })
-    expect(portal.calls).toHaveLength(0)
+    expect(calls()).toBe(before)
   })
 })
 
 describe("--dry-run", () => {
   it("deals update names its key and the api key its request checks", async () => {
-    const portal = deals()
-    const ran = await b24(["work", "deals", "update", "5", "--title", "x", "--dry-run", "--json"], { portal })
+    const portal = fakePortal()
+    const ran = await b24(["work", "deals", "update", "deal:1", "--title", "x", "--dry-run", "--json"], { portal })
     expect(ran.code).toBe(0)
     expect(ran.json().item).toMatchObject({
       permission: { key: "deals.update", level: "allow", also: [{ key: "api.crm.deal.update", level: "allow" }] },
@@ -56,7 +57,7 @@ describe("--dry-run", () => {
     expect(portal.calls).toHaveLength(0)
   })
 
-  it("api call crm.deal.delete names api.crm.deal.delete at ask and deals.delete beside it", async () => {
+  it("api call crm.deal.delete names api.crm.deal.delete and deals.delete beside it, both at ask", async () => {
     const portal = fakePortal()
     const ran = await b24(["work", "api", "call", "crm.deal.delete", "--body", '{"id":5}', "--dry-run", "--json"], {
       portal,
@@ -67,7 +68,7 @@ describe("--dry-run", () => {
       permission: { key: "api.crm.deal.delete", level: "ask" },
       permissions: [
         { key: "api.crm.deal.delete", level: "ask" },
-        { key: "deals.delete", level: "allow" },
+        { key: "deals.delete", level: "ask" },
       ],
     })
     expect(portal.calls).toHaveLength(0)
@@ -82,7 +83,7 @@ describe("--dry-run", () => {
 
   it("still works with one of b24's own keys in the config", async () => {
     await withPermissions({ "deals.list": "deny", "api.crm.deal.update": "ask" }, async () => {
-      const ran = await b24(["work", "deals", "update", "5", "--title", "x", "--dry-run", "--json"])
+      const ran = await b24(["work", "deals", "update", "deal:1", "--title", "x", "--dry-run", "--json"])
       expect(ran.code).toBe(0)
       expect(ran.json().item).toMatchObject({
         permission: { key: "deals.update", level: "allow", also: [{ key: "api.crm.deal.update", level: "ask" }] },
@@ -91,66 +92,74 @@ describe("--dry-run", () => {
   })
 })
 
-const clients: Client[] = []
-afterEach(async () => {
-  for (const client of clients.splice(0)) await client.close()
-})
+const overMcp = (portal: ReturnType<typeof fakePortal>) =>
+  mcpOverStdio((streams) =>
+    run(["work", "mcp", "serve"], {
+      tty: false,
+      streams: { data: () => {}, diagnostic: () => {} },
+      keyring: signedIn(),
+      fetch: portal.fetch,
+      sleep: async () => {},
+      ...streams,
+    } as Parameters<typeof run>[1]),
+  )
 
-const mcpClient = async (portal: ReturnType<typeof fakePortal>) => {
-  const program = createProgram()
-  const server = createMcpServer({
-    profile: "work",
-    commands: describeProgram(program),
-    levels: () => configuration.resolveSettings({ profile: "work" }).permissions,
-    authority: changesAuthorityAt(program),
-    run: (argv, options) =>
-      run(argv, { ...options, fetch: portal.fetch, keyring: signedIn(), sleep: async () => {} } as Parameters<
-        typeof run
-      >[1]),
-  })
-  const [clientSide, serverSide] = InMemoryTransport.createLinkedPair()
-  await server.connect(serverSide)
-  const client = new Client({ name: "test", version: "1.0.0" })
-  await client.connect(clientSide)
-  clients.push(client)
-  return client
-}
-
-it("an MCP read of a denied command is listed as unavailable and refused before any request", async () => {
-  const portal = deals()
-  await withPermissions({ "deals.list": "deny" }, async () => {
-    const client = await mcpClient(portal)
-    const found = await client.callTool({ name: "b24_tools_search", arguments: { query: "deals list" } })
-    expect((found.structuredContent as { items: unknown[] }).items).toContainEqual(
-      expect.objectContaining({ command: "deals list", availability: expect.objectContaining({ available: false }) }),
-    )
-    const answer = await client.callTool({ name: "b24_read", arguments: { command: "deals list" } })
-    expect(JSON.stringify(answer)).toContain("permission_error")
+it("an MCP read of a denied command is listed as unavailable and refused", async () => {
+  const portal = seededCrm()
+  await withPermissions({ "people.list": "deny" }, async () => {
+    const mcp = await overMcp(portal)
+    try {
+      const found = await mcp.call("b24_tools_search", { query: "people list" })
+      expect((found.body as { items: unknown[] }).items).toContainEqual(
+        expect.objectContaining({
+          command: "people list",
+          availability: expect.objectContaining({ available: false }),
+        }),
+      )
+      const answer = await mcp.call("b24_read", { command: "people list" })
+      expect(JSON.stringify(answer)).toContain("permission_error")
+    } finally {
+      await mcp.close()
+    }
   })
   expect(portal.calls).toHaveLength(0)
 })
 
-it("an MCP update that sets a stage checks deals.move", async () => {
-  const portal = deals()
+it("an MCP update to another stage checks deals.move, and a stage set as a custom field is refused", async () => {
+  const { portal, ref, calls } = await synced()
+  const before = calls()
   await withPermissions({ "deals.move": "deny" }, async () => {
-    const client = await mcpClient(portal)
-    const answer = await client.callTool({
-      name: "b24_write",
-      arguments: { command: "deals update", arguments: { id: "5", body: '{"stageId":"C1:WON"}' } },
-    })
-    expect(JSON.stringify(answer)).toContain("permission_error")
+    const mcp = await overMcp(portal)
+    try {
+      const moved = await mcp.call("b24_write", {
+        command: "deals update",
+        arguments: { ref: ref("deals", 102), stage: "New" },
+      })
+      expect(JSON.stringify(moved)).toContain("permission_error")
+      const aliased = await mcp.call("b24_write", {
+        command: "deals update",
+        arguments: { ref: ref("deals", 102), field: ["stageId=NEW"] },
+      })
+      expect(JSON.stringify(aliased)).toContain("validation_error")
+    } finally {
+      await mcp.close()
+    }
   })
-  expect(portal.calls).toHaveLength(0)
+  expect(calls()).toBe(before)
 })
 
 it("api call is not offered over MCP", async () => {
   const portal = fakePortal({ "crm.deal.delete": ok(true) })
-  const client = await mcpClient(portal)
-  const answer = await client.callTool({
-    name: "b24_write",
-    arguments: { command: "api call", arguments: { method: "crm.deal.delete", body: '{"id":5}' } },
-  })
-  expect(answer.isError).toBe(true)
+  const mcp = await overMcp(portal)
+  try {
+    const answer = await mcp.call("b24_write", {
+      command: "api call",
+      arguments: { method: "crm.deal.delete", body: '{"id":5}' },
+    })
+    expect(answer.isError).toBe(true)
+  } finally {
+    await mcp.close()
+  }
   expect(portal.calls).toHaveLength(0)
 })
 
@@ -209,40 +218,57 @@ describe("api call maps crm.item to the command keys", () => {
   })
 })
 
-describe("a write that sets a stage checks the move key", () => {
+describe("a write that sets a stage checks the move key, and a won or lost one the close key", () => {
   it.each([
-    [["deals", "update", "5", "--body", '{"stageId":"C1:WON"}']],
-    [["deals", "update", "5", "--body", '{"STAGE_ID":"C1:WON"}']],
-    [["deals", "create", "--title", "x", "--body", '{"stageId":"C1:WON"}']],
-  ])("b24 %j", async (argv) => {
-    const fake = fakePortal({ "crm.deal.update": ok(true), "crm.deal.add": ok({ id: 1 }) })
-    await withPermissions({ "deals.move": "deny" }, async () => {
-      expect((await b24(["work", ...argv], { portal: fake })).code).toBe(5)
+    ["deals.move", ["update", 102, "--stage", "New"]],
+    ["deals.move", ["create", "--title", "x", "--pipeline", "Example sales", "--stage", "Quote sent"]],
+    ["deals.close", ["update", 102, "--stage", "Won"]],
+    ["deals.close", ["move", 102, "Lost"]],
+  ] as const)("%s: deny refuses deals %j", async (key, argv) => {
+    const { ref, calls } = await synced()
+    const before = calls()
+    await withPermissions({ [key]: "deny" }, async () => {
+      const typed = argv.map((one) => (typeof one === "number" ? ref("deals", one) : one))
+      expect((await b24(["work", "deals", ...typed])).code).toBe(5)
     })
-    expect(fake.calls).toHaveLength(0)
+    expect(calls()).toBe(before)
   })
 
-  it("a lead's STATUS_ID checks leads.move, through the command and api call", async () => {
-    const fake = fakePortal({ "crm.lead.update": ok(true), "crm.item.update": ok(true) })
+  it.each(["stageId=NEW", "STAGE_ID=NEW", "categoryId=1", "ASSIGNED_BY_ID=9"])(
+    "--field %s is refused as a standard field before any request",
+    async (field) => {
+      const { ref, calls } = await synced()
+      const before = calls()
+      expect((await b24(["work", "deals", "update", ref("deals", 102), "--field", field])).code).toBe(2)
+      expect(calls()).toBe(before)
+    },
+  )
+
+  it("a lead's STATUS_ID is refused on the command and checks leads.move through api call", async () => {
+    const { ref, calls } = await synced()
+    const before = calls()
+    expect((await b24(["work", "leads", "update", ref("leads", 104), "--field", "STATUS_ID=JUNK"])).code).toBe(2)
     await withPermissions({ "leads.move": "deny" }, async () => {
-      expect(
-        (await b24(["work", "leads", "update", "5", "--body", '{"STATUS_ID":"WON"}'], { portal: fake })).code,
-      ).toBe(5)
       const item = call("crm.item.update", { entityTypeId: 1, id: 5, fields: { STAGE_ID: "WON" } })
-      expect((await b24(item, { portal: fake })).code).toBe(5)
+      expect((await b24(item)).code).toBe(5)
+    })
+    expect(calls()).toBe(before)
+  })
+
+  it("api call crm.deal.update with a stage checks deals.close", async () => {
+    const fake = fakePortal({ "crm.deal.update": ok(true) })
+    await withPermissions({ "deals.close": "deny" }, async () => {
+      expect((await b24(call("crm.deal.update", { id: 5, fields: { stageId: "WON" } }), { portal: fake })).code).toBe(5)
     })
     expect(fake.calls).toHaveLength(0)
   })
 
-  it("ASSIGNED_BY_ID checks crm.assign-others like assignedById", async () => {
-    const fake = fakePortal({ "crm.deal.update": ok(true) })
-    expect((await b24(["work", "deals", "update", "5", "--body", '{"ASSIGNED_BY_ID":9}'], { portal: fake })).code).toBe(
-      5,
-    )
-    expect((await b24(call("crm.deal.update", { id: 5, fields: { ASSIGNED_BY_ID: 9 } }), { portal: fake })).code).toBe(
-      5,
-    )
-    expect(fake.calls).toHaveLength(0)
+  it("another employee as owner checks crm.assign-others, on the command and through api call", async () => {
+    const { ref, calls } = await synced()
+    const before = calls()
+    expect((await b24(["work", "deals", "update", ref("deals", 102), "--owner", "9"])).code).toBe(5)
+    expect((await b24(call("crm.deal.update", { id: 5, fields: { ASSIGNED_BY_ID: 9 } }))).code).toBe(5)
+    expect(calls()).toBe(before)
   })
 })
 
@@ -293,12 +319,6 @@ describe("api call works from an allow list", () => {
       profile: "allow",
     })
   })
-})
-
-it("pipeline_id:0 filters the default pipeline", async () => {
-  const fake = fakePortal({ "crm.deal.list": ok({ items: [] }) })
-  expect((await b24(["work", "deals", "list", "pipeline_id:0", "--json"], { portal: fake })).code).toBe(0)
-  expect(JSON.stringify(fake.calls[0]?.body)).toContain('"categoryId"')
 })
 
 describe("a denied family stays denied for reads", () => {

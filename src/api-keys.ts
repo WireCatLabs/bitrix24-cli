@@ -87,14 +87,9 @@ export const commandKeysOf = (method: string, body: Record<string, unknown> = {}
   if (!write) return []
   const noun = NOUNS[write.type]
   const keys = [`${noun}.${ACTIONS[write.action]}`]
-  if (write.action !== "delete" && setsStage(write.type, fieldsOf(body))) keys.push(`${noun}.move`)
+  // Without a lookup a stage may be a won or lost one, so both the move and the close key are checked.
+  if (write.action !== "delete" && setsStage(write.type, fieldsOf(body))) keys.push(`${noun}.move`, `${noun}.close`)
   return keys
-}
-
-/** The command keys a CRM write command checks beside its own: `.move` when its fields set a stage. */
-export const stageKeysOf = (noun: string, fields: Record<string, unknown>): string[] => {
-  const type = Object.keys(NOUNS).find((one) => NOUNS[one] === noun) ?? ""
-  return setsStage(type, fields) ? [`${noun}.move`] : []
 }
 
 /**
@@ -120,7 +115,13 @@ export const callDefaults = (
   defaults: Readonly<Record<string, Level>>,
 ): Record<string, Level> => ({ ...defaults, [apiKey(method)]: apiDefault(method, effect, body) })
 
-const METHODS_OF_COMMANDS: Record<string, string> = { create: "add", update: "update", move: "update" }
+const METHODS_OF_COMMANDS: Record<string, string> = {
+  create: "add",
+  update: "update",
+  move: "update",
+  close: "update",
+  delete: "delete",
+}
 
 /**
  * The other way round: the `api.*` key a CRM write command's own request checks, so `api.crm.deal.update: deny` holds

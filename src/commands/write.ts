@@ -8,10 +8,11 @@ import {
   renderAnswer,
   terminalAsker,
 } from "@wirecat/cli-core/cli"
+import { CRM_ASSIGN_OTHERS_KEY } from "@wirecat/cli-core/crm"
 import { guardedWrite, guardFor, keyedGuard, type Level, levelFor, newOperationId } from "@wirecat/cli-core/sends"
 import type { Command } from "commander"
 import type { BitrixTransport } from "../bitrix/transport.js"
-import { ASSIGN_KEY, permissions } from "../config.js"
+import { permissions } from "../config.js"
 import { IDENTITY } from "../identity.js"
 import { contextOf, transportFor, webhookOf } from "../portal.js"
 
@@ -66,7 +67,7 @@ export const write = async (
   const operationId = operationIdOf(given)
   const webhook = webhookOf(command)
   const self = webhook.userId
-  const extra = [...also, ...(assignee !== undefined && assignee !== self ? [ASSIGN_KEY] : [])]
+  const extra = [...also, ...(assignee !== undefined && assignee !== self ? [CRM_ASSIGN_OTHERS_KEY] : [])]
   const levelOf = (one: string) => levelFor(settings.permissions, one, defaults).level
   const guard = keyedGuard(
     (ask) =>

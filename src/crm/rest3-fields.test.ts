@@ -1,58 +1,31 @@
 import { describe, expect, it } from "vitest"
 import type { FieldMap } from "./conditions.js"
-import { DEAL, DEAL_FIELDS } from "./deal.js"
+import { DEAL } from "./deal.js"
 import type { ItemType } from "./items.js"
-import { LEAD, LEAD_FIELDS } from "./lead.js"
+import { LEAD } from "./lead.js"
 import { ORGANIZATION, ORGANIZATION_FIELDS } from "./organization.js"
 import { PERSON, PERSON_FIELDS } from "./person.js"
-
-// REST 3.0 refuses the whole call over one unknown field (BITRIX_REST_V3_EXCEPTION_UNKNOWNDTOPROPERTYEXCEPTION), and
-// the fake portal accepts anything, so names are checked against the field pages:
-// https://apidocs.bitrix24.com/api-reference/crm/rest-v3/items/fields-deal.html (and fields-lead, -contact, -company)
-const COMMON = ["id", "title", "createdTime", "updatedTime", "assignedById", "url", "phone", "email"]
-const DOCUMENTED: Record<string, readonly string[]> = {
-  deal: [
-    ...COMMON,
-    "categoryId",
-    "stageId",
-    "stageSemanticId",
-    "opportunity",
-    "currencyId",
-    "companyId",
-    "contactsId",
-    "closeTime",
-    "sourceId",
-    "typeId",
-  ],
-  lead: [
-    ...COMMON,
-    "name",
-    "secondName",
-    "lastName",
-    "companyTitle",
-    "stageId",
-    "stageSemanticId",
-    "opportunity",
-    "currencyId",
-    "companyId",
-    "contactsId",
-    "sourceId",
-  ],
-  contact: [...COMMON, "name", "secondName", "lastName", "post", "companyId", "companiesId", "typeId", "sourceId"],
-  company: [...COMMON, "typeId", "industryId", "revenue", "currencyId", "contactsId"],
-}
+import { REST3_FIELDS } from "./rest3-fields.js"
 
 const TYPES: [Pick<ItemType<never>, "type" | "select">, Record<string, FieldMap>][] = [
-  [DEAL, DEAL_FIELDS],
-  [LEAD, LEAD_FIELDS],
+  [DEAL, {}],
+  [LEAD, {}],
   [PERSON, PERSON_FIELDS],
   [ORGANIZATION, ORGANIZATION_FIELDS],
 ]
+/** What the sync filters by, and what a deal or lead write sets. */
+const SYNC = ["id", "updatedTime"]
+const WRITES = ["title", "categoryId", "stageId", "opportunity", "currencyId", "closeTime", "companyId", "assignedById"]
 
 describe("REST 3.0 field names", () => {
   it.each(TYPES)("selects and filters only documented fields of $type", (type, fields) => {
-    const known = DOCUMENTED[type.type] ?? []
+    const known = REST3_FIELDS[type.type]
     const filtered = Object.values(fields).map((map) => map.field)
-    expect([...type.select, ...filtered].filter((name) => !known.includes(name))).toEqual([])
+    expect([...type.select, ...SYNC, ...filtered].filter((name) => !known.includes(name))).toEqual([])
+  })
+
+  it("writes only documented deal fields, and a lead's less its close date and pipeline", () => {
+    expect(WRITES.filter((name) => !REST3_FIELDS.deal.includes(name))).toEqual([])
+    expect(WRITES.filter((name) => !REST3_FIELDS.lead.includes(name))).toEqual(["categoryId", "closeTime"])
   })
 })

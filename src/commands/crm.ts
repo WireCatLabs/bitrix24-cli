@@ -11,14 +11,13 @@ import {
   REMOTE_READ,
   renderAnswer,
   typedQuery,
-  unfilteredQuery,
   withPaging,
   withQuery,
 } from "@wirecat/cli-core/cli"
 import { Command } from "commander"
 import type * as v from "valibot"
 import type { BitrixTransport } from "../bitrix/transport.js"
-import { type Condition, conditionsOf, type FieldMap } from "../crm/conditions.js"
+import { conditionsOf, type FieldMap } from "../crm/conditions.js"
 import {
   customConditions,
   customNames,
@@ -27,15 +26,11 @@ import {
   wantedCodes,
   withCustomFields,
 } from "../crm/custom-query.js"
-import { DEAL, DEAL_FIELDS, dealSchema } from "../crm/deal.js"
 import { loadFields } from "../crm/fields.js"
 import { getItem, type ItemType, listItems, resolveItem } from "../crm/items.js"
-import { LEAD, LEAD_FIELDS, leadSchema } from "../crm/lead.js"
 import { ORGANIZATION, ORGANIZATION_FIELDS, organizationSchema } from "../crm/organization.js"
 import { PERSON, PERSON_FIELDS, personSchema } from "../crm/person.js"
-import { findPipeline, listPipelines, pipelineSchema } from "../crm/pipeline.js"
 import { getProduct, listProducts, PRODUCT_FIELDS, productSchema } from "../crm/product.js"
-import { directoryOf, findStage, listStages, type Stage, stageSchema } from "../crm/stage.js"
 import { getUser, listUsers, USER_FIELDS, userSchema } from "../crm/user.js"
 import type { Window } from "../crm/walk.js"
 import { IDENTITY } from "../identity.js"
@@ -186,42 +181,7 @@ const itemNoun = <T extends { id: string }>(
   }
 }
 
-const whole = <T>(items: T[]): Listed<T> => ({ items, has_more: false })
-
-const STAGE_FIELDS: Record<string, FieldMap> = {
-  entity: { field: "ENTITY_ID", kind: "text" },
-  pipeline_id: { field: "ENTITY_ID", kind: "id" },
-}
-
-/** The stage directories a query names: one for leads or one pipeline, or all of them. */
-const stagesFor = async (portal: BitrixTransport, conditions: readonly Condition[]): Promise<Stage[]> => {
-  const entity = conditions.find((one) => one.field === "ENTITY_ID" && typeof one.value === "string")?.value
-  const pipeline = conditions.find((one) => typeof one.value === "number")?.value
-  if (entity === "leads") return listStages(portal, directoryOf("leads"))
-  if (pipeline !== undefined) return listStages(portal, directoryOf("deals", String(pipeline)))
-  const all = await listStages(portal)
-  return entity === "deals" ? all.filter((stage) => stage.entity === "deals") : all
-}
-
 export const crmCommands = (): Command[] => [
-  nounCommand(
-    itemNoun(
-      DEAL,
-      { noun: "deals", entity: "deal", schema: dealSchema, what: "deals", fields: DEAL_FIELDS },
-      { title: "title:kitchen*", stage_id: 'stage_id:"C1:WON"' },
-      [`${B24} work deals list`, `${B24} work deals list outcome:open pipeline_id:1 amount>=10000`],
-    ),
-    "read the portal's deals",
-  ),
-  nounCommand(
-    itemNoun(
-      LEAD,
-      { noun: "leads", entity: "lead", schema: leadSchema, what: "leads", fields: LEAD_FIELDS },
-      { title: "title:kitchen*", stage_id: "stage_id:NEW" },
-      [`${B24} work leads list`, `${B24} work leads list outcome:open updated_at>=7d`],
-    ),
-    "read the portal's leads",
-  ),
   nounCommand(
     itemNoun(
       PERSON,
@@ -245,34 +205,6 @@ export const crmCommands = (): Command[] => [
       [`${B24} work organizations list`, `${B24} work organizations list name:acme*`],
     ),
     "read the portal's companies",
-  ),
-  nounCommand(
-    {
-      noun: "pipelines",
-      entity: "pipeline",
-      schema: pipelineSchema,
-      what: "deal pipelines",
-      query: unfilteredQuery("pipeline", pipelineSchema),
-      examples: [`${B24} work pipelines list`, `${B24} work pipelines list --json`],
-      reference: "id-or-name",
-      list: async (portal) => whole(await listPipelines(portal)),
-      show: async (portal, reference) => findPipeline(await listPipelines(portal), reference),
-    },
-    "read the portal's deal pipelines",
-  ),
-  nounCommand(
-    {
-      noun: "stages",
-      entity: "stage",
-      schema: stageSchema,
-      what: "deal and lead stages, each with its outcome",
-      query: nativeQuery("stage", stageSchema, STAGE_FIELDS),
-      examples: [`${B24} work stages list`, `${B24} work stages list entity:leads`],
-      reference: "id-or-name",
-      list: async (portal, terms) => whole(await stagesFor(portal, conditionsOf(terms, STAGE_FIELDS))),
-      show: async (portal, reference) => findStage(await listStages(portal), reference),
-    },
-    "read the stages of the portal's deal pipelines and leads",
   ),
   nounCommand(
     {

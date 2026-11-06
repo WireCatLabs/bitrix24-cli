@@ -2,15 +2,12 @@ import { CliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
 import { REMOTE_WRITE } from "@wirecat/cli-core/cli"
 import { Command } from "commander"
-import { apiKeysOf, assigneeOf, stageKeysOf } from "../api-keys.js"
+import { apiKeysOf, assigneeOf } from "../api-keys.js"
 import type { BitrixTransport } from "../bitrix/transport.js"
-import { DEAL } from "../crm/deal.js"
 import { customValues, fieldPairsOf, loadFields } from "../crm/fields.js"
 import type { ItemType } from "../crm/items.js"
-import { LEAD } from "../crm/lead.js"
 import { ORGANIZATION } from "../crm/organization.js"
 import { PERSON } from "../crm/person.js"
-import { directoryOf, findStage, listStages } from "../crm/stage.js"
 import type { Raw } from "../crm/values.js"
 import { IDENTITY } from "../identity.js"
 import { write } from "./write.js"
@@ -25,7 +22,6 @@ interface Options {
   lastName?: string
   body?: string
   field?: string[]
-  stage?: string
   operationId?: string
 }
 
@@ -73,56 +69,21 @@ const fieldsOf = (options: Options, custom: Raw = {}): Raw => {
   return fields
 }
 
-/** Who the write assigns the record to, when it does: the guard compares it with the webhook's own user. */
-/** The pipeline a deal is in, so `--stage` is read among that pipeline's stages. */
-const dealPipeline = async (portal: BitrixTransport, id: string) => {
-  const answer = await portal.call("crm.deal.get", { id: Number(id), select: ["id", "categoryId"] })
-  const item = (answer.result as { item?: Raw })?.item
-  if (!item) throw new CliError("not_found", `there is no deal ${id}`)
-  return String(item.categoryId ?? "0")
-}
-
 interface Kind {
   noun: string
   type: Pick<ItemType<unknown>, "type" | "word">
   create: Option[]
   /** Options a create cannot go without, one of which is enough. */
   needs: Option[]
-  moves: boolean
-  examples: { create: string; update: string; move?: string }
+  examples: { create: string; update: string }
 }
 
 const KINDS: Kind[] = [
-  {
-    noun: "deals",
-    type: DEAL,
-    create: ["title"],
-    needs: ["title"],
-    moves: true,
-    examples: {
-      create: `${B24} work deals create --title "Kitchen for Acme" --body '{"opportunity":15000,"currencyId":"EUR"}'`,
-      update: `${B24} work deals update 42 --body '{"opportunity":18000}'`,
-      move: `${B24} work deals move 42 --stage "Contract signed"`,
-    },
-  },
-  {
-    noun: "leads",
-    type: LEAD,
-    create: ["title", "firstName", "lastName"],
-    needs: ["title", "firstName", "lastName"],
-    moves: true,
-    examples: {
-      create: `${B24} work leads create --title "Website form" --first-name Ivan`,
-      update: `${B24} work leads update 7 --field Source=Website --field Tags=Hot --field Tags=Repeat`,
-      move: `${B24} work leads move 7 --stage IN_PROCESS`,
-    },
-  },
   {
     noun: "people",
     type: PERSON,
     create: ["firstName", "lastName"],
     needs: ["firstName", "lastName"],
-    moves: false,
     examples: {
       create: `${B24} work people create --first-name Anna --last-name Ivanova`,
       update: `${B24} work people update 4 --body '{"post":"Buyer"}'`,
@@ -133,7 +94,6 @@ const KINDS: Kind[] = [
     type: ORGANIZATION,
     create: ["name"],
     needs: ["name"],
-    moves: false,
     examples: {
       create: `${B24} work organizations create --name "Acme"`,
       update: `${B24} work organizations update 9 --name "Acme Ltd"`,
@@ -158,10 +118,6 @@ const withOptions = (command: Command, options: Option[]) => {
     .option("--operation-id <id>", "the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice")
 }
 
-/** A deal's stages are its pipeline's; a lead's are the lead directory. */
-const stageDirectory = async (kind: Kind, portal: BitrixTransport, id: string) =>
-  kind.noun === "leads" ? directoryOf("leads") : directoryOf("deals", await dealPipeline(portal, id))
-
 const createCommand = (kind: Kind) =>
   withOptions(
     annotate(new Command("create"), { effects: REMOTE_WRITE, offline: false, examples: [kind.examples.create] }),
@@ -175,7 +131,7 @@ const createCommand = (kind: Kind) =>
       let fields = fieldsOf(options)
       await write(this, {
         key: `${kind.noun}.create`,
-        extra: [...apiKeysOf([kind.noun, "create"]), ...stageKeysOf(kind.noun, fields)],
+        extra: [...apiKeysOf([kind.noun, "create"])],
         assignee: assigneeOf(fields),
         operationId: options.operationId,
         ...(pairs.length ? { prepare: withFieldPairs(kind, options, pairs, (all) => (fields = all)) } : {}),
@@ -204,7 +160,7 @@ const updateCommand = (kind: Kind) =>
         throw new CliError("validation_error", "nothing to change: name a field")
       await write(this, {
         key: `${kind.noun}.update`,
-        extra: [...apiKeysOf([kind.noun, "update"]), ...stageKeysOf(kind.noun, fields)],
+        extra: [...apiKeysOf([kind.noun, "update"])],
         assignee: assigneeOf(fields),
         operationId: options.operationId,
         ...(pairs.length ? { prepare: withFieldPairs(kind, options, pairs, (all) => (fields = all)) } : {}),
@@ -215,36 +171,10 @@ const updateCommand = (kind: Kind) =>
       })
     })
 
-const moveCommand = (kind: Kind) =>
-  annotate(new Command("move"), { effects: REMOTE_WRITE, offline: false, examples: [kind.examples.move ?? ""] })
-    .description(`move one ${kind.type.word} to another stage`)
-    .argument("<id>", `the ${kind.type.word}'s id`)
-    .requiredOption("--stage <stage>", "the stage, by id or name, as `stages list` prints it")
-    .option("--operation-id <id>", "the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice")
-    .action(async function (this: Command, id: string, options: Options) {
-      if (!/^[1-9]\d*$/.test(id))
-        throw new CliError("validation_error", `${kind.noun} move takes the ${kind.type.word}'s id`)
-      await write(this, {
-        key: `${kind.noun}.move`,
-        extra: apiKeysOf([kind.noun, "move"]),
-        operationId: options.operationId,
-        act: async (portal, operationId) => {
-          const stage = findStage(await listStages(portal, await stageDirectory(kind, portal, id)), options.stage ?? "")
-          await portal.call(
-            `crm.${kind.type.type}.update`,
-            { id: Number(id), fields: { stageId: stage.id } },
-            { idempotencyKey: operationId },
-          )
-          return { id, stage_id: stage.id, outcome: stage.outcome }
-        },
-      })
-    })
-
 /** The writes of each CRM noun, added to the noun's read commands. */
 export const addWrites = (noun: Command): Command => {
   const kind = KINDS.find((one) => one.noun === noun.name())
   if (!kind) return noun
   noun.addCommand(createCommand(kind)).addCommand(updateCommand(kind))
-  if (kind.moves) noun.addCommand(moveCommand(kind))
   return noun
 }

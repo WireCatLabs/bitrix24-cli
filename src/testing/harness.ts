@@ -1,6 +1,7 @@
 import { Readable } from "node:stream"
 import { type KeyringStore, memoryKeyring } from "@wirecat/cli-base"
 import { run } from "../program.js"
+import { seededCrm } from "./fake-crm.js"
 import { FAKE_HOOK, fakePortal } from "./fake-portal.js"
 
 export interface Ran {
@@ -49,4 +50,23 @@ export const b24 = async (
     ...text,
     json: () => JSON.parse(text.out.trim() || text.err.trim()) as Record<string, unknown>,
   }
+}
+
+/** A seeded fake portal, synced into this test file's store; `ref` finds a copy's `deal:<n>` by its portal id. */
+export const synced = async (portal: ReturnType<typeof seededCrm> = seededCrm()) => {
+  const ran = await b24(["work", "sync", "--json"], { portal })
+  if (ran.code !== 0) throw new Error(`sync failed: ${ran.err}`)
+  const refs = new Map<string, string>()
+  for (const kind of ["deals", "leads"]) {
+    const listed = (await b24(["work", kind, "list", "--json"], { portal })).json() as {
+      items: { ref: string; external_id: string }[]
+    }
+    for (const item of listed.items) refs.set(`${kind}/${item.external_id}`, item.ref)
+  }
+  const ref = (kind: "deals" | "leads", externalId: number) => {
+    const found = refs.get(`${kind}/${externalId}`)
+    if (!found) throw new Error(`no stored copy of ${kind} ${externalId}`)
+    return found
+  }
+  return { portal, ref, calls: () => portal.calls.length }
 }

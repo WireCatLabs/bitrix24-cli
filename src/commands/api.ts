@@ -16,12 +16,13 @@ import {
   terminalAsker,
   withQuery,
 } from "@wirecat/cli-core/cli"
+import { CRM_ASSIGN_OTHERS_KEY } from "@wirecat/cli-core/crm"
 import { levelFor } from "@wirecat/cli-core/sends"
 import { Command } from "commander"
 import * as v from "valibot"
 import { apiDefault, apiKey, assigneeOf, callDefaults, commandKeysOf, fieldsOf, normalMethod } from "../api-keys.js"
 import { KNOWN_METHODS, type Method, methodOf } from "../bitrix/methods.js"
-import { ASSIGN_KEY, permissions } from "../config.js"
+import { permissions } from "../config.js"
 import { IDENTITY } from "../identity.js"
 import { contextOf, withPortal } from "../portal.js"
 import { write } from "./write.js"
@@ -137,7 +138,13 @@ const preview = (command: Command, method: Method, body: Record<string, unknown>
       level: levelOf(key),
     })),
     ...(writes && assigneeOf(fields) !== undefined
-      ? [{ key: ASSIGN_KEY, level: levelOf(ASSIGN_KEY), when: "assignedById is not the webhook's own user" }]
+      ? [
+          {
+            key: CRM_ASSIGN_OTHERS_KEY,
+            level: levelOf(CRM_ASSIGN_OTHERS_KEY),
+            when: "assignedById is not the webhook's own user",
+          },
+        ]
       : []),
   ]
   const refused = checked.find(

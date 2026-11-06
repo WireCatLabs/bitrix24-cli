@@ -39,6 +39,23 @@ export const time = (value: unknown): string | null => {
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString()
 }
 
+/** Epoch milliseconds, as core's CRM copy keeps times. */
+export const epoch = (value: unknown): number | null => {
+  const found = time(value)
+  return found === null ? null : Date.parse(found)
+}
+
+/**
+ * Money as a decimal string in its currency, both or neither. Bitrix24 gives every deal a currency and `0` for no
+ * amount, so `0` is no amount.
+ */
+export const amountOf = (value: unknown, currency: unknown): { amount: string | null; currency: string | null } => {
+  const found = number(value)
+  const code = text(currency)?.toUpperCase() ?? null
+  if (found === null || found <= 0 || code === null) return { amount: null, currency: null }
+  return { amount: found.toFixed(6).replace(/\.?0+$/, ""), currency: code }
+}
+
 export const yes = (value: unknown): boolean => value === true || value === "Y" || value === "1" || value === 1
 
 export const fullName = (...parts: unknown[]): string | null =>
