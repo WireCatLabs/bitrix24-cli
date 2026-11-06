@@ -1,7 +1,7 @@
 {
   "name": "@wirecat/bitrix24-cli",
   "version": "0.0.0",
-  "description": "A new WireCat CLI, started from cli-template",
+  "description": "Read and change a Bitrix24 portal's CRM — deals, leads, contacts, companies — from the terminal, scripts and AI agents",
   "license": "Apache-2.0",
   "author": "Viacheslav Ptsarev",
   "repository": {

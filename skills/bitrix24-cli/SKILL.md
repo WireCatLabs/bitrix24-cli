@@ -1,6 +1,6 @@
 ---
 name: bitrix24-cli
-description: Use b24, a WireCat CLI started from cli-template, from an agent — find a command, run it with the owner's profile, read JSON answers. Use when a task needs b24. It does not connect to a service yet.
+description: Use b24 to read and change a Bitrix24 portal's CRM — deals, leads, contacts (people), companies (organizations), pipelines, stages, products, employees — with the owner's profile and JSON answers. Use when a task needs the owner's Bitrix24 sales data.
 metadata:
   openclaw:
     requires:
@@ -21,6 +21,18 @@ Find your way with the tool itself, not this file:
 - `b24 commands --json` is the full command tree; `b24 commands config --json` one group.
 - `b24 help config set` is one command's help, with what it returns.
 - `b24 doctor --json` says what is set up on this computer.
+
+## CRM
+
+- Lists filter with a query: `b24 work deals list outcome:open pipeline_id:1 amount>=10000`; a bare word matches
+  part of the title. `b24 help deals list` lists the fields. A list has no total; read `page.has_more`.
+- `show` takes an id, or an exact name; two records with that name are refused with both in `candidates`.
+- Stages are per pipeline for deals and one list for leads: `b24 work stages list entity:leads`. Won or lost is
+  `outcome`, never the stage's name.
+- Writes: `create`, `update` (`--title`, `--name`, `--first-name`, `--last-name`, the rest in `--body` with Bitrix24's
+  field names), `move <id> --stage <id or name>`. Keep the `operation_id` of every write; after `outcome_unknown`
+  repeat it with `--operation-id` and nothing is made twice.
+- `b24 work session status --check` says whose rights the webhook carries.
 
 ## Rules
 

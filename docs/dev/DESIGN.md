@@ -3,18 +3,6 @@
 Written by `npx @wirecat/cli-template new`. The agent reads it first, asks the further questions the reference CLI
 does not answer, and starts building only after the owner has read it.
 
-## First task
-
-Delete this section once every step is done (WC-DOC-3).
-
-1. If an answer below is missing, ask the owner the [design interview](skills/design-interview/SKILL.md).
-2. Learn from the reference CLI below: its provider, its store and its commands.
-3. Ask the further questions in the interview that the reference CLI does not answer, and write the answers here.
-   Build only after the owner has read this page.
-4. When the first command reaches the service, rewrite `README.md`, `docs/index.md` and the description in
-   `package.json` and `skills/bitrix24-cli/SKILL.md` to say what the tool does and who it is for. Rewrite the
-   MCP server's instructions in `src/mcp.ts` too: name the kinds of outside text the CLI carries (WC-MCP-11).
-
 ## Answers
 
 - **Category:** CRM (sales: deals, contacts, companies)

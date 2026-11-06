@@ -3,8 +3,23 @@
 What WireCat CLIs share — the keyring, permissions, MCP and what never reaches a log — is on the
 [shared security page](https://wirecat.dev/en/docs/security). This page keeps only what is particular to `b24`.
 
-`b24` keeps its settings in `config.json` and its state in the folders `b24 doctor` shows. It sends nothing
-to any service yet.
+`b24` keeps its settings in `config.json` and its state in the folders `b24 doctor` shows. It talks only to the
+portal of the profile's webhook, over HTTPS, and never follows a redirect.
+
+The webhook's address carries its secret in its path, so the whole address is the password. `b24` keeps it in the
+system keyring (service `bitrix24-cli`, account `token:<profile>`), or in a private file with
+`--credential-storage file`, and never writes it to the output, an error, a log or a run record: a run keeps the
+method and `/rest/:user/:token/<method>`, never the address. An error keeps Bitrix24's error code and the names of
+the fields it refused, never Bitrix24's description, which can quote what was typed.
+
+The webhook acts with the rights of the employee who made it. A webhook made by an admin lets an agent read and
+change everything in the CRM. `session status --check` says whose rights it carries; make the webhook with an
+employee whose rights fit the work, and only the scopes it needs.
+
+Every write is checked against the permissions and kept in the send journal. `B24_READ_ONLY=1` refuses every write. Assigning a record to another employee,
+and through `api call` every write that sends messages, starts the portal's automation or creates tasks, is refused
+until you allow it. A stage change can still start the portal's own robots, which may write to your clients: set
+`permissions.deals.move` and `permissions.leads.move` to `ask` or `deny` if your portal has such robots.
 
 `b24 personal mcp serve --http` listens on `127.0.0.1` only, for browser apps that reach it through your own
 tunnel. Each app logs in with a one-time code, and the server keeps a hash of each login it gives, in the state
