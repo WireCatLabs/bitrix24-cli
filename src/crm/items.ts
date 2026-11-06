@@ -1,7 +1,8 @@
 import { CliError, isCliError } from "@wirecat/cli-base"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { type Condition, needsRest2, rest2Filter, rest3Filter } from "./conditions.js"
-import { customFields, type Metadata, type Raw, text } from "./values.js"
+import { type Field, loadFields, metadataOf } from "./fields.js"
+import { customFields, type Metadata, type Raw } from "./values.js"
 import { type Window, walk } from "./walk.js"
 
 /** A CRM object REST 3.0 serves as `crm.<type>.*`, and REST 2 as `crm.item.*` with its `entityTypeId`. */
@@ -73,29 +74,16 @@ export const getItem = async <T>(portal: BitrixTransport, type: ItemType<T>, id:
   })
   const custom = customFields((full.result as { item?: Raw })?.item)
   if (!Object.keys(custom).length) return type.map(item)
-  const labels = await labelsOf(portal, type.type)
-  return type.map(
-    item,
-    Object.fromEntries(
-      Object.entries(custom).map(([code, value]) => [code, { label: labels.get(code) ?? null, value }]),
-    ),
-  )
+  return type.map(item, metadataOf(custom, await fieldsOrNone(portal, type.type)))
 }
 
-/**
- * Titles by field code. `field.list` needs only read rights, where `field.custom.list` answers empty without the right
- * to edit CRM settings. Labels are extra, so a failed call leaves them out rather than failing `show`.
- */
-const labelsOf = async (
-  portal: BitrixTransport,
-  type: ItemType<unknown>["type"],
-): Promise<Map<string, string | null>> => {
+/** Labels are extra, so a failed call leaves them out rather than failing `show`. */
+const fieldsOrNone = async (portal: BitrixTransport, type: ItemType<unknown>["type"]): Promise<Field[]> => {
   try {
-    const answer = await portal.call(`crm.${type}.field.list`, { select: ["name", "title"] })
-    return new Map(itemsOf(answer.result).map((field) => [String(field.name), text(field.title)]))
+    return await loadFields(portal, type)
   } catch (error) {
     if (isCliError(error) && error.code === "cancelled") throw error
-    return new Map()
+    return []
   }
 }
 

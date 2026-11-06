@@ -63,6 +63,9 @@ export const contacts = (value: unknown): Contact[] =>
 
 const CUSTOM = /^(UF_CRM_|ufCrm)/
 
+/** A portal's own field, not its read-only `_data` twin. */
+export const isCustom = (name: string) => CUSTOM.test(name) && !name.endsWith("_data")
+
 const empty = (value: unknown) => value === null || value === "" || (Array.isArray(value) && value.length === 0)
 
 /**
@@ -70,14 +73,22 @@ const empty = (value: unknown) => value === null || value === "" || (Array.isArr
  * unmapped. `false` and `0` stay, since a yes/no field saying no is an answer.
  */
 export const customFields = (raw: Raw | undefined): Record<string, unknown> =>
-  Object.fromEntries(
-    Object.entries(raw ?? {}).filter(([key, value]) => CUSTOM.test(key) && !key.endsWith("_data") && !empty(value)),
-  )
+  Object.fromEntries(Object.entries(raw ?? {}).filter(([key, value]) => isCustom(key) && !empty(value)))
 
 export const contactSchema = v.strictObject({ type: v.nullable(v.string()), value: v.string() })
 export const nullableTime = v.nullable(isoTime)
-/** A custom field's value with its title on the portal; `label` is null when the portal did not give one. */
+/**
+ * A custom field's value with its title on the portal; `label` is null when the portal did not give one. A list
+ * field's value is its option's label, and `option_id` the option's id (both arrays for a multiple field).
+ */
 export const metadataSchema = v.optional(
-  v.record(v.string(), v.strictObject({ label: v.nullable(v.string()), value: v.unknown() })),
+  v.record(
+    v.string(),
+    v.strictObject({
+      label: v.nullable(v.string()),
+      value: v.unknown(),
+      option_id: v.optional(v.union([v.string(), v.array(v.string())])),
+    }),
+  ),
 )
 export type Metadata = NonNullable<v.InferOutput<typeof metadataSchema>>

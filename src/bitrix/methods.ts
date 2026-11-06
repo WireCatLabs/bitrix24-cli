@@ -14,6 +14,8 @@ export interface Method {
  * keeps the outcome rule in one place.
  */
 const REST3_TYPES = /^crm\.(deal|lead|contact|company|quote|smartinvoice|smartprocess\d+)\./
+/** `crm.<type>.userfield.*` is REST 2 only; REST 3.0's own is `crm.<type>.field.custom.*`. */
+const REST2_ONLY = /^crm\.[a-z]+\.userfield\./
 
 const READ_ACTIONS = new Set(["list", "get", "fields", "current", "search", "aggregate", "admin", "access"])
 
@@ -32,7 +34,7 @@ const scopeOf = (name: string) => {
 /** Which REST version answers a method, what it does, and its scope; unknown methods go to REST 2, the older API. */
 export const methodOf = (name: string): Method => ({
   name,
-  api: REST3_TYPES.test(name) ? 3 : 2,
+  api: REST3_TYPES.test(name) && !REST2_ONLY.test(name) ? 3 : 2,
   effect: effectOf(name),
   scope: scopeOf(name),
 })
@@ -40,7 +42,9 @@ export const methodOf = (name: string): Method => ({
 /** Methods `b24`'s own commands call; `api list` starts from them. */
 export const KNOWN_METHODS: readonly Method[] = [
   ...["deal", "lead", "contact", "company"].flatMap((type) =>
-    ["list", "get", "add", "update", "delete"].map((action) => methodOf(`crm.${type}.${action}`)),
+    ["list", "get", "add", "update", "delete", "field.list", "userfield.list"].map((action) =>
+      methodOf(`crm.${type}.${action}`),
+    ),
   ),
   ...["crm.item.list", "crm.category.list", "crm.status.list", "crm.product.list", "crm.product.get"].map(methodOf),
   ...["user.current", "user.get", "user.admin"].map(methodOf),

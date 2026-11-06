@@ -681,6 +681,33 @@ b24 users show <id>
 
 **Example:** `b24 work users show 42`, `b24 work users show 42 --json`
 
+## `b24 fields`
+
+read the portal's own fields on deals, leads, people and organizations
+
+### `b24 fields list`
+
+list the portal's custom fields of one kind, with a list field's options
+
+```sh
+b24 fields list <kind> [query] [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `kind` | required | deals, leads, people, organizations. |
+| `query` | optional | field:value terms; this list filters by none yet. |
+
+| Option | What it does |
+|---|---|
+| `--limit <n>` | how many to show. |
+| `--page <n>` | which page, starting at 1. |
+| `--all` | every row, no paging. |
+
+**Returns:** crm field — code, label, type, multiple, filterable, options; every field: b24 commands info fields list
+
+**Example:** `b24 work fields list deals`, `b24 work fields list people --json`
+
 ## `b24 api`
 
 see and call the Bitrix24 REST methods directly

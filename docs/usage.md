@@ -43,6 +43,10 @@ b24 work people show "Anna Ivanova"            # by id, or by the exact name
 b24 work stages list entity:leads              # each stage with its outcome: open, won or lost
 ```
 
+`show` gives the portal's own fields under `provider_metadata`, each by its code with its label; a list field gives
+its option's label, and the option's id as `option_id`. `b24 work fields list deals` lists those fields with their
+type and options; `leads`, `people` and `organizations` work the same way.
+
 A list shows the newest first, 20 at a time: `--limit`, `--page` and `--all` change that. The fields a list can
 filter by are in its help, `b24 help deals list`. When two records have the name you gave, `show` refuses and lists
 both, so you can pick one by its id.

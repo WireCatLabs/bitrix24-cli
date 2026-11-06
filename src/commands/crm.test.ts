@@ -115,7 +115,32 @@ describe("deals", () => {
     expect((await b24(["work", "deals", "list", "assigned_to:abc"])).code).toBe(2)
   })
 
-  const withCustomFields = (labels: Reply) =>
+  const userFields = ok(
+    [
+      { FIELD_NAME: "UF_CRM_1_SIZE", USER_TYPE_ID: "string", MULTIPLE: "N" },
+      {
+        FIELD_NAME: "UF_CRM_6_KIND",
+        USER_TYPE_ID: "enumeration",
+        MULTIPLE: "N",
+        LIST: [
+          { ID: "44", SORT: "10", VALUE: "Retail", DEF: "N", XML_ID: "R" },
+          { ID: "45", SORT: "20", VALUE: "Wholesale", DEF: "N", XML_ID: "W" },
+        ],
+      },
+      {
+        FIELD_NAME: "UF_CRM_7_TAGS",
+        USER_TYPE_ID: "enumeration",
+        MULTIPLE: "Y",
+        LIST: [
+          { ID: "50", SORT: "10", VALUE: "Hot", DEF: "N", XML_ID: "H" },
+          { ID: "51", SORT: "20", VALUE: "Repeat", DEF: "N", XML_ID: "P" },
+        ],
+      },
+    ],
+    { total: 3 },
+  )
+
+  const withCustomFields = (labels: Reply, more: Record<string, unknown> = {}) =>
     fakePortal({
       "crm.deal.get": ok({ item: deal(42) }),
       "crm.item.get": ok({
@@ -128,9 +153,11 @@ describe("deals", () => {
           UF_CRM_4_CODE: "",
           UF_CRM_5_TAGS: [],
           title: "x",
+          ...more,
         },
       }),
       "crm.deal.field.list": labels,
+      "crm.deal.userfield.list": userFields,
     })
 
   it("show reads one deal with the portal's custom fields and their labels under provider_metadata", async () => {
@@ -151,9 +178,24 @@ describe("deals", () => {
     expect(portal.calls[2]).toMatchObject({
       api: 3,
       method: "crm.deal.field.list",
-      body: { select: ["name", "title"] },
+      body: { select: ["name", "title", "type", "multiple", "filterable"] },
     })
-    expect(portal.calls).toHaveLength(3)
+    expect(portal.calls[3]).toMatchObject({ api: 2, method: "crm.deal.userfield.list" })
+    expect(portal.calls).toHaveLength(4)
+  })
+
+  it("show gives a list field's value by its option's label and keeps the option id", async () => {
+    const portal = withCustomFields(
+      items([
+        { name: "UF_CRM_6_KIND", title: "Kind", type: "int" },
+        { name: "UF_CRM_7_TAGS", title: "Tags", type: "int", multiple: true },
+      ]),
+      { UF_CRM_6_KIND: 45, UF_CRM_7_TAGS: [50, 99] },
+    )
+    const ran = await b24(["work", "deals", "show", "42", "--json"], { portal })
+    const metadata = (ran.json().item as { provider_metadata: Record<string, unknown> }).provider_metadata
+    expect(metadata.UF_CRM_6_KIND).toEqual({ label: "Kind", value: "Wholesale", option_id: "45" })
+    expect(metadata.UF_CRM_7_TAGS).toEqual({ label: "Tags", value: ["Hot", "99"], option_id: ["50", "99"] })
   })
 
   it("show gives a custom field the portal has no label for a null label", async () => {
