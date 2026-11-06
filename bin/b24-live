@@ -29,8 +29,8 @@ step() { printf '\n== b24 live %s\n' "$*"; b24 "$@" || echo "!! exit $?"; }
 step session status --check
 step pipelines list
 step stages list
-step deals list --limit 3 --json=id,title,stage,amount,currency
-step leads list --limit 3 --json=id,title,stage
+step deals list --limit 3 --json=id,title,stage_id,amount,currency
+step leads list --limit 3 --json=id,title,stage_id
 step people list --limit 3 --json=id,name
 step organizations list --limit 3 --json=id,name
 step products list --limit 3
@@ -42,6 +42,6 @@ title="WireCat test $(date +%Y-%m-%dT%H:%M)"
 id=$(b24 leads create --title "$title" --json=id | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).item.id))')
 echo "created lead $id: $title"
 step leads show "$id"
-step leads move "$id" --stage IN_PROCESS --json=id,stage
+step leads move "$id" --stage IN_PROCESS --json=id,stage_id
 step api call crm.lead.delete --body "{\"id\":$id}" --yes
 echo "deleted lead $id"

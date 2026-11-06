@@ -42,7 +42,7 @@ export const PERSON_FIELDS: Record<string, FieldMap> = {
 }
 
 export const fromBitrixPerson = (raw: Raw, custom?: Raw): Person => {
-  const companies = ids(raw.companiesId ?? raw.companyIds)
+  const companies = ids(raw.companiesId)
   const first = id(raw.companyId)
   return {
     id: id(raw.id) ?? "",
@@ -73,7 +73,6 @@ export const PERSON: ItemType<Person> = {
     "post",
     "companyId",
     "companiesId",
-    "companyIds",
     "phone",
     "email",
     "assignedById",

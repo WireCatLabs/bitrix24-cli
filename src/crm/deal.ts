@@ -48,7 +48,7 @@ export const DEAL_FIELDS: Record<string, FieldMap> = {
   updated_at: { field: "updatedTime", kind: "time" },
 }
 
-/** Bitrix24 ⇄ neutral for a deal. REST 3.0 names a deal's contacts `contactsId`, REST 2's crm.item `contactIds`. */
+/** Bitrix24 ⇄ neutral for a deal. */
 export const fromBitrixDeal = (raw: Raw, custom?: Raw): Deal => ({
   id: id(raw.id) ?? "",
   title: text(raw.title),
@@ -59,8 +59,8 @@ export const fromBitrixDeal = (raw: Raw, custom?: Raw): Deal => ({
   currency: text(raw.currencyId),
   assigned_to: id(raw.assignedById),
   organization_id: id(raw.companyId),
-  person_ids: ids(raw.contactsId ?? raw.contactIds),
-  closes_on: text(raw.closeTime ?? raw.closedate)?.slice(0, 10) ?? null,
+  person_ids: ids(raw.contactsId),
+  closes_on: text(raw.closeTime)?.slice(0, 10) ?? null,
   created_at: time(raw.createdTime),
   updated_at: time(raw.updatedTime),
   url: text(raw.url),
@@ -82,9 +82,7 @@ export const DEAL: ItemType<Deal> = {
     "assignedById",
     "companyId",
     "contactsId",
-    "contactIds",
     "closeTime",
-    "closedate",
     "createdTime",
     "updatedTime",
     "url",

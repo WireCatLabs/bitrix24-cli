@@ -182,7 +182,7 @@ describe("leads, people and organizations", () => {
 
   it("people list matches a word against the first or last name", async () => {
     const portal = fakePortal({
-      "crm.item.list": ok({ items: [{ id: 4, name: "Anna", lastName: "Ivanova", companyIds: [9] }] }),
+      "crm.item.list": ok({ items: [{ id: 4, name: "Anna", lastName: "Ivanova", companiesId: [9] }] }),
     })
     const ran = await b24(["work", "people", "list", "name:ivan*", "--json"], { portal })
     expect(listed(ran).items[0]).toMatchObject({ name: "Anna Ivanova", organization_ids: ["9"] })
