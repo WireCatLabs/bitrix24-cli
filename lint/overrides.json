@@ -30,7 +30,7 @@
   {
     "rule": "unknown-resource",
     "target": "fields",
-    "reason": "The portal's own (custom) fields of deals, leads, people and organizations, which `--set` and the list query take by label (plan 2026-11-06-bitrix24-cli §4.4); the cli-base vocabulary has no noun for a record type's field definitions yet. Add `fields` there with the CRM nouns, then drop this.",
+    "reason": "The portal's own (custom) fields of deals, leads, people and organizations, which the list query takes by label (plan 2026-11-06-bitrix24-cli §4.4); the cli-base vocabulary has no noun for a record type's field definitions yet. Drop this with the cli-base release that adds it: https://github.com/WireCatLabs/cli-base/issues/485",
     "owner": "@WireCatLabs",
     "review_after": "2027-02-06"
   }

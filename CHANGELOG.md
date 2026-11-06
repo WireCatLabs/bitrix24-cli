@@ -6,6 +6,11 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 
 ### Added
 
+- `list` for deals, leads, people and organizations filters by the portal's own fields: `<code or label>:<value>`,
+  for the fields the portal can filter by; a list field takes its option's label or id. A label with spaces is
+  written `lead_source:web` or `Lead\ source:web`.
+- `list --json=…,provider_metadata.<code>` adds that custom field to each item, as `show` gives it;
+  `--json=…,provider_metadata` adds every one. Only codes the portal lists are asked for.
 - `fields list <deals|leads|people|organizations>` lists the portal's custom fields of that kind: code, label, type,
   whether it holds several values, whether a list can filter by it, and a list field's options with their ids.
 

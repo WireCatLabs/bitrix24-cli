@@ -28,7 +28,9 @@ Find your way with the tool itself, not this file:
   part of the title. `b24 help deals list` lists the fields. A list has no total; read `page.has_more`.
 - `show` takes an id, or an exact name; two records with that name are refused with both in `candidates`.
 - The portal's own fields are in `show`'s `provider_metadata`, by code with their label; a list field gives the
-  option's label and `option_id`. `b24 work fields list deals` lists them with their type and options.
+  option's label and `option_id`. `b24 work fields list deals` lists them with their type and options. A list
+  filters by one the portal marks `filterable` (`lead_source:Website`), and `--json=id,provider_metadata.<code>`
+  adds it to each item.
 - Stages are per pipeline for deals and one list for leads: `b24 work stages list entity:leads`. Won or lost is
   `outcome`, never the stage's name.
 - Writes: `create`, `update` (`--title`, `--name`, `--first-name`, `--last-name`, the rest in `--body` with Bitrix24's
