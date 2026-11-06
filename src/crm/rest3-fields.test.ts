@@ -42,7 +42,7 @@ const DOCUMENTED: Record<string, readonly string[]> = {
   company: [...COMMON, "typeId", "industryId", "revenue", "currencyId", "contactsId"],
 }
 
-const TYPES: [ItemType<unknown>, Record<string, FieldMap>][] = [
+const TYPES: [Pick<ItemType<never>, "type" | "select">, Record<string, FieldMap>][] = [
   [DEAL, DEAL_FIELDS],
   [LEAD, LEAD_FIELDS],
   [PERSON, PERSON_FIELDS],
