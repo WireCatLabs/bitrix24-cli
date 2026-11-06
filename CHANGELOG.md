@@ -2,6 +2,16 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Fixed
+
+- Commands that call the portal now run inside cli-core's run: each answer's `meta.run_id` names a run `runs show`
+  finds, with the portal requests in it, `meta.duration_ms` measures the command, and `--timeout` stops a stuck
+  command. An MCP agent's permission overrides now reach these commands too.
+- `show` for deals, leads, people and organizations no longer lists the portal's custom fields that hold no value:
+  `provider_metadata` leaves out `null`, `""` and `[]`, and is left out when nothing is left.
+
 ## 0.1.0 — 06.11.2026
 
 ### Fixed

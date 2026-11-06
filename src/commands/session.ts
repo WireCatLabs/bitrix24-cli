@@ -25,7 +25,7 @@ import { Command } from "commander"
 import { parseWebhook } from "../bitrix/webhook.js"
 import { configuration } from "../config.js"
 import { IDENTITY } from "../identity.js"
-import { type B24Environment, contextOf, portalOf, refuseOffline, transportFor } from "../portal.js"
+import { type B24Environment, contextOf, refuseOffline, transportFor, withPortal } from "../portal.js"
 import { TOKEN_VARIABLE, tokens } from "../token.js"
 import { webhookUser } from "../whoami.js"
 
@@ -56,13 +56,13 @@ const startCommand = () =>
       const storage = args.credentialStorage
       if (storage !== "keyring" && storage !== "file")
         throw new CliError("validation_error", "--credential-storage takes keyring or file")
-      const { env, flags, profile, tokens } = contextOf(this)
+      const { env, flags, profile, tokens, run } = contextOf(this)
       refuseCommandName(profile, commandWords(rootOf(this)), IDENTITY.command)
       refuseOffline(flags)
       const address = (await readSecret("Bitrix24 webhook address: ", secretInputOf(this))).trim()
       if (!address) throw new CliError("validation_error", "no webhook address was given")
       const webhook = parseWebhook(address)
-      const user = await webhookUser(transportFor(this, webhook))
+      const user = await run((events) => webhookUser(transportFor(this, webhook, events)))
       const portal = new URL(webhook.origin).host
       const stored = tokens.write(profile, address, storage)
       rememberAccount(IDENTITY, profile, `${portal}:${webhook.userId}`, env)
@@ -86,7 +86,7 @@ const statusCommand = () =>
       const portal = stored ? new URL(parseWebhook(stored.secret).origin).host : null
       const status = { profile, state: stored ? "saved" : "missing", token_from: stored?.source ?? null, portal }
       if (!args.check || !stored) return answer(this, { ...status, verified: false })
-      answer(this, { ...status, verified: true, user: await webhookUser(portalOf(this)) })
+      answer(this, { ...status, verified: true, user: await withPortal(this, webhookUser) })
     })
 
 const endCommand = () =>

@@ -1,5 +1,11 @@
 import { CliError, type SleepLike } from "@wirecat/cli-base"
-import { type BaseEnvironment, environmentOf, type GlobalFlags } from "@wirecat/cli-core/cli"
+import {
+  type BaseEnvironment,
+  baseContext,
+  type EventSink,
+  environmentOf,
+  type GlobalFlags,
+} from "@wirecat/cli-core/cli"
 import { Pacer, pacePathFor } from "@wirecat/cli-core/sends"
 import type { Command } from "commander"
 import { BitrixTransport, type FetchLike } from "./bitrix/transport.js"
@@ -18,11 +24,14 @@ export interface B24Environment extends BaseEnvironment {
 export const PORTAL_PACE = { perMinute: 120, burst: 50 }
 
 export const contextOf = (command: Command) => {
-  const environment = environmentOf<B24Environment>(command)
-  const env = environment.env ?? process.env
-  const flags = command.optsWithGlobals<GlobalFlags>()
-  const settings = configuration.resolveSettings(flags, { env })
-  return { environment, env, flags, settings, profile: settings.profile, tokens: tokens(env, environment.keyring) }
+  const base = baseContext(command, configuration.resolveSettings)
+  return {
+    ...base,
+    environment: environmentOf<B24Environment>(command),
+    flags: command.optsWithGlobals<GlobalFlags>(),
+    profile: base.settings.profile,
+    tokens: tokens(base.env, base.keyring),
+  }
 }
 
 export const signInWords = (profile: string) => `\`${IDENTITY.command} ${profile} session start\``
@@ -34,10 +43,11 @@ export const refuseOffline = (flags: GlobalFlags) => {
     })
 }
 
-export const transportFor = (command: Command, webhook: Webhook): BitrixTransport => {
+export const transportFor = (command: Command, webhook: Webhook, events?: EventSink): BitrixTransport => {
   const { environment, env, profile } = contextOf(command)
   return new BitrixTransport({
     webhook,
+    ...(events ? { events } : {}),
     ...(environment.fetch ? { fetch: environment.fetch } : {}),
     ...(environment.signal ? { signal: environment.signal } : {}),
     ...(environment.sleep ? { sleep: environment.sleep } : {}),
@@ -45,8 +55,8 @@ export const transportFor = (command: Command, webhook: Webhook): BitrixTranspor
   })
 }
 
-/** The profile's portal, or an authentication error that names the command to sign in. */
-export const portalOf = (command: Command): BitrixTransport => {
+/** The profile's webhook, or an authentication error that names the command to sign in. */
+export const webhookOf = (command: Command): Webhook => {
   const { flags, profile, tokens } = contextOf(command)
   refuseOffline(flags)
   const stored = tokens.read(profile)
@@ -54,5 +64,9 @@ export const portalOf = (command: Command): BitrixTransport => {
     throw new CliError("authentication_error", `profile ${profile} is not signed in — run ${signInWords(profile)}`, {
       reason: "webhook.missing",
     })
-  return transportFor(command, parseWebhook(stored.secret))
+  return parseWebhook(stored.secret)
 }
+
+/** The body inside core's run: recorded, under `--timeout`, its requests in the run's events. */
+export const withPortal = <T>(command: Command, body: (portal: BitrixTransport) => Promise<T>): Promise<T> =>
+  contextOf(command).run((events) => body(transportFor(command, webhookOf(command), events)))

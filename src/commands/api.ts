@@ -21,7 +21,7 @@ import { apiDefault, apiKey, commandKeysOf } from "../api-keys.js"
 import { KNOWN_METHODS, type Method, methodOf } from "../bitrix/methods.js"
 import { permissions } from "../config.js"
 import { IDENTITY } from "../identity.js"
-import { contextOf, portalOf } from "../portal.js"
+import { contextOf, withPortal } from "../portal.js"
 import { write } from "./write.js"
 
 const B24 = IDENTITY.command
@@ -164,7 +164,8 @@ const callCommand = () =>
             permission: key,
           },
         )
-      renderAnswer(this, outputFor(this), itemOf(shown(await portalOf(this).call(method.name, body))))
+      const answer = await withPortal(this, (portal) => portal.call(method.name, body))
+      renderAnswer(this, outputFor(this), itemOf(shown(answer)))
     })
 
 export const apiCommand = (): Command =>

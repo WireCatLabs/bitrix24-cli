@@ -100,6 +100,16 @@ describe("deals", () => {
     ])
   })
 
+  it("list runs in its own recorded run, with the portal request in it", async () => {
+    const portal = fakePortal({ "crm.deal.list": items([deal(1)]) })
+    const ran = await b24(["work", "deals", "list", "--json", "--record"], { portal })
+    const runId = (ran.json().meta as { run_id: string }).run_id
+    expect(runId).toMatch(/-deals-list-/)
+    const shown = await b24(["runs", "show", runId, "--json"])
+    expect(shown.code).toBe(0)
+    expect(shown.out).toContain("crm.deal.list")
+  })
+
   it("list refuses a field the portal cannot filter, and a bad id", async () => {
     expect((await b24(["work", "deals", "list", "closes_on:2026-12-01"])).code).toBe(2)
     expect((await b24(["work", "deals", "list", "assigned_to:abc"])).code).toBe(2)
@@ -108,10 +118,24 @@ describe("deals", () => {
   it("show reads one deal with the portal's custom fields under provider_metadata", async () => {
     const portal = fakePortal({
       "crm.deal.get": ok({ item: deal(42) }),
-      "crm.item.get": ok({ item: { id: 42, UF_CRM_1_SIZE: "large", UF_CRM_1_SIZE_data: {}, title: "x" } }),
+      "crm.item.get": ok({
+        item: {
+          id: 42,
+          UF_CRM_1_SIZE: "large",
+          UF_CRM_1_SIZE_data: {},
+          UF_CRM_2_PAID: false,
+          UF_CRM_3_NOTE: null,
+          UF_CRM_4_CODE: "",
+          UF_CRM_5_TAGS: [],
+          title: "x",
+        },
+      }),
     })
     const ran = await b24(["work", "deals", "show", "42", "--json"], { portal })
-    expect(ran.json().item).toMatchObject({ id: "42", provider_metadata: { UF_CRM_1_SIZE: "large" } })
+    expect((ran.json().item as Record<string, unknown>).provider_metadata).toEqual({
+      UF_CRM_1_SIZE: "large",
+      UF_CRM_2_PAID: false,
+    })
     expect(portal.calls[1]?.body).toEqual({ entityTypeId: 2, id: 42, useOriginalUfNames: "Y" })
   })
 
@@ -332,5 +356,15 @@ describe("every list pages the same way", () => {
   it("leads show reads one lead", async () => {
     const at = fakePortal({ "crm.lead.get": ok({ item: { id: 3, title: "Form" } }), "crm.item.get": ok({ item: {} }) })
     expect((await b24(["work", "leads", "show", "3", "--json"], { portal: at })).json().item).toMatchObject({ id: "3" })
+  })
+
+  it("leads show leaves out provider_metadata when every custom field is empty", async () => {
+    const at = fakePortal({
+      "crm.lead.get": ok({ item: { id: 3, title: "Form" } }),
+      "crm.item.get": ok({ item: { UF_CRM_1745512486047: null, UF_CRM_1745512486048: [] } }),
+    })
+    expect((await b24(["work", "leads", "show", "3", "--json"], { portal: at })).json().item).not.toHaveProperty(
+      "provider_metadata",
+    )
   })
 })
