@@ -4,6 +4,11 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 
 ## Unreleased
 
+### Fixed
+
+- An error reason that a newer cli-core also defines no longer makes every failing command crash instead of printing
+  its error.
+
 ### Added
 
 - Started from `@wirecat/cli-template` 0.14.0.

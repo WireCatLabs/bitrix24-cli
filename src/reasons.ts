@@ -1,17 +1,21 @@
 import { defineReasons } from "@wirecat/cli-base/standards"
+import { CORE_REASONS } from "@wirecat/cli-core"
 
-/** Core's own CRM reasons (`pipeline.not-found`, `deal.*`) are kept as they are; these add the ones it lacks. */
-const CORE = new Set(["pipeline.not-found"])
+/**
+ * cli-core's registry refuses a reason listed twice, on every error path, and core is adding CRM reasons of its own
+ * (`pipeline.not-found` in 0.586.0); its own entry wins.
+ */
+const CORE = new Set(CORE_REASONS.map((one) => one.reason))
 
-const NAMED = ["deal", "lead", "person", "organization", "pipeline", "stage"]
-  .flatMap((word): [string, string, string][] => [
+const NAMED = ["deal", "lead", "person", "organization", "pipeline", "stage"].flatMap(
+  (word): [string, string, string][] => [
     [`${word}.ambiguous`, "validation_error", `more than one ${word} has that name; name one by its id`],
     [`${word}.not-found`, "not_found", `no ${word} has exactly that name`],
-  ])
-  .filter(([reason]) => !CORE.has(reason))
+  ],
+)
 
 /** b24's own reasons; the shared ones (`offline.refused`, `query.*`) are cli-core's and cli-base's. */
-const ENTRIES: [reason: string, code: string, message: string][] = [
+const OWN: [reason: string, code: string, message: string][] = [
   ["webhook.malformed", "validation_error", "that is not a Bitrix24 incoming webhook address"],
   ["webhook.missing", "authentication_error", "this profile has no webhook; sign in first"],
   ["webhook.refused", "authentication_error", "Bitrix24 refused this webhook"],
@@ -22,6 +26,8 @@ const ENTRIES: [reason: string, code: string, message: string][] = [
   ["query.bad-value", "validation_error", "a query term takes an id or a number"],
   ...NAMED,
 ]
+
+const ENTRIES = OWN.filter(([reason]) => !CORE.has(reason))
 
 export const REASONS = defineReasons(ENTRIES.map(([reason, code, message]) => ({ reason, code, message, details: [] })))
 
