@@ -116,10 +116,14 @@ const mcpClient = async (portal: ReturnType<typeof fakePortal>) => {
   return client
 }
 
-it("an MCP read of a denied command is refused before any request", async () => {
+it("an MCP read of a denied command is listed as unavailable and refused before any request", async () => {
   const portal = deals()
   await withPermissions({ "deals.list": "deny" }, async () => {
     const client = await mcpClient(portal)
+    const found = await client.callTool({ name: "b24_tools_search", arguments: { query: "deals list" } })
+    expect((found.structuredContent as { items: unknown[] }).items).toContainEqual(
+      expect.objectContaining({ command: "deals list", availability: expect.objectContaining({ available: false }) }),
+    )
     const answer = await client.callTool({ name: "b24_read", arguments: { command: "deals list" } })
     expect(JSON.stringify(answer)).toContain("permission_error")
   })

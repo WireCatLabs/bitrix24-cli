@@ -44,6 +44,8 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   `Idempotency-Key`, which is not yet checked on a live portal; it is now `outcome_unknown` at once, and its message
   names `--operation-id` once.
 - `pipeline_id:0`, the default pipeline, is accepted by `deals list` and `stages list`.
+- The MCP server applies b24's permission table (WC-PERM-23): a command the profile denies is listed by tools search
+  as unavailable, not offered as available.
 
 ## 0.3.0 — 06.11.2026
 

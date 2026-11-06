@@ -13,6 +13,7 @@ import {
   toolsFromCommands,
 } from "@wirecat/cli-core/mcp"
 import type { Level } from "@wirecat/cli-core/sends"
+import { permissions } from "./config.js"
 import { IDENTITY } from "./identity.js"
 
 export interface McpOptions {
@@ -45,13 +46,15 @@ export const createMcpServer = (options: McpOptions): McpServer => {
     },
   )
   const program = { commands: options.commands, run: options.run }
-  const context = { profile: options.profile, levels: options.levels, authority: options.authority }
+  // Without the table, a denied command would still be offered and run as a tool (WC-PERM-23).
+  const context = { profile: options.profile, levels: options.levels, authority: options.authority, permissions }
   const tools = toolsFromCommands(options.commands, {
     includeUnavailable: true,
     currentLevels: options.levels,
     levels: options.levels(),
     exclude: EXCLUDED,
     authority: options.authority,
+    permissions,
   })
   const commands: Record<string, McpCommand> = Object.fromEntries(
     tools.map((tool) => [
