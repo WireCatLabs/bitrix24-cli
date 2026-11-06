@@ -133,8 +133,8 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
 - **Lists** filter only by the fields the portal marks `filterable`. `--json=…,provider_metadata.<code>` adds a
   custom field to each item, and `provider_metadata` alone adds all. A bare code in `--json` is refused by cli-core's
   field check before `b24` runs.
-- **Writes** (pending cli-base#485 for the flag's name): `--set "<label or code>=<value>"` sets custom fields only.
-  `--body` comes first, `--set` over it, and the named options over both.
+- **Writes:** `--field "<label or code>=<value>"` sets custom fields only, the name and shape of `gh api --field`.
+  `--body` comes first, `--field` over it, and the named options over both.
 
 ### The portal's limits
 

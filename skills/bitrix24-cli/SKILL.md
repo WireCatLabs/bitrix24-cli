@@ -33,9 +33,10 @@ Find your way with the tool itself, not this file:
   adds it to each item.
 - Stages are per pipeline for deals and one list for leads: `b24 work stages list entity:leads`. Won or lost is
   `outcome`, never the stage's name.
-- Writes: `create`, `update` (`--title`, `--name`, `--first-name`, `--last-name`, the rest in `--body` with Bitrix24's
-  field names), `move <id> --stage <id or name>`. Keep the `operation_id` of every write; after `outcome_unknown`
-  repeat it with `--operation-id` and nothing is made twice.
+- Writes: `create`, `update` (`--title`, `--name`, `--first-name`, `--last-name`, custom fields with
+  `--field "<label or code>=<value>"`, the rest in `--body` with Bitrix24's field names),
+  `move <id> --stage <id or name>`. Keep the `operation_id` of every write; after `outcome_unknown` repeat it with
+  `--operation-id` and nothing is made twice.
 - `b24 work session status --check` says whose rights the webhook carries.
 
 ## Rules

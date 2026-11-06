@@ -65,7 +65,12 @@ b24 work deals create --title "Kitchen for Acme" --body '{"opportunity":15000,"c
 b24 work deals update 42 --title "Kitchen and hall"
 b24 work deals move 42 --stage "Contract signed"
 b24 work people create --first-name Anna --last-name Ivanova
+b24 work leads update 7 --field Source=Website --field Tags=Hot --field Tags=Repeat
 ```
+
+`--field "<label or code>=<value>"` sets one of the portal's own fields, as `fields list` names them; a list field takes
+its option's label or id, and a field that holds several values takes `--field` once per value. `--field` wins over
+`--body` for the same field.
 
 `--body` takes the other fields in Bitrix24's own names, the ones its REST 3.0 reference lists. Each write answers
 an `operation_id`. If a write ends with `outcome_unknown`, repeat it with `--operation-id <that id>`: Bitrix24 then

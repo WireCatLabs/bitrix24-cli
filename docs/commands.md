@@ -173,6 +173,7 @@ b24 deals create [options]
 |---|---|
 | `--title <title>` | the title. |
 | `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
 | `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
 
 **Returns:** create one deal on the portal
@@ -197,6 +198,7 @@ b24 deals update <id> [options]
 |---|---|
 | `--title <title>` | the title. |
 | `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
 | `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
 
 **Returns:** change one deal on the portal; options left out keep their values
@@ -284,6 +286,7 @@ b24 leads create [options]
 | `--first-name <name>` | the person's first name. |
 | `--last-name <name>` | the person's last name. |
 | `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
 | `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
 
 **Returns:** create one lead on the portal
@@ -310,11 +313,12 @@ b24 leads update <id> [options]
 | `--first-name <name>` | the person's first name. |
 | `--last-name <name>` | the person's last name. |
 | `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
 | `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
 
 **Returns:** change one lead on the portal; options left out keep their values
 
-**Example:** `b24 work leads update 7 --body '{"opportunity":5000}'`
+**Example:** `b24 work leads update 7 --field Source=Website --field Tags=Hot --field Tags=Repeat`
 
 ### `b24 leads move`
 
@@ -396,6 +400,7 @@ b24 people create [options]
 | `--first-name <name>` | the person's first name. |
 | `--last-name <name>` | the person's last name. |
 | `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
 | `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
 
 **Returns:** create one person on the portal
@@ -421,6 +426,7 @@ b24 people update <id> [options]
 | `--first-name <name>` | the person's first name. |
 | `--last-name <name>` | the person's last name. |
 | `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
 | `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
 
 **Returns:** change one person on the portal; options left out keep their values
@@ -483,6 +489,7 @@ b24 organizations create [options]
 |---|---|
 | `--name <name>` | the name. |
 | `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
 | `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
 
 **Returns:** create one organization on the portal
@@ -507,6 +514,7 @@ b24 organizations update <id> [options]
 |---|---|
 | `--name <name>` | the name. |
 | `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
 | `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
 
 **Returns:** change one organization on the portal; options left out keep their values
