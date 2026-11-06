@@ -13,7 +13,7 @@ import type { Command } from "commander"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { ASSIGN_KEY, permissions } from "../config.js"
 import { IDENTITY } from "../identity.js"
-import { contextOf, portalOf } from "../portal.js"
+import { contextOf, transportFor, webhookOf } from "../portal.js"
 
 /** REST 3.0's `Idempotency-Key`: 1 to 255 printable ASCII characters (apidocs "REST 3.0"). */
 const OPERATION_ID = /^[\x21-\x7e]{1,255}$/
@@ -47,12 +47,12 @@ export const write = async (
   command: Command,
   { key, assignee, extra: also = [], keyed = true, operationId: given, act }: Write,
 ) => {
-  const { env, settings } = contextOf(command)
+  const { env, settings, run } = contextOf(command)
   const lock = readOnlyLockOf(IDENTITY, env)
   if (lock) throw readOnlyRefusal(lock, "change the Bitrix24 portal")
   const operationId = operationIdOf(given)
-  const portal = portalOf(command)
-  const self = portal.userId
+  const webhook = webhookOf(command)
+  const self = webhook.userId
   const extra = [...also, ...(assignee !== undefined && assignee !== self ? [ASSIGN_KEY] : [])]
   const levelOf = (one: string) => levelFor(settings.permissions, one, permissions.defaults).level
   const guard = keyedGuard(
@@ -73,7 +73,9 @@ export const write = async (
   guard.refuse(request)
   let done: Record<string, unknown>
   try {
-    done = await guardedWrite(guard, request, () => act(portal, operationId))
+    done = await guardedWrite(guard, request, () =>
+      run((events) => act(transportFor(command, webhook, events), operationId)),
+    )
   } catch (error) {
     if (keyed && error instanceof CliError && error.code === "outcome_unknown")
       throw new CliError(

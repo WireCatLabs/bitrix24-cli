@@ -30,7 +30,7 @@ import { directoryOf, findStage, listStages, type Stage, stageSchema } from "../
 import { getUser, listUsers, USER_FIELDS, userSchema } from "../crm/user.js"
 import type { Window } from "../crm/walk.js"
 import { IDENTITY } from "../identity.js"
-import { contextOf, portalOf } from "../portal.js"
+import { contextOf, withPortal } from "../portal.js"
 
 const B24 = IDENTITY.command
 
@@ -97,7 +97,8 @@ const listCommand = <T>(noun: Noun<T>) =>
         path,
       )
       const { settings } = contextOf(this)
-      const found = await noun.list(portalOf(this), terms, windowOf(this))
+      const window = windowOf(this)
+      const found = await withPortal(this, (portal) => noun.list(portal, terms, window))
       renderAnswer(this, outputFor(this), pagedList(path, settings, found))
     })
 
@@ -114,7 +115,8 @@ const showCommand = <T>(noun: Noun<T>) =>
     .description(`show one of the ${noun.what} on the portal`)
     .argument(`<${noun.reference}>`, `the ${noun.reference} as list prints it`)
     .action(async function (this: Command, reference: string) {
-      renderAnswer(this, outputFor(this), itemOf(await noun.show(portalOf(this), reference)))
+      const item = await withPortal(this, (portal) => noun.show(portal, reference))
+      renderAnswer(this, outputFor(this), itemOf(item))
     })
 
 const nounCommand = <T>(noun: Noun<T>, description: string): Command =>

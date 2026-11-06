@@ -100,6 +100,16 @@ describe("deals", () => {
     ])
   })
 
+  it("list runs in its own recorded run, with the portal request in it", async () => {
+    const portal = fakePortal({ "crm.deal.list": items([deal(1)]) })
+    const ran = await b24(["work", "deals", "list", "--json", "--record"], { portal })
+    const runId = (ran.json().meta as { run_id: string }).run_id
+    expect(runId).toMatch(/-deals-list-/)
+    const shown = await b24(["runs", "show", runId, "--json"])
+    expect(shown.code).toBe(0)
+    expect(shown.out).toContain("crm.deal.list")
+  })
+
   it("list refuses a field the portal cannot filter, and a bad id", async () => {
     expect((await b24(["work", "deals", "list", "closes_on:2026-12-01"])).code).toBe(2)
     expect((await b24(["work", "deals", "list", "assigned_to:abc"])).code).toBe(2)
