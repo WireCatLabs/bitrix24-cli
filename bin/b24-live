@@ -4,9 +4,9 @@
 # Config, state and the store are a throwaway folder: a branch build must not migrate the owner's real store.
 #
 #   pnpm build
-#   bin/b24-live                       # reads only
-#   bin/b24-live --write               # also creates one lead "WireCat test …", with one custom string field when
-#                                      # the portal has one, moves it, deletes it by id
+#   bin/b24-live            # syncs into the throwaway store and reads; changes nothing on the portal
+#   bin/b24-live --write    # also creates one lead (twice with one operation id) and one deal "WireCat test …",
+#                           # changes, moves and deletes each, then syncs again
 #   B24_KEYRING_ACCOUNT=other bin/b24-live
 set -euo pipefail
 
@@ -26,12 +26,24 @@ b24() {
     node "$root/dist/bin/b24.js" live "$@"
 }
 step() { printf '\n== b24 live %s\n' "$*"; b24 "$@" || echo "!! exit $?"; }
+# One value out of a JSON answer on stdin, by a dotted path: `item.lead.ref`.
+value() {
+  node -e '
+    let s = ""
+    process.stdin.on("data", (d) => (s += d)).on("end", () => {
+      let v
+      try { v = process.argv[1].split(".").reduce((o, k) => o?.[k], JSON.parse(s)) } catch {}
+      console.log(v ?? "")
+    })' "$1"
+}
 
 step session status --check
-step pipelines list
-step stages list
-step deals list --limit 3 --json=id,title,stage_id,amount,currency
-step leads list --limit 3 --json=id,title,stage_id
+step sync --json=state,synced,issues
+step store status
+step pipelines list --json=ref,name,kind
+step stages list --json=pipeline_name,name,outcome,external_id,open
+step deals list status:open --limit 3 --json=ref,title,pipeline_name,stage,status,amount,currency,close_date
+step leads list --limit 3 --json=ref,title,stage,status,amount,currency
 step people list --limit 3 --json=id,name
 step organizations list --limit 3 --json=id,name
 step products list --limit 3
@@ -55,22 +67,65 @@ pick() {
     })' "$2" || true
 }
 
-term=$(pick deals list)
+term=$(pick organizations list)
 if [ -n "$term" ]; then
-  step deals list "$term" --limit 3 --json=id,title
+  step organizations list "$term" --limit 3 --json=id,name
 else
-  echo "no list field on deals that a list can filter by — skipped the filtered deals list"
+  echo "no list field on companies that a list can filter by — skipped the filtered organizations list"
 fi
 
 [ "${1:-}" = "--write" ] || exit 0
 
 title="WireCat test $(date +%Y-%m-%dT%H:%M)"
+
+# A lead: created with one custom string field when the portal has one, renamed twice with one operation id (the
+# second must be answered from the portal's record, not done again), moved, closed lost, deleted. Never closed won:
+# a won lead is a converted one.
 custom=$(pick leads string)
 field=()
 if [ -n "$custom" ]; then field=(--field "$custom=$title"); else echo "no one-value string field on leads — no --field"; fi
-id=$(b24 leads create --title "$title" "${field[@]}" --json=id | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).item.id))')
-echo "created lead $id: $title"
-step leads show "$id"
-step leads move "$id" --stage IN_PROCESS --json=id,stage_id
-step api call crm.lead.delete --body "{\"id\":$id}" --yes
-echo "deleted lead $id"
+# The create is sent twice with one operation id: Bitrix24 must answer the second from its record, with the same lead.
+made="wirecat-live-create-$(date +%s)"
+lead=$(b24 leads create --title "$title" "${field[@]}" --operation-id "$made" --json | value item.lead.ref)
+[ -n "$lead" ] || { echo "!! leads create gave no ref"; exit 1; }
+echo "created $lead: $title"
+again=$(b24 leads create --title "$title" "${field[@]}" --operation-id "$made" --json | value item.lead.ref)
+if [ "$again" = "$lead" ]; then echo "ok: the repeated create answered $lead from the record"; else
+  echo "!! the repeated create answered '$again', not $lead — Idempotency-Key is not honoured"
+  [ -z "$again" ] || step leads delete "$again" --yes --json=ref,removed
+fi
+step leads show "$lead" --json=ref,title,stage,status
+op="wirecat-live-$(date +%s)"
+step leads update "$lead" --title "$title (renamed)" --operation-id "$op" --json=operation_id,lead.title
+step leads update "$lead" --title "$title (renamed)" --operation-id "$op" --json=operation_id,lead.title
+step leads move "$lead" IN_PROCESS --json=lead.stage,lead.status
+step leads close "$lead" lost --json=lead.stage,lead.status
+step leads delete "$lead" --yes --json=ref,removed
+echo "deleted $lead"
+
+# A deal in the first deal pipeline: created, given a close date, moved to its second open stage, deleted.
+stages=$(b24 stages list kind:deal --json)
+pipeline=$(printf '%s' "$stages" | value items.0.pipeline)
+next=$(printf '%s' "$stages" | node -e '
+  let s = ""
+  process.stdin.on("data", (d) => (s += d)).on("end", () => {
+    const items = JSON.parse(s).items ?? []
+    const open = items.filter((one) => one.pipeline === items[0]?.pipeline && one.outcome === "open")
+    console.log(open[1]?.external_id ?? "")
+  })')
+deal=$(b24 deals create --title "$title" --pipeline "$pipeline" --json | value item.deal.ref)
+[ -n "$deal" ] || { echo "!! deals create gave no ref"; exit 1; }
+echo "created $deal: $title"
+step deals update "$deal" --close-date "$(date -d '+30 days' +%Y-%m-%d)" --json=deal.close_date
+if [ -n "$next" ]; then step deals move "$deal" "$next" --json=deal.stage,deal.status; else echo "one open stage only — no move"; fi
+step deals delete "$deal" --yes --json=ref,removed
+echo "deleted $deal"
+
+# A sync from the cursor (the updatedTime filter), then a rescan with the id pass: neither brings the deleted ones back.
+step sync --json=state,synced,issues
+step sync --rescan --json=state,synced,issues
+for ref in "$lead" "$deal"; do
+  if b24 --offline "${ref%%:*}s" show "$ref" --json >/dev/null 2>&1; then echo "!! $ref is still in the store"; else
+    echo "ok: $ref is gone from the store"
+  fi
+done

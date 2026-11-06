@@ -1,73 +1,24 @@
-import * as v from "valibot"
-import type { FieldMap } from "./conditions.js"
+import type { CrmItem } from "@wirecat/cli-core"
 import type { ItemType } from "./items.js"
-import {
-  id,
-  ids,
-  type Metadata,
-  metadataSchema,
-  nullableTime,
-  number,
-  OUTCOMES,
-  outcomeOf,
-  type Raw,
-  text,
-  time,
-} from "./values.js"
+import { amountOf, epoch, id, ids, type Metadata, type Raw, text } from "./values.js"
 
-export const dealSchema = v.strictObject({
-  id: v.string(),
-  title: v.nullable(v.string()),
-  pipeline_id: v.nullable(v.string()),
-  stage_id: v.nullable(v.string()),
-  outcome: v.picklist(OUTCOMES),
-  amount: v.nullable(v.number()),
-  currency: v.nullable(v.string()),
-  assigned_to: v.nullable(v.string()),
-  organization_id: v.nullable(v.string()),
-  person_ids: v.array(v.string()),
-  closes_on: v.nullable(v.string()),
-  created_at: nullableTime,
-  updated_at: nullableTime,
-  url: v.nullable(v.string()),
-  provider_metadata: metadataSchema,
-})
-
-export type Deal = v.InferOutput<typeof dealSchema>
-
-export const DEAL_FIELDS: Record<string, FieldMap> = {
-  title: { field: "title", kind: "word" },
-  pipeline_id: { field: "categoryId", kind: "id" },
-  stage_id: { field: "stageId", kind: "text" },
-  outcome: { field: "stageSemanticId", kind: "outcome" },
-  amount: { field: "opportunity", kind: "number" },
-  currency: { field: "currencyId", kind: "text" },
-  assigned_to: { field: "assignedById", kind: "id" },
-  organization_id: { field: "companyId", kind: "id" },
-  created_at: { field: "createdTime", kind: "time" },
-  updated_at: { field: "updatedTime", kind: "time" },
-}
-
-/** Bitrix24 ⇄ neutral for a deal. */
-export const fromBitrixDeal = (raw: Raw, metadata?: Metadata): Deal => ({
-  id: id(raw.id) ?? "",
-  title: text(raw.title),
-  pipeline_id: text(raw.categoryId),
-  stage_id: text(raw.stageId),
-  outcome: outcomeOf(raw.stageSemanticId),
-  amount: number(raw.opportunity),
-  currency: text(raw.currencyId),
-  assigned_to: id(raw.assignedById),
-  organization_id: id(raw.companyId),
-  person_ids: ids(raw.contactsId),
-  closes_on: text(raw.closeTime)?.slice(0, 10) ?? null,
-  created_at: time(raw.createdTime),
-  updated_at: time(raw.updatedTime),
+/** Bitrix24 ⇄ neutral for a deal: its pipeline is its category, `0` the default one. */
+export const fromBitrixDeal = (raw: Raw, metadata?: Metadata): CrmItem => ({
+  externalId: id(raw.id) ?? "",
+  title: text(raw.title) ?? "",
+  pipeline: text(raw.categoryId) ?? "0",
+  stage: text(raw.stageId) ?? "",
+  ...amountOf(raw.opportunity, raw.currencyId),
+  closeDate: text(raw.closeTime)?.slice(0, 10) ?? null,
+  organization: id(raw.companyId),
+  people: ids(raw.contactsId).map((externalId) => ({ externalId, role: "contact" as const })),
+  createdAt: epoch(raw.createdTime),
+  updatedAt: epoch(raw.updatedTime),
   url: text(raw.url),
-  ...(metadata ? { provider_metadata: metadata } : {}),
+  ...(metadata ? { metadata } : {}),
 })
 
-export const DEAL: ItemType<Deal> = {
+export const DEAL: ItemType<CrmItem> = {
   type: "deal",
   entityTypeId: 2,
   word: "deal",
@@ -76,10 +27,8 @@ export const DEAL: ItemType<Deal> = {
     "title",
     "categoryId",
     "stageId",
-    "stageSemanticId",
     "opportunity",
     "currencyId",
-    "assignedById",
     "companyId",
     "contactsId",
     "closeTime",

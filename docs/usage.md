@@ -31,52 +31,81 @@ the webhook's employee can.
 `b24 work session end` forgets the address on this computer; the webhook itself stays in Bitrix24 until you delete
 it there. `b24 session list` lists the profiles on this computer.
 
+## Sync
+
+Deals, leads, pipelines and stages are read from the local WireCat store, the one every WireCat tool searches. `sync`
+brings it up to date:
+
+```sh
+b24 work sync                    # what changed since the last sync; everything on the first one
+b24 work sync --rescan           # everything again, every id too
+b24 work store status            # how far each kind is, and how many are stored
+```
+
+A sync reads by each record's change time, with an overlap, so a record changed while it ran comes again next time.
+Once a day it also lists every id, and marks deleted the ones the portal no longer has; a list that would mark more
+than half of them is held back, as a webhook that lost its rights lists none. A sync stops before its deadline or
+`--max-pages` and the next one goes on from there.
+
 ## Read
 
-Each kind of record has `list` and `show`:
-
 ```sh
-b24 work deals list outcome:open pipeline_id:1 amount>=10000
-b24 work deals list kitchen                    # a word matches part of the title
-b24 work leads list stage_id:NEW updated_at>=7d
-b24 work people show "Anna Ivanova"            # by id, or by the exact name
-b24 work stages list entity:leads              # each stage with its outcome: open, won or lost
+b24 work deals list status:open                 # open, won or lost
+b24 work deals list stage:"Quote sent" pipeline:Sales
+b24 work leads list --json
+b24 work deals show deal:12                     # by the ref a list prints
+b24 work pipelines show Sales                   # its funnel: how many reached each stage
+b24 work stages list kind:lead                  # each stage with its outcome: open, won or lost
+b24 work people show "Anna Ivanova"             # contacts and companies by id, or by the exact name
 ```
 
-`show` gives the portal's own fields under `provider_metadata`, each by its code with its label; a list field gives
-its option's label, and the option's id as `option_id`. `b24 work fields list deals` lists those fields with their
-type and options; `leads`, `people` and `organizations` work the same way.
+`deals`, `leads`, `pipelines` and `stages` are WireCat's shared CRM commands: the same words, query and answer in
+every CRM tool. A deal or lead answers its `pipeline`, `stage`, `status`, `close_date`, and `amount` as a decimal in
+its `currency`; `--offline` reads the same. Bitrix24's leads have no pipelines, so they stand in one pipeline named
+`Leads`.
 
-A list filters by those fields too, by code or label, when the portal can filter by them, and `--json` can add them:
+`people` and `organizations` read the portal itself. Their `show` gives the portal's own fields under
+`provider_metadata`, each by its code with its label; a list field gives its option's label, and the option's id as
+`option_id`. `b24 work fields list deals` lists those fields with their type and options; `leads`, `people` and
+`organizations` work the same way. Their lists filter by those fields too, by code or label, when the portal can
+filter by them, and `--json` can add them:
 
 ```sh
-b24 work deals list lead_source:Website rooms:3   # a label with spaces: lead_source or Lead\ source
-b24 work deals list --json=id,title,provider_metadata.UF_CRM_1745512486047
+b24 work organizations list industry:IT
+b24 work organizations list --json=id,name,provider_metadata.UF_CRM_1745512486047
 ```
 
-A list shows the newest first, 20 at a time: `--limit`, `--page` and `--all` change that. The fields a list can
-filter by are in its help, `b24 help deals list`. When two records have the name you gave, `show` refuses and lists
-both, so you can pick one by its id.
+A list shows the newest first: `--limit`, `--page` and, for `people` and `organizations`, `--all` change that. The
+fields a list can filter by are in its help, `b24 help deals list`.
 
 ## Write
 
 ```sh
-b24 work deals create --title "Kitchen for Acme" --body '{"opportunity":15000,"currencyId":"EUR"}'
-b24 work deals update 42 --title "Kitchen and hall"
-b24 work deals move 42 --stage "Contract signed"
+b24 work deals create --title "Kitchen for Example" --pipeline Sales --amount 15000 --currency EUR
+b24 work deals update deal:12 --amount 18000 --close-date 2026-12-24
+b24 work deals move deal:12 "Contract signed"
+b24 work deals close deal:12 won
+b24 work deals delete deal:12                   # asks first
+b24 work leads update lead:7 --field UF_CRM_SOURCE=Website
 b24 work people create --first-name Anna --last-name Ivanova
-b24 work leads update 7 --field Source=Website --field Tags=Hot --field Tags=Repeat
+b24 work organizations update 9 --field "Lead source=Fair" --body '{"revenue":1000}'
 ```
 
-`--field "<label or code>=<value>"` sets one of the portal's own fields, as `fields list` names them; a list field takes
-its option's label or id, and a field that holds several values takes `--field` once per value. `--field` wins over
-`--body` for the same field.
+A deal or lead write sends one request, then reads the record back into the store. `--stage` takes a stage of the
+record's own pipeline by name or id, and checks the `move` key too; a won or lost stage checks the `close` key as
+well. `close` moves it to the first won or lost stage of its pipeline. `--field <code>=<value>` sets one of the
+portal's own fields, as `fields list` names them; a list field takes its option's label or id, and an empty value
+clears the field. A field that names a stage, a pipeline or an owner is refused: those have their own options.
 
-`--body` takes the other fields in Bitrix24's own names, the ones its REST 3.0 reference lists. Each write answers
-an `operation_id`. If a write ends with `outcome_unknown`, repeat it with `--operation-id <that id>`: Bitrix24 then
-answers from its record of the first try instead of making a second record. `--dry-run` shows what a write would do
-and sends nothing. Assigning a record to another employee is refused until you allow it, because Bitrix24 tells that
-employee: `b24 work config set permissions.crm.assign-others allow`.
+For `people` and `organizations`, `--field "<label or code>=<value>"` takes the label too, and a field that holds
+several values takes `--field` once per value; `--body` takes the other fields in Bitrix24's own REST 3.0 names.
+
+Each write answers an `operation_id`, which Bitrix24 receives as its `Idempotency-Key`. If a write ends with
+`outcome_unknown`, look at the record first (`sync`, then `show`). Bitrix24's documentation says a repeat with
+`--operation-id <that id>` is answered from its record of the first try instead of done again; that is not yet checked
+on a live portal. `--dry-run` sends nothing and names the command's own permission keys; the keys its options add (a
+stage's move and close keys, `crm.assign-others` for another owner) are checked only when it runs. Assigning a record to another employee is refused until
+you allow it, because Bitrix24 tells that employee: `b24 work config set permissions.crm.assign-others allow`.
 
 `b24 work api call <method> --body <json>` calls any other Bitrix24 method. It checks the same permissions as the
 command that does the same thing, and refuses writes that send messages, start the portal's automation or create

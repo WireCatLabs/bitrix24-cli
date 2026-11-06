@@ -1,12 +1,7 @@
 import { type Configuration, commandPathKey, commandPermissions, settingsFor } from "@wirecat/cli-core/cli"
+import { CRM_WRITE_DEFAULTS, CRM_WRITE_KEYS } from "@wirecat/cli-core/crm"
 import { API_DEFAULTS, API_KEYS, apiKeysOf } from "./api-keys.js"
 import { IDENTITY } from "./identity.js"
-
-/**
- * Assigning a record to another employee tells that employee in Bitrix24 by itself, so it is its own key, denied
- * until the owner allows it (WC-PERM-22). Assigning to the webhook's own user tells nobody.
- */
-export const ASSIGN_KEY = "crm.assign-others"
 
 /** `api list` and `show` never reach the portal; `api call` names its method only in its arguments and checks it itself. */
 const keyOf = (path: readonly string[]) =>
@@ -15,8 +10,8 @@ const keyOf = (path: readonly string[]) =>
 export const permissions = commandPermissions({
   keyOf,
   alsoChecks: apiKeysOf,
-  extra: [ASSIGN_KEY, ...API_KEYS],
-  defaults: { [ASSIGN_KEY]: "deny", ...API_DEFAULTS },
+  extra: [...CRM_WRITE_KEYS, ...API_KEYS],
+  defaults: { ...CRM_WRITE_DEFAULTS, ...API_DEFAULTS },
 })
 
 export const configuration: Configuration = settingsFor(IDENTITY, { permissions })

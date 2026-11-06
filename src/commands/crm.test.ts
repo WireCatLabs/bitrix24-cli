@@ -3,21 +3,18 @@ import { describe, expect, it } from "vitest"
 import { FAKE_SECRET, fakePortal, ok, type PortalCall, type Reply } from "../testing/fake-portal.js"
 import { b24 } from "../testing/harness.js"
 
-const deal = (id: number, more: Record<string, unknown> = {}) => ({
+const company = (id: number, more: Record<string, unknown> = {}) => ({
   id,
-  title: `Kitchen ${id}`,
-  categoryId: 1,
-  stageId: "C1:NEW",
-  stageSemanticId: "P",
-  opportunity: 15000,
+  title: `Example ${id}`,
+  typeId: "CUSTOMER",
+  industryId: "IT",
+  revenue: 15000,
   currencyId: "EUR",
   assignedById: 7,
-  companyId: 0,
   contactsId: [3, 4],
-  closeTime: "2026-12-01T00:00:00+03:00",
   createdTime: "2026-11-01T10:00:00+03:00",
   updatedTime: "2026-11-02T10:00:00+03:00",
-  url: "https://example.bitrix24.test/crm/deal/details/1/",
+  url: "https://example.bitrix24.test/crm/company/details/1/",
   ...more,
 })
 
@@ -26,61 +23,57 @@ const items = (rows: unknown[]) => ok({ items: rows })
 const listed = (ran: Awaited<ReturnType<typeof b24>>) =>
   ran.json() as { items: Record<string, unknown>[]; page: Record<string, unknown> }
 
-describe("deals", () => {
-  it("list sends the query as REST 3.0 triples and answers neutral deals", async () => {
-    const portal = fakePortal({ "crm.deal.list": items([deal(2), deal(1)]) })
+describe("organizations: the list and show every portal noun shares", () => {
+  it("list sends the query as REST 3.0 triples and answers neutral organizations", async () => {
+    const portal = fakePortal({ "crm.company.list": items([company(2), company(1)]) })
     const ran = await b24(
-      ["work", "deals", "list", "outcome:open", "pipeline_id:1", "amount>=10000", "--limit", "1", "--json"],
+      ["work", "organizations", "list", "type_id:CUSTOMER", "assigned_to:7", "--limit", "1", "--json"],
       { portal },
     )
     expect(ran.code).toBe(0)
     const call = portal.calls[0] as PortalCall
     expect(call.api).toBe(3)
     expect(call.body.filter).toEqual([
-      ["stageSemanticId", "=", "P"],
-      ["categoryId", "=", 1],
-      ["opportunity", ">=", 10000],
+      ["typeId", "=", "CUSTOMER"],
+      ["assignedById", "=", 7],
     ])
     expect(call.body.pagination).toEqual({ limit: 2, offset: 0 })
     const answer = listed(ran)
     expect(answer.items).toEqual([
       {
         id: "2",
-        title: "Kitchen 2",
-        pipeline_id: "1",
-        stage_id: "C1:NEW",
-        outcome: "open",
-        amount: 15000,
+        name: "Example 2",
+        type_id: "CUSTOMER",
+        industry_id: "IT",
+        revenue: 15000,
         currency: "EUR",
-        assigned_to: "7",
-        organization_id: null,
         person_ids: ["3", "4"],
-        closes_on: "2026-12-01",
+        assigned_to: "7",
         created_at: "2026-11-01T07:00:00.000Z",
         updated_at: "2026-11-02T07:00:00.000Z",
-        url: "https://example.bitrix24.test/crm/deal/details/1/",
+        url: "https://example.bitrix24.test/crm/company/details/1/",
       },
     ])
     expect(answer.page).toMatchObject({ has_more: true, limit: 1 })
   })
 
   it("list sends a free word to REST 2's substring match, which REST 3.0 does not have", async () => {
-    const portal = fakePortal({ "crm.item.list": ok({ items: [deal(5)] }) })
-    const ran = await b24(["work", "deals", "list", "kitchen", 'stage_id:"C1:WON"', "--json"], { portal })
+    const portal = fakePortal({ "crm.item.list": ok({ items: [company(5)] }) })
+    const ran = await b24(["work", "organizations", "list", "kitchen", "type_id:PARTNER", "--json"], { portal })
     expect(ran.code).toBe(0)
     const call = portal.calls[0] as PortalCall
     expect(call).toMatchObject({ api: 2, method: "crm.item.list" })
     expect(call.body).toMatchObject({
-      entityTypeId: 2,
-      filter: { "%title": "kitchen", "=stageId": "C1:WON" },
+      entityTypeId: 4,
+      filter: { "%title": "kitchen", "=typeId": "PARTNER" },
       start: 0,
     })
   })
 
   it("list --all walks every page", async () => {
-    const pages = [Array.from({ length: 1000 }, (_, i) => deal(2000 - i)), [deal(1)]]
-    const portal = fakePortal({ "crm.deal.list": () => items(pages.shift() ?? []) })
-    const ran = await b24(["work", "deals", "list", "--all", "--json"], { portal })
+    const pages = [Array.from({ length: 1000 }, (_, i) => company(2000 - i)), [company(1)]]
+    const portal = fakePortal({ "crm.company.list": () => items(pages.shift() ?? []) })
+    const ran = await b24(["work", "organizations", "list", "--all", "--json"], { portal })
     expect(listed(ran).items).toHaveLength(1001)
     expect(portal.calls.map((call) => call.body.pagination)).toEqual([
       { limit: 1000, offset: 0 },
@@ -89,10 +82,13 @@ describe("deals", () => {
   })
 
   it("list reads a time window in UTC", async () => {
-    const portal = fakePortal({ "crm.deal.list": items([]) })
-    await b24(["work", "deals", "list", "updated_at:[2026-11-01T00:00:00Z TO 2026-11-02T00:00:00Z]", "--json"], {
-      portal,
-    })
+    const portal = fakePortal({ "crm.company.list": items([]) })
+    await b24(
+      ["work", "organizations", "list", "updated_at:[2026-11-01T00:00:00Z TO 2026-11-02T00:00:00Z]", "--json"],
+      {
+        portal,
+      },
+    )
     const filter = portal.calls[0]?.body.filter as unknown[][]
     expect(filter.map((one) => one.slice(0, 2))).toEqual([
       ["updatedTime", ">="],
@@ -101,18 +97,18 @@ describe("deals", () => {
   })
 
   it("list runs in its own recorded run, with the portal request in it", async () => {
-    const portal = fakePortal({ "crm.deal.list": items([deal(1)]) })
-    const ran = await b24(["work", "deals", "list", "--json", "--record"], { portal })
+    const portal = fakePortal({ "crm.company.list": items([company(1)]) })
+    const ran = await b24(["work", "organizations", "list", "--json", "--record"], { portal })
     const runId = (ran.json().meta as { run_id: string }).run_id
-    expect(runId).toMatch(/-deals-list-/)
+    expect(runId).toMatch(/-organizations-list-/)
     const shown = await b24(["runs", "show", runId, "--json"])
     expect(shown.code).toBe(0)
-    expect(shown.out).toContain("crm.deal.list")
+    expect(shown.out).toContain("crm.company.list")
   })
 
   it("list refuses a field the portal cannot filter, and a bad id", async () => {
-    expect((await b24(["work", "deals", "list", "closes_on:2026-12-01"])).code).toBe(2)
-    expect((await b24(["work", "deals", "list", "assigned_to:abc"])).code).toBe(2)
+    expect((await b24(["work", "organizations", "list", "revenue:5"])).code).toBe(2)
+    expect((await b24(["work", "organizations", "list", "assigned_to:abc"])).code).toBe(2)
   })
 
   const userFields = ok(
@@ -142,7 +138,7 @@ describe("deals", () => {
 
   const withCustomFields = (labels: Reply, more: Record<string, unknown> = {}) =>
     fakePortal({
-      "crm.deal.get": ok({ item: deal(42) }),
+      "crm.company.get": ok({ item: company(42) }),
       "crm.item.get": ok({
         item: {
           id: 42,
@@ -156,11 +152,11 @@ describe("deals", () => {
           ...more,
         },
       }),
-      "crm.deal.field.list": labels,
-      "crm.deal.userfield.list": userFields,
+      "crm.company.field.list": labels,
+      "crm.company.userfield.list": userFields,
     })
 
-  it("show reads one deal with the portal's custom fields and their labels under provider_metadata", async () => {
+  it("show reads one company with the portal's custom fields and their labels under provider_metadata", async () => {
     const portal = withCustomFields(
       items([
         { name: "title", title: "Name" },
@@ -169,18 +165,18 @@ describe("deals", () => {
         { name: "UF_CRM_2_PAID", title: "Paid" },
       ]),
     )
-    const ran = await b24(["work", "deals", "show", "42", "--json"], { portal })
+    const ran = await b24(["work", "organizations", "show", "42", "--json"], { portal })
     expect((ran.json().item as Record<string, unknown>).provider_metadata).toEqual({
       UF_CRM_1_SIZE: { label: "Size", value: "large" },
       UF_CRM_2_PAID: { label: "Paid", value: false },
     })
-    expect(portal.calls[1]?.body).toEqual({ entityTypeId: 2, id: 42, useOriginalUfNames: "Y" })
+    expect(portal.calls[1]?.body).toEqual({ entityTypeId: 4, id: 42, useOriginalUfNames: "Y" })
     expect(portal.calls[2]).toMatchObject({
       api: 3,
-      method: "crm.deal.field.list",
+      method: "crm.company.field.list",
       body: { select: ["name", "title", "type", "multiple", "filterable"] },
     })
-    expect(portal.calls[3]).toMatchObject({ api: 2, method: "crm.deal.userfield.list" })
+    expect(portal.calls[3]).toMatchObject({ api: 2, method: "crm.company.userfield.list" })
     expect(portal.calls).toHaveLength(4)
   })
 
@@ -192,7 +188,7 @@ describe("deals", () => {
       ]),
       { UF_CRM_6_KIND: 45, UF_CRM_7_TAGS: [50, 99] },
     )
-    const ran = await b24(["work", "deals", "show", "42", "--json"], { portal })
+    const ran = await b24(["work", "organizations", "show", "42", "--json"], { portal })
     const metadata = (ran.json().item as { provider_metadata: Record<string, unknown> }).provider_metadata
     expect(metadata.UF_CRM_6_KIND).toEqual({ label: "Kind", value: "Wholesale", option_id: "45" })
     expect(metadata.UF_CRM_7_TAGS).toEqual({ label: "Tags", value: ["Hot", "99"], option_id: ["50", "99"] })
@@ -200,7 +196,7 @@ describe("deals", () => {
 
   it("show gives a custom field the portal has no label for a null label", async () => {
     const portal = withCustomFields(items([{ name: "UF_CRM_1_SIZE", title: "Size" }]))
-    const ran = await b24(["work", "deals", "show", "42", "--json"], { portal })
+    const ran = await b24(["work", "organizations", "show", "42", "--json"], { portal })
     expect((ran.json().item as Record<string, unknown>).provider_metadata).toEqual({
       UF_CRM_1_SIZE: { label: "Size", value: "large" },
       UF_CRM_2_PAID: { label: null, value: false },
@@ -212,7 +208,7 @@ describe("deals", () => {
       status: 403,
       body: { error: { code: "BITRIX_REST_V3_EXCEPTION_ACCESSDENIEDEXCEPTION", message: "Access denied" } },
     })
-    const ran = await b24(["work", "deals", "show", "42", "--json"], { portal })
+    const ran = await b24(["work", "organizations", "show", "42", "--json"], { portal })
     expect(ran.code).toBe(0)
     expect((ran.json().item as Record<string, unknown>).provider_metadata).toEqual({
       UF_CRM_1_SIZE: { label: null, value: "large" },
@@ -224,80 +220,56 @@ describe("deals", () => {
 
   it("show asks for labels only when a custom field holds a value, and list never does", async () => {
     const portal = fakePortal({
-      "crm.deal.get": ok({ item: deal(42) }),
+      "crm.company.get": ok({ item: company(42) }),
       "crm.item.get": ok({ item: { UF_CRM_3_NOTE: null } }),
-      "crm.deal.list": items([deal(1)]),
+      "crm.company.list": items([company(1)]),
     })
-    await b24(["work", "deals", "show", "42", "--json"], { portal })
-    await b24(["work", "deals", "list", "--json"], { portal })
-    expect(portal.calls.map((call) => call.method)).toEqual(["crm.deal.get", "crm.item.get", "crm.deal.list"])
+    await b24(["work", "organizations", "show", "42", "--json"], { portal })
+    await b24(["work", "organizations", "list", "--json"], { portal })
+    expect(portal.calls.map((call) => call.method)).toEqual(["crm.company.get", "crm.item.get", "crm.company.list"])
   })
 
-  it("show finds a deal by its exact title, and refuses two with candidates", async () => {
+  it("show finds a company by its exact title, and refuses two with candidates", async () => {
     const one = fakePortal({
-      "crm.item.list": ok({ items: [deal(1, { title: "Kitchen" }), deal(2, { title: "Kitchen sink" })] }),
-      "crm.deal.get": ok({ item: deal(1, { title: "Kitchen" }) }),
+      "crm.item.list": ok({ items: [company(1, { title: "Kitchen" }), company(2, { title: "Kitchen sink" })] }),
+      "crm.company.get": ok({ item: company(1, { title: "Kitchen" }) }),
       "crm.item.get": ok({ item: {} }),
     })
-    expect((await b24(["work", "deals", "show", "kitchen", "--json"], { portal: one })).json().item).toMatchObject({
+    expect(
+      (await b24(["work", "organizations", "show", "kitchen", "--json"], { portal: one })).json().item,
+    ).toMatchObject({
       id: "1",
     })
     const two = fakePortal({
-      "crm.item.list": ok({ items: [deal(1, { title: "Kitchen" }), deal(2, { title: "kitchen" })] }),
+      "crm.item.list": ok({ items: [company(1, { title: "Kitchen" }), company(2, { title: "kitchen" })] }),
     })
-    const ran = await b24(["work", "deals", "show", "Kitchen", "--json"], { portal: two })
+    const ran = await b24(["work", "organizations", "show", "Kitchen", "--json"], { portal: two })
     expect(ran.code).toBe(2)
-    expect(ran.json().error).toMatchObject({ reason: "deal.ambiguous" })
+    expect(ran.json().error).toMatchObject({ reason: "organization.ambiguous" })
     const none = fakePortal({ "crm.item.list": ok({ items: [] }) })
-    expect((await b24(["work", "deals", "show", "Nothing"], { portal: none })).code).toBe(6)
+    expect((await b24(["work", "organizations", "show", "Nothing"], { portal: none })).code).toBe(6)
   })
 
-  it("show answers not_found for a deal the portal does not have", async () => {
+  it("show answers not_found for a company the portal does not have", async () => {
     const portal = fakePortal({
-      "crm.deal.get": {
+      "crm.company.get": {
         status: 400,
         body: { error: { code: "BITRIX_REST_V3_EXCEPTION_ENTITYNOTFOUNDEXCEPTION", message: "x" } },
       },
     })
-    expect((await b24(["work", "deals", "show", "9"], { portal })).code).toBe(6)
-    expect((await b24(["work", "deals", "show", "9"], { portal: fakePortal({ "crm.deal.get": ok({}) }) })).code).toBe(6)
+    expect((await b24(["work", "organizations", "show", "9"], { portal })).code).toBe(6)
+    expect(
+      (await b24(["work", "organizations", "show", "9"], { portal: fakePortal({ "crm.company.get": ok({}) }) })).code,
+    ).toBe(6)
   })
 
   it("refuses --offline and a profile with no sign-in", async () => {
-    expect((await b24(["work", "deals", "list", "--offline"])).code).toBe(5)
-    expect((await b24(["work", "deals", "list"], { keyring: memoryKeyring() })).code).toBe(4)
+    expect((await b24(["work", "organizations", "list", "--offline"])).code).toBe(5)
+    expect((await b24(["work", "organizations", "list"], { keyring: memoryKeyring() })).code).toBe(4)
   })
 })
 
-describe("leads, people and organizations", () => {
-  it("leads list maps a lead with its phones and the person's name", async () => {
-    const portal = fakePortal({
-      "crm.lead.list": items([
-        {
-          id: 3,
-          title: "Website form",
-          name: "Ivan",
-          lastName: "Petrov",
-          companyTitle: "Acme",
-          stageId: "NEW",
-          stageSemanticId: "S",
-          phone: [{ id: 1, valueTypeId: "WORK", value: "+10000000000" }],
-          email: [],
-          createdTime: "2026-11-01T10:00:00Z",
-        },
-      ]),
-    })
-    const ran = await b24(["work", "leads", "list", "outcome:won", "--json"], { portal })
-    expect(listed(ran).items[0]).toMatchObject({
-      name: "Ivan Petrov",
-      organization_name: "Acme",
-      outcome: "won",
-      phones: [{ type: "work", value: "+10000000000" }],
-      emails: [],
-    })
-    expect(portal.calls[0]?.body.filter).toEqual([["stageSemanticId", "=", "S"]])
-  })
-
+describe("people and organizations", () => {
   it("people list matches a word against the first or last name", async () => {
     const portal = fakePortal({
       "crm.item.list": ok({ items: [{ id: 4, name: "Anna", lastName: "Ivanova", companiesId: [9] }] }),
@@ -328,55 +300,6 @@ describe("leads, people and organizations", () => {
       portal: fakePortal({ "crm.company.list": items([]) }),
     })
     expect(listedOrganizations.code).toBe(0)
-  })
-})
-
-describe("pipelines and stages", () => {
-  const categories = ok({
-    categories: [
-      { id: 0, name: "General", sort: 100, isDefault: "Y" },
-      { id: 1, name: "Wholesale", sort: 200, isDefault: "N" },
-    ],
-  })
-  const statuses = [
-    { ENTITY_ID: "STATUS", STATUS_ID: "NEW", NAME: "New", SORT: 10, EXTRA: { SEMANTICS: "", COLOR: "#aaa" } },
-    { ENTITY_ID: "STATUS", STATUS_ID: "CONVERTED", NAME: "Good lead", SORT: 20, SEMANTICS: "S" },
-    { ENTITY_ID: "DEAL_STAGE_1", STATUS_ID: "C1:LOSE", NAME: "Lost", SORT: 30, SEMANTICS: "F" },
-    { ENTITY_ID: "SOURCE", STATUS_ID: "WEB", NAME: "Website" },
-  ]
-
-  it("pipelines list and show by name", async () => {
-    const portal = fakePortal({ "crm.category.list": () => categories })
-    expect(listed(await b24(["work", "pipelines", "list", "--json"], { portal })).items).toEqual([
-      { id: "0", name: "General", is_default: true, sort: 100 },
-      { id: "1", name: "Wholesale", is_default: false, sort: 200 },
-    ])
-    expect((await b24(["work", "pipelines", "show", "wholesale", "--json"], { portal })).json().item).toMatchObject({
-      id: "1",
-    })
-    expect((await b24(["work", "pipelines", "show", "Retail"], { portal })).code).toBe(6)
-  })
-
-  it("stages list takes the outcome from the stage's semantics", async () => {
-    const portal = fakePortal({ "crm.status.list": () => ok(statuses) })
-    const all = listed(await b24(["work", "stages", "list", "--json"], { portal })).items
-    expect(all.map(({ id, entity, pipeline_id, outcome }) => [id, entity, pipeline_id, outcome])).toEqual([
-      ["NEW", "leads", null, "open"],
-      ["CONVERTED", "leads", null, "won"],
-      ["C1:LOSE", "deals", "1", "lost"],
-    ])
-    await b24(["work", "stages", "list", "entity:leads", "--json"], { portal })
-    await b24(["work", "stages", "list", "pipeline_id:1", "--json"], { portal })
-    const deals = listed(await b24(["work", "stages", "list", "entity:deals", "--json"], { portal })).items
-    expect(deals).toHaveLength(1)
-    expect(portal.calls.slice(1, 3).map((call) => call.body.filter)).toEqual([
-      { ENTITY_ID: "STATUS" },
-      { ENTITY_ID: "DEAL_STAGE_1" },
-    ])
-    expect((await b24(["work", "stages", "show", "C1:LOSE", "--json"], { portal })).json().item).toMatchObject({
-      outcome: "lost",
-    })
-    expect((await b24(["work", "stages", "show", "Nowhere"], { portal })).code).toBe(6)
   })
 })
 
@@ -424,17 +347,13 @@ describe("products and users", () => {
 describe("every list pages the same way", () => {
   const portal = () =>
     fakePortal({
-      "crm.deal.list": items([]),
-      "crm.lead.list": items([]),
       "crm.contact.list": items([]),
       "crm.company.list": items([]),
-      "crm.category.list": ok({ categories: [] }),
-      "crm.status.list": ok([]),
       "crm.product.list": ok([]),
       "user.get": ok([]),
     })
 
-  for (const noun of ["deals", "leads", "people", "organizations", "pipelines", "stages", "products", "users"])
+  for (const noun of ["people", "organizations", "products", "users"])
     it(`${noun} list takes --limit, --page and --all`, async () => {
       const at = portal()
       for (const flags of [["--limit", "5", "--page", "2", "--json"], ["--all", "--json"], ["--compact"]])
@@ -443,21 +362,16 @@ describe("every list pages the same way", () => {
 
   it("a later page starts past the earlier ones", async () => {
     const at = portal()
-    await b24(["work", "deals", "list", "--limit", "5", "--page", "3", "--json"], { portal: at })
+    await b24(["work", "organizations", "list", "--limit", "5", "--page", "3", "--json"], { portal: at })
     expect(at.calls[0]?.body.pagination).toEqual({ limit: 6, offset: 10 })
   })
 
-  it("leads show reads one lead", async () => {
-    const at = fakePortal({ "crm.lead.get": ok({ item: { id: 3, title: "Form" } }), "crm.item.get": ok({ item: {} }) })
-    expect((await b24(["work", "leads", "show", "3", "--json"], { portal: at })).json().item).toMatchObject({ id: "3" })
-  })
-
-  it("leads show leaves out provider_metadata when every custom field is empty", async () => {
+  it("people show leaves out provider_metadata when every custom field is empty", async () => {
     const at = fakePortal({
-      "crm.lead.get": ok({ item: { id: 3, title: "Form" } }),
+      "crm.contact.get": ok({ item: { id: 3, name: "Example" } }),
       "crm.item.get": ok({ item: { UF_CRM_1745512486047: null, UF_CRM_1745512486048: [] } }),
     })
-    expect((await b24(["work", "leads", "show", "3", "--json"], { portal: at })).json().item).not.toHaveProperty(
+    expect((await b24(["work", "people", "show", "3", "--json"], { portal: at })).json().item).not.toHaveProperty(
       "provider_metadata",
     )
   })

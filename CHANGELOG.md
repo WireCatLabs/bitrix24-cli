@@ -2,6 +2,46 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Added
+
+- `sync` copies the portal's pipelines, companies, contacts, deals and leads into the local WireCat store: what changed
+  since the last sync, or everything with `--rescan`; once a day it also finds what the portal deleted. `store status`
+  says how far each kind is. A sync stops before its deadline or `--max-pages`, and the next one goes on from there.
+- `deals close <ref> won|lost` and `leads close`, to the first won or lost stage of the record's pipeline, and
+  `deals delete` and `leads delete`, which ask first.
+- `deals create` and `update` take `--pipeline`, `--stage`, `--amount` with `--currency`, `--close-date` and
+  `--owner`; leads take the same but `--close-date`. A stage checks the move key, a won or lost one the close key too.
+- `search all` finds stored deals and leads beside the other WireCat tools' messages, notes and events.
+
+### Changed — may break callers
+
+- `deals`, `leads`, `pipelines` and `stages` are cli-core's shared CRM commands, the same in every WireCat CRM tool.
+  Their lists and `show` read the local store, so run `sync` first; `--offline` works for them now.
+- A deal or lead is named by its ref, `deal:12` or `lead:7`, as a list prints it, not by its Bitrix24 id or title.
+- A deal or lead answers `ref`, `pipeline` and `pipeline_name`, `stage` (its name), `status` (`open`, `won` or `lost`),
+  `close_date`, and `amount` as a decimal string in `currency`, both `null` with no amount. `stage_id`, `pipeline_id`,
+  `outcome`, `closes_on`, `assigned_to`, `person_ids` and `provider_metadata` are gone from them; contacts are in
+  `people`, the company in `organization`.
+- Their list query takes `status`, `stage`, `pipeline` and `organization`; the free word, the time windows and the
+  portal's own fields are gone from it. `--all` is gone from those lists.
+- `deals move <ref> <stage>` takes the stage as an argument, not `--stage`.
+- Deal and lead writes have no `--body`. `--field <code>=<value>` sets a custom field by its code, once per field;
+  an empty value clears it. A code that names a standard field (`stageId`, `categoryId`, `assignedById`, a lead's
+  `STATUS_ID`) is refused.
+- Leads stand in one pipeline named `Leads`, since Bitrix24's leads have none.
+- `deals.delete` and `leads.delete` default to `ask`; `api call` that sets a stage checks `deals.close` (or
+  `leads.close`) as well as `deals.move`.
+- `mcp` and `doctor` are cli-core's shared commands: `mcp` adds `config`, `add` and `check`, and `--profiles` and
+  `--permission` on `serve`; `doctor` adds `--online`.
+
+### Fixed
+
+- A write answered with a server or gateway failure (500, 502, 504) is `outcome_unknown`, not `provider_unavailable`:
+  the portal may have made it. A write a cancel cuts is `outcome_unknown` too, never `cancelled`.
+- Stages are read page by page: a directory past REST 2's first 50 rows lost its later stages.
+
 ## 0.4.0 — 06.11.2026
 
 ### Added

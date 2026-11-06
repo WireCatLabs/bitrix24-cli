@@ -7,20 +7,6 @@
     "review_after": "2027-02-06"
   },
   {
-    "rule": "option-role",
-    "target": "deals move --stage",
-    "reason": "`move` takes a CRM record to another stage of its funnel (plan 2026-11-06-bitrix24-cli §4.2.6); the cli-base flag vocabulary has no flag for a stage, and --to means a chat or an address. Add --stage there with the other CRM flags (NEED-2280's neighbour), then drop this.",
-    "owner": "@WireCatLabs",
-    "review_after": "2027-02-06"
-  },
-  {
-    "rule": "option-role",
-    "target": "leads move --stage",
-    "reason": "`move` takes a CRM record to another stage of its funnel (plan 2026-11-06-bitrix24-cli §4.2.6); the cli-base flag vocabulary has no flag for a stage, and --to means a chat or an address. Add --stage there with the other CRM flags (NEED-2280's neighbour), then drop this.",
-    "owner": "@WireCatLabs",
-    "review_after": "2027-02-06"
-  },
-  {
     "rule": "unknown-verb",
     "target": "api call",
     "reason": "Calls one Bitrix24 method by its API name, the same command gcal-cli and drive-cli have; no shared verb names a raw API call. Review when the vocabulary names it: https://github.com/WireCatLabs/cli-base/issues/425",

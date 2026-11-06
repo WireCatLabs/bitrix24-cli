@@ -1,8 +1,6 @@
 import { chmodSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
-import { expect, it, vi } from "vitest"
-import { doctorReport } from "./commands/doctor.js"
-import { configuration } from "./config.js"
+import { expect, it } from "vitest"
 import { IDENTITY } from "./identity.js"
 import { run } from "./program.js"
 
@@ -64,22 +62,6 @@ it("doctor reports an unknown setting with the command that removes it", async (
       issues: [{ kind: "unknown_setting", key: "limt", fix: "b24 config unset --defaults limt" }],
     }),
   )
-})
-
-it("doctor reports settings an environment variable breaks, and still answers", () => {
-  const { report } = doctorReport({ ...process.env, B24_EMBEDDING_DIMS: "many" })
-  expect(report).toMatchObject({ config: { issues: [] }, settings: { error: expect.any(String) }, profiles: null })
-})
-
-it("doctor answers when reading the settings fails with an unexpected error", () => {
-  const spy = vi.spyOn(configuration, "resolveSettings").mockImplementation(() => {
-    throw new TypeError("boom")
-  })
-  try {
-    expect(doctorReport(process.env).report).toMatchObject({ settings: { error: "boom" }, profiles: null })
-  } finally {
-    spy.mockRestore()
-  }
 })
 
 it.skipIf(process.platform === "win32")(

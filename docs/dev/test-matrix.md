@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**162 ✅ · 6 ⛔ · 0 ❌** — 55 commands, 113 options.
+**188 ✅ · 23 ⛔ · 0 ❌** — 64 commands, 147 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -19,46 +19,83 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `session status` | `--check` | ✅ |  |
 | `session end` |  | ✅ |  |
 | `session list` |  | ✅ |  |
+| `sync` |  | ✅ |  |
+| `sync` | `--rescan` | ✅ |  |
+| `sync` | `--max-pages` | ✅ |  |
+| `store status` |  | ✅ |  |
 | `deals list` |  | ✅ |  |
 | `deals list` | `--limit` | ✅ |  |
 | `deals list` | `--page` | ✅ |  |
-| `deals list` | `--all` | ✅ |  |
 | `deals show` |  | ✅ |  |
 | `deals create` |  | ✅ |  |
-| `deals create` | `--title` | ✅ |  |
-| `deals create` | `--body` | ✅ |  |
-| `deals create` | `--field` | ✅ |  |
 | `deals create` | `--operation-id` | ✅ |  |
+| `deals create` | `--title` | ✅ |  |
+| `deals create` | `--pipeline` | ✅ |  |
+| `deals create` | `--stage` | ✅ |  |
+| `deals create` | `--amount` | ✅ |  |
+| `deals create` | `--currency` | ✅ |  |
+| `deals create` | `--close-date` | ✅ |  |
+| `deals create` | `--owner` | ✅ |  |
+| `deals create` | `--field` | ✅ |  |
 | `deals update` |  | ✅ |  |
-| `deals update` | `--title` | ✅ |  |
-| `deals update` | `--body` | ✅ |  |
-| `deals update` | `--field` | ✅ |  |
 | `deals update` | `--operation-id` | ✅ |  |
+| `deals update` | `--title` | ✅ |  |
+| `deals update` | `--pipeline` | ✅ |  |
+| `deals update` | `--stage` | ✅ |  |
+| `deals update` | `--amount` | ✅ |  |
+| `deals update` | `--currency` | ✅ |  |
+| `deals update` | `--close-date` | ✅ |  |
+| `deals update` | `--owner` | ✅ |  |
+| `deals update` | `--field` | ✅ |  |
 | `deals move` |  | ✅ |  |
-| `deals move` | `--stage` | ✅ |  |
 | `deals move` | `--operation-id` | ✅ |  |
+| `deals close` |  | ✅ |  |
+| `deals close` | `--operation-id` | ✅ |  |
+| `deals close` | `--reason` | ✅ |  |
+| `deals delete` |  | ✅ |  |
+| `deals delete` | `--operation-id` | ✅ |  |
 | `leads list` |  | ✅ |  |
 | `leads list` | `--limit` | ✅ |  |
 | `leads list` | `--page` | ✅ |  |
-| `leads list` | `--all` | ✅ |  |
 | `leads show` |  | ✅ |  |
 | `leads create` |  | ✅ |  |
-| `leads create` | `--title` | ✅ |  |
-| `leads create` | `--first-name` | ✅ |  |
-| `leads create` | `--last-name` | ✅ |  |
-| `leads create` | `--body` | ✅ |  |
-| `leads create` | `--field` | ✅ |  |
 | `leads create` | `--operation-id` | ✅ |  |
+| `leads create` | `--title` | ✅ |  |
+| `leads create` | `--pipeline` | ✅ |  |
+| `leads create` | `--stage` | ✅ |  |
+| `leads create` | `--amount` | ✅ |  |
+| `leads create` | `--currency` | ✅ |  |
+| `leads create` | `--close-date` | ✅ |  |
+| `leads create` | `--owner` | ✅ |  |
+| `leads create` | `--field` | ✅ |  |
 | `leads update` |  | ✅ |  |
-| `leads update` | `--title` | ✅ |  |
-| `leads update` | `--first-name` | ✅ |  |
-| `leads update` | `--last-name` | ✅ |  |
-| `leads update` | `--body` | ✅ |  |
-| `leads update` | `--field` | ✅ |  |
 | `leads update` | `--operation-id` | ✅ |  |
+| `leads update` | `--title` | ✅ |  |
+| `leads update` | `--pipeline` | ✅ |  |
+| `leads update` | `--stage` | ✅ |  |
+| `leads update` | `--amount` | ✅ |  |
+| `leads update` | `--currency` | ✅ |  |
+| `leads update` | `--close-date` | ✅ |  |
+| `leads update` | `--owner` | ✅ |  |
+| `leads update` | `--field` | ✅ |  |
 | `leads move` |  | ✅ |  |
-| `leads move` | `--stage` | ✅ |  |
 | `leads move` | `--operation-id` | ✅ |  |
+| `leads close` |  | ✅ |  |
+| `leads close` | `--operation-id` | ✅ |  |
+| `leads close` | `--reason` | ✅ |  |
+| `leads delete` |  | ✅ |  |
+| `leads delete` | `--operation-id` | ✅ |  |
+| `pipelines list` |  | ✅ |  |
+| `pipelines show` |  | ✅ |  |
+| `stages list` |  | ✅ |  |
+| `search all` |  | ✅ |  |
+| `search all` | `--only` | ✅ |  |
+| `search all` | `--source` | ✅ |  |
+| `search all` | `--max-meetings` | ✅ |  |
+| `search all` | `--limit` | ✅ |  |
+| `search all` | `--page` | ✅ |  |
+| `search all` | `--exact` | ✅ |  |
+| `search all` | `--timezone` | ✅ |  |
 | `people list` |  | ✅ |  |
 | `people list` | `--limit` | ✅ |  |
 | `people list` | `--page` | ✅ |  |
@@ -91,16 +128,6 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `organizations update` | `--body` | ✅ |  |
 | `organizations update` | `--field` | ✅ |  |
 | `organizations update` | `--operation-id` | ✅ |  |
-| `pipelines list` |  | ✅ |  |
-| `pipelines list` | `--limit` | ✅ |  |
-| `pipelines list` | `--page` | ✅ |  |
-| `pipelines list` | `--all` | ✅ |  |
-| `pipelines show` |  | ✅ |  |
-| `stages list` |  | ✅ |  |
-| `stages list` | `--limit` | ✅ |  |
-| `stages list` | `--page` | ✅ |  |
-| `stages list` | `--all` | ✅ |  |
-| `stages show` |  | ✅ |  |
 | `products list` |  | ✅ |  |
 | `products list` | `--limit` | ✅ |  |
 | `products list` | `--page` | ✅ |  |
@@ -122,21 +149,37 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `api call` | `--operation-id` | ✅ |  |
 | `api call` | `--dry-run` | ✅ |  |
 | `doctor` |  | ✅ |  |
+| `doctor` | `--online` | ✅ |  |
 | `skill show` |  | ✅ |  |
 | `skill show` | `--for` | ✅ |  |
 | `skill install` |  | ✅ |  |
 | `skill install` | `--for` | ✅ |  |
 | `skill status` |  | ✅ |  |
 | `mcp serve` |  | ✅ |  |
+| `mcp serve` | `--permission` | ✅ |  |
+| `mcp serve` | `--profiles` | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and src/permissions.test.ts run b24's own server |
 | `mcp serve` | `--http` | ✅ |  |
-| `mcp serve` | `--port` | ✅ |  |
-| `mcp serve` | `--public-url` | ✅ |  |
+| `mcp serve` | `--port` | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and src/permissions.test.ts run b24's own server |
+| `mcp serve` | `--public-url` | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and src/permissions.test.ts run b24's own server |
 | `mcp revoke` |  | ✅ |  |
+| `mcp revoke` | `--profiles` | ⛔ | cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and src/permissions.test.ts run b24's own server |
 | `mcp server start` |  | ⛔ | starts a detached `mcp serve --http` from the built entry; cli-core tests mcpServerCommand, and the background run was checked by hand against dist/ |
 | `mcp server start` | `--port` | ⛔ | starts a detached `mcp serve --http` from the built entry; cli-core tests mcpServerCommand, and the background run was checked by hand against dist/ |
 | `mcp server start` | `--public-url` | ⛔ | starts a detached `mcp serve --http` from the built entry; cli-core tests mcpServerCommand, and the background run was checked by hand against dist/ |
+| `mcp server start` | `--permission` | ⛔ | starts a detached `mcp serve --http` from the built entry; cli-core tests mcpServerCommand, and the background run was checked by hand against dist/ |
+| `mcp server start` | `--profiles` | ⛔ | starts a detached `mcp serve --http` from the built entry; cli-core tests mcpServerCommand, and the background run was checked by hand against dist/ |
 | `mcp server stop` |  | ⛔ | stops the detached server that `mcp server start` wrote a pid file for; cli-core tests mcpServerCommand, and no live scenario starts a server to stop |
-| `mcp server status` |  | ✅ |  |
+| `mcp server stop` | `--profiles` | ⛔ | stops the detached server that `mcp server start` wrote a pid file for; cli-core tests mcpServerCommand, and no live scenario starts a server to stop |
+| `mcp server status` |  | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and src/permissions.test.ts run b24's own server |
+| `mcp server status` | `--profiles` | ⛔ | starts an HTTP server or a background process that runs until stopped; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and src/permissions.test.ts run b24's own server |
+| `mcp config` |  | ⛔ | prints the settings an agent pastes; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and src/permissions.test.ts run b24's own server |
+| `mcp config` | `--permission` | ⛔ | prints the settings an agent pastes; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and src/permissions.test.ts run b24's own server |
+| `mcp config` | `--profiles` | ⛔ | prints the settings an agent pastes; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and src/permissions.test.ts run b24's own server |
+| `mcp add` |  | ⛔ | writes Codex's or Claude Code's own MCP settings; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and src/permissions.test.ts run b24's own server |
+| `mcp add` | `--allow-writes` | ⛔ | writes Codex's or Claude Code's own MCP settings; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and src/permissions.test.ts run b24's own server |
+| `mcp add` | `--permission` | ⛔ | writes Codex's or Claude Code's own MCP settings; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and src/permissions.test.ts run b24's own server |
+| `mcp check` |  | ⛔ | starts the installed b24 as a child process, as the agent would; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and src/permissions.test.ts run b24's own server |
+| `mcp check` | `--permission` | ⛔ | starts the installed b24 as a child process, as the agent would; cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and src/permissions.test.ts run b24's own server |
 | `upgrade` |  | ✅ |  |
 | `upgrade` | `--check` | ✅ |  |
 | `config show` |  | ✅ |  |

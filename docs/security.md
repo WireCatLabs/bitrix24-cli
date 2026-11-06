@@ -19,8 +19,10 @@ employee whose rights fit the work, and only the scopes it needs.
 Every write is checked against the permissions and kept in the send journal. `B24_READ_ONLY=1` refuses every write.
 Assigning a record to another employee is refused until you allow it. A stage change can still start the portal's own
 robots, which may write to your clients: set `permissions.deals.move` and `permissions.leads.move` to `ask` or `deny`
-if your portal has such robots. Every write that sets a stage checks them, `update` and `create` with a `stageId` in
-`--body` too.
+if your portal has such robots. Every write that sets a stage checks them; a won or lost stage, and `close`, check
+`deals.close` or `leads.close` too, and `api call` with a `stageId` checks both. A deal or lead `--field` that names a
+stage, a pipeline or an owner is refused. Deleting a deal or a lead asks first. `api.crm.deal.update: deny` also stops
+`deals update`, `move` and `close`; at `ask` it asks only on `api call`.
 
 `api call` works from an allow list. It allows the CRM, catalog and user reads `b24` makes itself, and the deal, lead,
 contact and company writes, which also check the command's own key (`api call crm.item.update` with `entityTypeId` 2

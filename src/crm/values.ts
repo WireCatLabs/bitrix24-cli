@@ -1,15 +1,12 @@
 import { isoTime } from "@wirecat/cli-base/standards"
+import type { StageOutcome } from "@wirecat/cli-core"
 import * as v from "valibot"
 
 export type Raw = Record<string, unknown>
 
-export const OUTCOMES = ["open", "won", "lost"] as const
-export type Outcome = (typeof OUTCOMES)[number]
-
 /** Bitrix24's stage semantics: `S` success, `F` failure, anything else still in progress (apidocs crm.status.fields). */
-export const outcomeOf = (semantics: unknown): Outcome =>
+export const outcomeOf = (semantics: unknown): StageOutcome =>
   semantics === "S" ? "won" : semantics === "F" ? "lost" : "open"
-export const semanticsOf = (outcome: string): string => (outcome === "won" ? "S" : outcome === "lost" ? "F" : "P")
 
 export const text = (value: unknown): string | null => {
   if (typeof value !== "string" && typeof value !== "number") return null
@@ -37,6 +34,23 @@ export const time = (value: unknown): string | null => {
   if (found === null) return null
   const parsed = new Date(found)
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString()
+}
+
+/** Epoch milliseconds, as core's CRM copy keeps times. */
+export const epoch = (value: unknown): number | null => {
+  const found = time(value)
+  return found === null ? null : Date.parse(found)
+}
+
+/**
+ * Money as a decimal string in its currency, both or neither. Bitrix24 gives every deal a currency and `0` for no
+ * amount, so `0` is no amount.
+ */
+export const amountOf = (value: unknown, currency: unknown): { amount: string | null; currency: string | null } => {
+  const found = number(value)
+  const code = text(currency)?.toUpperCase() ?? null
+  if (found === null || found <= 0 || code === null) return { amount: null, currency: null }
+  return { amount: found.toFixed(6).replace(/\.?0+$/, ""), currency: code }
 }
 
 export const yes = (value: unknown): boolean => value === true || value === "Y" || value === "1" || value === 1

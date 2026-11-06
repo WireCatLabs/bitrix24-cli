@@ -193,6 +193,31 @@ describe("BitrixTransport", () => {
     expect(error.code).toBe("cancelled")
   })
 
+  it("a write answered 502 or 504 is outcome_unknown, sent once; a read's is provider_unavailable", async () => {
+    const portal = fakePortal({
+      "crm.deal.update": { status: 504, text: "<html>" },
+      "crm.deal.add": { status: 502, body: { error: "INTERNAL_SERVER_ERROR" } },
+    })
+    const { transport } = transportOf(portal)
+    for (const method of ["crm.deal.update", "crm.deal.add"])
+      expect((await failureOf(transport.call(method, {}, { idempotencyKey: "op-1" }))).code).toBe("outcome_unknown")
+    expect(portal.calls).toHaveLength(2)
+  })
+
+  it("a write a cancel cuts is outcome_unknown, never cancelled, and is not sent again", async () => {
+    const stop = new AbortController()
+    const portal = fakePortal({
+      "crm.deal.update": () => {
+        stop.abort()
+        return new DOMException("aborted", "AbortError")
+      },
+    })
+    const { transport } = transportOf(portal, { signal: stop.signal })
+    const error = await failureOf(transport.call("crm.deal.update", { id: 1, fields: {} }, { idempotencyKey: "op-1" }))
+    expect(error.code).toBe("outcome_unknown")
+    expect(portal.calls).toHaveLength(1)
+  })
+
   it("times out a read that never answers and tries it again", async () => {
     const portal = fakePortal({ "user.current": new DOMException("timed out", "TimeoutError") })
     const error = await failureOf(transportOf(portal).transport.call("user.current"))
