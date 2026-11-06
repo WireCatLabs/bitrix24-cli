@@ -20,7 +20,7 @@ const READ_ACTIONS = new Set(["list", "get", "fields", "current", "search", "agg
 const effectOf = (name: string): Effect => {
   const action = name.slice(name.lastIndexOf(".") + 1)
   if (action === "delete" || action === "deletefieldvalue") return "destructive"
-  if (READ_ACTIONS.has(action) || name.endsWith(".field.list") || name === "batch") return "read"
+  if (READ_ACTIONS.has(action) || name.endsWith(".field.list")) return "read"
   return "write"
 }
 

@@ -100,7 +100,12 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
      yet seen on the owner's portal;
    - `B24_READ_ONLY` refuses every write;
    - `api call <method>` checks `api.<method>` and also the key of the command that does the same thing, so
-     `api call crm.deal.update` cannot get round `deals.update: deny`.
+     `api call crm.deal.update` cannot get round `deals.update: deny`; an update that sets a stage also checks
+     `deals.move` or `leads.move`.
+   - Through `api call`, the writes of method families that reach people or start the portal's automation are
+     `deny` until the owner allows them: `im`, `imopenlines`, `imbot`, `messageservice`, `mailservice`,
+     `telephony`, `voximplant`, `bizproc`, `crm.automation`, `crm.activity`, `tasks`, `task`, `user.add` and
+     `batch`, which can hold any of them. A method whose name ends in `delete` asks.
    - Never allowed, whatever the permissions: a bulk or filtered delete. A delete takes one id.
    - Messages to clients and employees (`im`, `imopenlines`) are not part of slice 1.
 3. **Writes are safe to repeat.** Each write gets an `operation_id`, goes through cli-core's write guard and is

@@ -15,6 +15,7 @@ import {
 } from "@wirecat/cli-core/cli"
 import { appUpdate } from "@wirecat/cli-core/update"
 import type { Command } from "commander"
+import { apiCommand } from "./commands/api.js"
 import { crmCommands } from "./commands/crm.js"
 import { addWrites } from "./commands/crm-writes.js"
 import { doctorCommand } from "./commands/doctor.js"
@@ -41,6 +42,7 @@ export const definition = (): ProgramDefinition => ({
     commandsCommand(IDENTITY),
     sessionCommand(),
     ...crmCommands().map(addWrites),
+    apiCommand(),
     doctorCommand(),
     skillCommand(IDENTITY, SKILL),
     mcpCommand(),
