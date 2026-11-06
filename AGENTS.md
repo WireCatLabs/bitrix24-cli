@@ -16,7 +16,9 @@ from the reference CLI below; the template has no sample code on purpose.
 <!-- cli-template:reference-cli:start -->
 ## Reference CLI
 
-No reference CLI for this category yet: pick the nearest one with the owner from the Reference CLIs page.
+No CRM CLI exists yet. `b24` learns from gcal-cli (a provider API, `api`, permissions, the write guard),
+beeline-cli (a token sign-in) and tg-cli's Bot API transport (a secret in the URL path); see
+[DESIGN.md](docs/dev/DESIGN.md).
 <!-- cli-template:reference-cli:end -->
 
 ## Template-owned files
