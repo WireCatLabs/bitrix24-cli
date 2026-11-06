@@ -159,6 +159,73 @@ b24 deals show <id-or-name>
 
 **Example:** `b24 work deals show 42`, `b24 work deals show 42 --json`
 
+### `b24 deals create`
+
+create one deal on the portal
+
+**Changes something in the service.**
+
+```sh
+b24 deals create [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--title <title>` | the title. |
+| `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
+
+**Returns:** create one deal on the portal
+
+**Example:** `b24 work deals create --title "Kitchen for Acme" --body '{"opportunity":15000,"currencyId":"EUR"}'`
+
+### `b24 deals update`
+
+change one deal on the portal; options left out keep their values
+
+**Changes something in the service.**
+
+```sh
+b24 deals update <id> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `id` | required | the deal's id. |
+
+| Option | What it does |
+|---|---|
+| `--title <title>` | the title. |
+| `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
+
+**Returns:** change one deal on the portal; options left out keep their values
+
+**Example:** `b24 work deals update 42 --body '{"opportunity":18000}'`
+
+### `b24 deals move`
+
+move one deal to another stage
+
+**Changes something in the service.**
+
+```sh
+b24 deals move <id> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `id` | required | the deal's id. |
+
+| Option | What it does |
+|---|---|
+| `--stage <stage>` | the stage, by id or name, as `stages list` prints it. |
+| `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
+
+**Returns:** move one deal to another stage
+
+**Example:** `b24 work deals move 42 --stage "Contract signed"`
+
 ## `b24 leads`
 
 read the portal's leads
@@ -200,6 +267,77 @@ b24 leads show <id-or-name>
 **Returns:** lead — id, title, name, organization_name, stage_id, outcome, amount, currency, and 10 more; every field: b24 commands info leads show
 
 **Example:** `b24 work leads show 42`, `b24 work leads show 42 --json`
+
+### `b24 leads create`
+
+create one lead on the portal
+
+**Changes something in the service.**
+
+```sh
+b24 leads create [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--title <title>` | the title. |
+| `--first-name <name>` | the person's first name. |
+| `--last-name <name>` | the person's last name. |
+| `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
+
+**Returns:** create one lead on the portal
+
+**Example:** `b24 work leads create --title "Website form" --first-name Ivan`
+
+### `b24 leads update`
+
+change one lead on the portal; options left out keep their values
+
+**Changes something in the service.**
+
+```sh
+b24 leads update <id> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `id` | required | the lead's id. |
+
+| Option | What it does |
+|---|---|
+| `--title <title>` | the title. |
+| `--first-name <name>` | the person's first name. |
+| `--last-name <name>` | the person's last name. |
+| `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
+
+**Returns:** change one lead on the portal; options left out keep their values
+
+**Example:** `b24 work leads update 7 --body '{"opportunity":5000}'`
+
+### `b24 leads move`
+
+move one lead to another stage
+
+**Changes something in the service.**
+
+```sh
+b24 leads move <id> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `id` | required | the lead's id. |
+
+| Option | What it does |
+|---|---|
+| `--stage <stage>` | the stage, by id or name, as `stages list` prints it. |
+| `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
+
+**Returns:** move one lead to another stage
+
+**Example:** `b24 work leads move 7 --stage IN_PROCESS`
 
 ## `b24 people`
 
@@ -243,6 +381,52 @@ b24 people show <id-or-name>
 
 **Example:** `b24 work people show 42`, `b24 work people show 42 --json`
 
+### `b24 people create`
+
+create one person on the portal
+
+**Changes something in the service.**
+
+```sh
+b24 people create [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--first-name <name>` | the person's first name. |
+| `--last-name <name>` | the person's last name. |
+| `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
+
+**Returns:** create one person on the portal
+
+**Example:** `b24 work people create --first-name Anna --last-name Ivanova`
+
+### `b24 people update`
+
+change one person on the portal; options left out keep their values
+
+**Changes something in the service.**
+
+```sh
+b24 people update <id> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `id` | required | the person's id. |
+
+| Option | What it does |
+|---|---|
+| `--first-name <name>` | the person's first name. |
+| `--last-name <name>` | the person's last name. |
+| `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
+
+**Returns:** change one person on the portal; options left out keep their values
+
+**Example:** `b24 work people update 4 --body '{"post":"Buyer"}'`
+
 ## `b24 organizations`
 
 read the portal's companies
@@ -284,6 +468,50 @@ b24 organizations show <id-or-name>
 **Returns:** crm organization — id, name, type_id, industry_id, revenue, currency, person_ids, assigned_to, and 6 more; every field: b24 commands info organizations show
 
 **Example:** `b24 work organizations show 42`, `b24 work organizations show 42 --json`
+
+### `b24 organizations create`
+
+create one organization on the portal
+
+**Changes something in the service.**
+
+```sh
+b24 organizations create [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--name <name>` | the name. |
+| `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
+
+**Returns:** create one organization on the portal
+
+**Example:** `b24 work organizations create --name "Acme"`
+
+### `b24 organizations update`
+
+change one organization on the portal; options left out keep their values
+
+**Changes something in the service.**
+
+```sh
+b24 organizations update <id> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `id` | required | the organization's id. |
+
+| Option | What it does |
+|---|---|
+| `--name <name>` | the name. |
+| `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
+
+**Returns:** change one organization on the portal; options left out keep their values
+
+**Example:** `b24 work organizations update 9 --name "Acme Ltd"`
 
 ## `b24 pipelines`
 

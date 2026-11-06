@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**100 ✅ · 6 ⛔ · 0 ❌** — 41 commands, 65 options.
+**144 ✅ · 6 ⛔ · 0 ❌** — 51 commands, 99 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -24,21 +24,65 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `deals list` | `--page` | ✅ |  |
 | `deals list` | `--all` | ✅ |  |
 | `deals show` |  | ✅ |  |
+| `deals create` |  | ✅ |  |
+| `deals create` | `--title` | ✅ |  |
+| `deals create` | `--body` | ✅ |  |
+| `deals create` | `--operation-id` | ✅ |  |
+| `deals update` |  | ✅ |  |
+| `deals update` | `--title` | ✅ |  |
+| `deals update` | `--body` | ✅ |  |
+| `deals update` | `--operation-id` | ✅ |  |
+| `deals move` |  | ✅ |  |
+| `deals move` | `--stage` | ✅ |  |
+| `deals move` | `--operation-id` | ✅ |  |
 | `leads list` |  | ✅ |  |
 | `leads list` | `--limit` | ✅ |  |
 | `leads list` | `--page` | ✅ |  |
 | `leads list` | `--all` | ✅ |  |
 | `leads show` |  | ✅ |  |
+| `leads create` |  | ✅ |  |
+| `leads create` | `--title` | ✅ |  |
+| `leads create` | `--first-name` | ✅ |  |
+| `leads create` | `--last-name` | ✅ |  |
+| `leads create` | `--body` | ✅ |  |
+| `leads create` | `--operation-id` | ✅ |  |
+| `leads update` |  | ✅ |  |
+| `leads update` | `--title` | ✅ |  |
+| `leads update` | `--first-name` | ✅ |  |
+| `leads update` | `--last-name` | ✅ |  |
+| `leads update` | `--body` | ✅ |  |
+| `leads update` | `--operation-id` | ✅ |  |
+| `leads move` |  | ✅ |  |
+| `leads move` | `--stage` | ✅ |  |
+| `leads move` | `--operation-id` | ✅ |  |
 | `people list` |  | ✅ |  |
 | `people list` | `--limit` | ✅ |  |
 | `people list` | `--page` | ✅ |  |
 | `people list` | `--all` | ✅ |  |
 | `people show` |  | ✅ |  |
+| `people create` |  | ✅ |  |
+| `people create` | `--first-name` | ✅ |  |
+| `people create` | `--last-name` | ✅ |  |
+| `people create` | `--body` | ✅ |  |
+| `people create` | `--operation-id` | ✅ |  |
+| `people update` |  | ✅ |  |
+| `people update` | `--first-name` | ✅ |  |
+| `people update` | `--last-name` | ✅ |  |
+| `people update` | `--body` | ✅ |  |
+| `people update` | `--operation-id` | ✅ |  |
 | `organizations list` |  | ✅ |  |
 | `organizations list` | `--limit` | ✅ |  |
 | `organizations list` | `--page` | ✅ |  |
 | `organizations list` | `--all` | ✅ |  |
 | `organizations show` |  | ✅ |  |
+| `organizations create` |  | ✅ |  |
+| `organizations create` | `--name` | ✅ |  |
+| `organizations create` | `--body` | ✅ |  |
+| `organizations create` | `--operation-id` | ✅ |  |
+| `organizations update` |  | ✅ |  |
+| `organizations update` | `--name` | ✅ |  |
+| `organizations update` | `--body` | ✅ |  |
+| `organizations update` | `--operation-id` | ✅ |  |
 | `pipelines list` |  | ✅ |  |
 | `pipelines list` | `--limit` | ✅ |  |
 | `pipelines list` | `--page` | ✅ |  |

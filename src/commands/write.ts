@@ -1,0 +1,81 @@
+import { CliError } from "@wirecat/cli-base"
+import {
+  environmentOf,
+  itemOf,
+  outputFor,
+  readOnlyLockOf,
+  readOnlyRefusal,
+  renderAnswer,
+  terminalAsker,
+} from "@wirecat/cli-core/cli"
+import { guardedWrite, guardFor, keyedGuard, levelFor, newOperationId } from "@wirecat/cli-core/sends"
+import type { Command } from "commander"
+import type { BitrixTransport } from "../bitrix/transport.js"
+import { ASSIGN_KEY, permissions } from "../config.js"
+import { IDENTITY } from "../identity.js"
+import { contextOf, portalOf } from "../portal.js"
+
+/** REST 3.0's `Idempotency-Key`: 1 to 255 printable ASCII characters (apidocs "REST 3.0"). */
+const OPERATION_ID = /^[\x21-\x7e]{1,255}$/
+
+export const operationIdOf = (given: string | undefined): string => {
+  if (given !== undefined && !OPERATION_ID.test(given))
+    throw new CliError("validation_error", "--operation-id takes 1 to 255 printable characters with no spaces", {
+      param: "--operation-id",
+    })
+  return given ?? newOperationId()
+}
+
+export interface Write {
+  /** The command's own permission key, `deals.create`. */
+  key: string
+  /** The employee the record is assigned to, when the write sets one. */
+  assignee?: string | undefined
+  operationId?: string | undefined
+  act: (portal: BitrixTransport, operationId: string) => Promise<Record<string, unknown>>
+}
+
+/**
+ * Every write's one path, as gcal-cli's `api call` (src/commands/api.ts): the read-only lock, the profile's levels,
+ * one question for every key at `ask`, the send journal, and an `operation_id` in the answer (WC-PERM-13, WC-OUT-10).
+ */
+export const write = async (command: Command, { key, assignee, operationId: given, act }: Write) => {
+  const { env, settings } = contextOf(command)
+  const lock = readOnlyLockOf(IDENTITY, env)
+  if (lock) throw readOnlyRefusal(lock, "change the Bitrix24 portal")
+  const operationId = operationIdOf(given)
+  const portal = portalOf(command)
+  const self = portal.userId
+  const extra = assignee !== undefined && assignee !== self ? [ASSIGN_KEY] : []
+  const levelOf = (one: string) => levelFor(settings.permissions, one, permissions.defaults).level
+  const guard = keyedGuard(
+    (ask) =>
+      guardFor(
+        IDENTITY,
+        // The portal limits its own rate; the guard is here for the levels and the journal, not a send limit.
+        { ...settings, sendsPerHour: Number.MAX_SAFE_INTEGER, permissionDefaults: permissions.defaults },
+        outputFor(command).renderer.warn,
+        environmentOf(command).env ?? process.env,
+        ask,
+      ),
+    terminalAsker(command),
+    levelOf,
+    extra,
+  )
+  const request = { chatId: null, kind: "edit" as const, key, operationId }
+  guard.refuse(request)
+  let done: Record<string, unknown>
+  try {
+    done = await guardedWrite(guard, request, () => act(portal, operationId))
+  } catch (error) {
+    if (error instanceof CliError && error.code === "outcome_unknown")
+      throw new CliError(
+        "outcome_unknown",
+        `${error.message} — repeat it with --operation-id ${operationId}: Bitrix24 answers a repeat from its record ` +
+          "instead of running it again",
+        { ...error.details, operation_id: operationId },
+      )
+    throw error
+  }
+  renderAnswer(command, outputFor(command), itemOf({ operation_id: operationId, ...done }))
+}
