@@ -46,7 +46,7 @@ describe("fields list", () => {
           { id: "45", label: "Fair" },
         ],
       },
-      { code: "UF_CRM_2_NOTE", label: "Note", type: "string", multiple: true, filterable: false, options: null },
+      { code: "UF_CRM_2_NOTE", label: "Note", type: "string", multiple: true, filterable: false },
     ])
     expect(fake.calls.map((call) => [call.api, call.method])).toEqual([
       [3, "crm.contact.field.list"],

@@ -9,7 +9,8 @@ export const fieldSchema = v.strictObject({
   type: v.string(),
   multiple: v.boolean(),
   filterable: v.boolean(),
-  options: v.nullable(v.array(v.strictObject({ id: v.string(), label: v.string() }))),
+  /** A list field's options; absent on any other field. */
+  options: v.optional(v.array(v.strictObject({ id: v.string(), label: v.string() }))),
 })
 
 /** One of the portal's own fields on deals, leads, contacts or companies. */
@@ -41,14 +42,14 @@ export const loadFields = async (portal: BitrixTransport, type: ItemType<unknown
             const id = text(option.ID)
             return id === null ? [] : [{ id, label: text(option.VALUE) ?? id }]
           })
-        : null
+        : undefined
       return {
         code,
         label: text(field.title),
         type: text(user?.USER_TYPE_ID) ?? text(field.type) ?? "string",
         multiple: yes(field.multiple),
         filterable: yes(field.filterable),
-        options,
+        ...(options ? { options } : {}),
       }
     })
 }
