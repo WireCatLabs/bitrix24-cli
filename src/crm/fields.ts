@@ -1,3 +1,4 @@
+import { CliError } from "@wirecat/cli-base"
 import * as v from "valibot"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import type { ItemType } from "./items.js"
@@ -73,4 +74,67 @@ export const metadataOf = (custom: Record<string, unknown>, fields: readonly Fie
       return [code, { label, value: optionLabel(field, value), option_id: String(value) }]
     }),
   )
+}
+
+/** Case, spaces and underscores aside: `lead_source` and `Lead source` are one name. */
+const folded = (name: string) =>
+  name
+    .trim()
+    .toLocaleLowerCase()
+    .replace(/[\s_]+/g, " ")
+
+const named = (field: Field) => ({ code: field.code, label: field.label })
+
+/** No field by that name: the fields whose code or label holds it, or is held in it, as candidates. */
+export const unknownField = (fields: readonly Field[], name: string) => {
+  const want = folded(name)
+  const close = fields.filter((field) =>
+    [field.code, field.label ?? ""].some((one) => {
+      const other = folded(one)
+      return other !== "" && (other.includes(want) || want.includes(other))
+    }),
+  )
+  return new CliError(
+    "validation_error",
+    `no custom field is named ${name}${close.length ? "; close ones are in candidates" : ""} — \`fields list\` lists them`,
+    { reason: "field.unknown", candidates: close.map(named) },
+  )
+}
+
+/**
+ * A custom field by its code, or by its whole label; two fields with that label are refused with both, never
+ * guessed (as `resolveItem` refuses two records).
+ */
+export const findField = (fields: readonly Field[], name: string): Field => {
+  const want = folded(name)
+  const byCode = fields.find((field) => folded(field.code) === want)
+  if (byCode) return byCode
+  const labelled = fields.filter((field) => field.label !== null && folded(field.label) === want)
+  if (labelled.length === 1 && labelled[0]) return labelled[0]
+  if (labelled.length > 1)
+    throw new CliError(
+      "validation_error",
+      `${labelled.length} custom fields are labelled ${name}; name one by its code`,
+      {
+        reason: "field.ambiguous",
+        candidates: labelled.map(named),
+      },
+    )
+  throw unknownField(fields, name)
+}
+
+/** A list field's option by its id or its whole label. */
+export const optionOf = (field: Field, value: string): string => {
+  if (!field.options) return value
+  const want = folded(value)
+  const found =
+    field.options.find((option) => option.id === value.trim()) ??
+    field.options.find((option) => folded(option.label) === want)
+  if (!found)
+    throw new CliError("validation_error", `${field.label ?? field.code} has no option ${value}`, {
+      reason: "field.unknown-option",
+      field: field.code,
+      allowed: field.options,
+    })
+  return found.id
 }

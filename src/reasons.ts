@@ -25,6 +25,10 @@ const OWN: [reason: string, code: string, message: string][] = [
   ["operation.reused", "conflict", "this operation id was already used for a different request"],
   ["query.bad-value", "validation_error", "a query term takes an id or a number"],
   ["field.unknown-kind", "validation_error", "fields are listed for deals, leads, people and organizations"],
+  ["field.ambiguous", "validation_error", "more than one custom field has that label; name one by its code"],
+  ["field.unknown", "validation_error", "no custom field has that label or code"],
+  ["field.unknown-option", "validation_error", "the list field has no option with that label or id"],
+  ["field.not-filterable", "validation_error", "the portal cannot filter a list by this custom field"],
   ...NAMED,
 ]
 
@@ -33,4 +37,4 @@ const ENTRIES = OWN.filter(([reason]) => !CORE.has(reason))
 export const REASONS = defineReasons(ENTRIES.map(([reason, code, message]) => ({ reason, code, message, details: [] })))
 
 /** Detail keys b24's errors carry beyond cli-core's own. */
-export const DETAILS = ["fields"]
+export const DETAILS = ["fields", "field"]

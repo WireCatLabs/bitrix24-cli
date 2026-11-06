@@ -19,7 +19,16 @@ import { Command } from "commander"
 import type * as v from "valibot"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { type Condition, conditionsOf, type FieldMap } from "../crm/conditions.js"
+import {
+  customConditions,
+  customNames,
+  filterableFields,
+  selectedCodes,
+  wantedCodes,
+  withCustomFields,
+} from "../crm/custom-query.js"
 import { DEAL, DEAL_FIELDS, dealSchema } from "../crm/deal.js"
+import { loadFields } from "../crm/fields.js"
 import { getItem, type ItemType, listItems, resolveItem } from "../crm/items.js"
 import { LEAD, LEAD_FIELDS, leadSchema } from "../crm/lead.js"
 import { ORGANIZATION, ORGANIZATION_FIELDS, organizationSchema } from "../crm/organization.js"
@@ -50,6 +59,8 @@ interface Noun<T> {
   word?: string
   examples: string[]
   list: (portal: BitrixTransport, terms: Map<string, Predicate>, window: Window) => Promise<Listed<T>>
+  /** Deals, leads, people and organizations: a list that names the portal's own fields in its query or `--json`. */
+  custom?: (portal: BitrixTransport, ask: CustomAsk, window: Window) => Promise<Listed<T>>
   show: (portal: BitrixTransport, reference: string) => Promise<T>
   reference: string
 }
@@ -73,6 +84,20 @@ const nativeQuery = (
     }),
   })
 
+interface CustomAsk {
+  /** The query's names its own fields do not have. */
+  names: string[]
+  wanted: string[] | "all" | undefined
+  /** The query's terms, validated against these fields. */
+  terms: (registry: QueryRegistry) => Map<string, Predicate>
+}
+
+const CUSTOM_HELP = `
+The portal's own fields, as \`fields list\` prints them:
+  <code or label>:<value>    a field the portal can filter by; a list field takes its option's label or id.
+                             A label with spaces: lead_source:web, or Lead\\ source:web
+  --json=id,title,provider_metadata.<code>   adds that field to each item; provider_metadata alone adds them all`
+
 const windowOf = (command: Command): Window => {
   const { settings } = contextOf(command)
   return settings.all ? { offset: 0 } : { offset: (settings.page - 1) * settings.limit, limit: settings.limit }
@@ -90,15 +115,22 @@ const listCommand = <T>(noun: Noun<T>) =>
     ),
   )
     .description(`list ${noun.what} on the portal, newest first`)
+    .addHelpText("after", noun.custom ? CUSTOM_HELP : "")
     .action(async function (this: Command, words: string[]) {
       const path = commandPath(this)
-      const terms = nativeTerms(
-        listQuery(typedQuery(words), noun.query, path, noun.word ? { defaultField: noun.word } : {}),
-        path,
-      )
+      const text = typedQuery(words)
+      const options = noun.word ? { defaultField: noun.word } : {}
+      const termsOf = (registry: QueryRegistry) => nativeTerms(listQuery(text, registry, path, options), path)
+      const names = noun.custom ? customNames(text, noun.query, path, noun.word) : []
+      const wanted = noun.custom ? wantedCodes(this.optsWithGlobals<{ fields?: string }>().fields) : undefined
+      const terms = names.length ? undefined : termsOf(noun.query)
       const { settings } = contextOf(this)
       const window = windowOf(this)
-      const found = await withPortal(this, (portal) => noun.list(portal, terms, window))
+      const found = await withPortal(this, (portal) =>
+        noun.custom && (terms === undefined || wanted !== undefined)
+          ? noun.custom(portal, { names, wanted, terms: termsOf }, window)
+          : noun.list(portal, terms ?? new Map(), window),
+      )
       renderAnswer(this, outputFor(this), pagedList(path, settings, found))
     })
 
@@ -132,13 +164,24 @@ const itemNoun = <T extends { id: string }>(
   listExamples: string[],
 ): Noun<T> => {
   const word = Object.entries(shape.fields).find(([, map]) => map.kind === "word")?.[0]
+  const query = nativeQuery(shape.entity, shape.schema, shape.fields, examples)
   return {
     ...shape,
-    query: nativeQuery(shape.entity, shape.schema, shape.fields, examples),
+    query,
     ...(word ? { word } : {}),
     examples: listExamples,
     reference: "id-or-name",
     list: (portal, terms, window) => listItems(portal, type, conditionsOf(terms, shape.fields), window),
+    custom: async (portal, { names, wanted, terms: termsOf }, window) => {
+      const fields = await loadFields(portal, type.type)
+      const chosen = filterableFields(fields, names)
+      const terms = termsOf(withCustomFields(query, chosen))
+      const custom = customConditions(terms, chosen)
+      return listItems(portal, type, [...conditionsOf(terms, shape.fields), ...custom], window, {
+        codes: selectedCodes(fields, wanted),
+        fields,
+      })
+    },
     show: async (portal, reference) => getItem(portal, type, await resolveItem(portal, type, reference)),
   }
 }

@@ -29,20 +29,29 @@ const itemsOf = (result: unknown): Raw[] => {
 /** Newest first; REST 3.0 adds `id` itself for stable pages. */
 const ORDER = { id: "DESC" }
 
+/** Custom fields a list selects beside its own, with the definitions that label them. */
+export interface Custom {
+  codes: readonly string[]
+  fields: readonly Field[]
+}
+
 export const listItems = async <T>(
   portal: BitrixTransport,
   type: ItemType<T>,
   conditions: readonly Condition[],
   window: Window,
+  custom: Custom = { codes: [], fields: [] },
 ) => {
+  const select = [...type.select, ...custom.codes]
   const { items, has_more } = needsRest2(conditions)
     ? await walk(window, REST2_PAGE, async (start) => {
         const answer = await portal.call("crm.item.list", {
           entityTypeId: type.entityTypeId,
-          select: type.select,
+          select,
           filter: rest2Filter(conditions, { [type.words[0] ?? "title"]: type.words }),
           order: ORDER,
           start,
+          useOriginalUfNames: "Y",
         })
         return { rows: itemsOf(answer.result), more: answer.next !== undefined }
       })
@@ -50,7 +59,7 @@ export const listItems = async <T>(
         const rows = itemsOf(
           (
             await portal.call(`crm.${type.type}.list`, {
-              select: type.select,
+              select,
               filter: rest3Filter(conditions),
               order: ORDER,
               pagination: { limit, offset },
@@ -59,7 +68,12 @@ export const listItems = async <T>(
         )
         return { rows, more: rows.length === limit }
       })
-  return { items: items.map((raw) => type.map(raw)), has_more }
+  return { items: items.map((raw) => type.map(raw, metadataIn(raw, custom))), has_more }
+}
+
+const metadataIn = (raw: Raw, { codes, fields }: Custom): Metadata | undefined => {
+  const values = Object.entries(customFields(raw)).filter(([code]) => codes.includes(code))
+  return values.length ? metadataOf(Object.fromEntries(values), fields) : undefined
 }
 
 /** One item, with the portal's custom fields, which REST 3.0 returns only when each is named in `select`. */
