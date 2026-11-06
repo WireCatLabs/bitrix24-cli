@@ -63,9 +63,16 @@ export const contacts = (value: unknown): Contact[] =>
 
 const CUSTOM = /^(UF_CRM_|ufCrm)/
 
-/** The portal's own fields, as it names them: their meaning is the portal owner's, so they stay unmapped. */
+const empty = (value: unknown) => value === null || value === "" || (Array.isArray(value) && value.length === 0)
+
+/**
+ * The portal's own fields that hold a value, as it names them: their meaning is the portal owner's, so they stay
+ * unmapped. `false` and `0` stay, since a yes/no field saying no is an answer.
+ */
 export const customFields = (raw: Raw | undefined): Record<string, unknown> =>
-  Object.fromEntries(Object.entries(raw ?? {}).filter(([key]) => CUSTOM.test(key) && !key.endsWith("_data")))
+  Object.fromEntries(
+    Object.entries(raw ?? {}).filter(([key, value]) => CUSTOM.test(key) && !key.endsWith("_data") && !empty(value)),
+  )
 
 export const contactSchema = v.strictObject({ type: v.nullable(v.string()), value: v.string() })
 export const nullableTime = v.nullable(isoTime)
