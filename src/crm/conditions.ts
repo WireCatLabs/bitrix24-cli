@@ -23,7 +23,7 @@ const bare = (value: string) => value.replace(/^\*+|\*+$/g, "")
 const valueFor = (kind: FieldMap["kind"], raw: string, name: string): string | number => {
   if (kind === "id" || kind === "number") {
     const found = Number(raw)
-    if (!Number.isFinite(found) || (kind === "id" && !/^[1-9]\d*$/.test(raw)))
+    if (!Number.isFinite(found) || (kind === "id" && !/^(0|[1-9]\d*)$/.test(raw)))
       throw new CliError("validation_error", `${name} takes ${kind === "id" ? "an id" : "a number"}; got ${raw}`, {
         reason: "query.bad-value",
       })

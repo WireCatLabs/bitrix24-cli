@@ -113,13 +113,14 @@ describe("create", () => {
     expect(portal.calls).toHaveLength(0)
   })
 
-  it("a create that gets no answer is outcome_unknown, tried with one key, and names the retry", async () => {
+  it("a create that gets no answer is sent once, is outcome_unknown, and names the retry once", async () => {
     const portal = fakePortal({ "crm.deal.add": new TypeError("socket hang up") })
     const ran = await b24(["work", "deals", "create", "--title", "x", "--json"], { portal })
     expect(ran.code).toBe(14)
     const error = ran.json().error as Record<string, unknown>
-    expect(String(error.message)).toContain("--operation-id")
-    expect(new Set(portal.calls.map((call) => call.headers["Idempotency-Key"])).size).toBe(1)
+    expect(String(error.message).split("--operation-id")).toHaveLength(2)
+    expect(String(error.message)).not.toContain("check before repeating")
+    expect(portal.calls).toHaveLength(1)
   })
 
   it("an add answered without an id is invalid_response", async () => {

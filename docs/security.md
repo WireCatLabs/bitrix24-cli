@@ -16,10 +16,22 @@ The webhook acts with the rights of the employee who made it. A webhook made by 
 change everything in the CRM. `session status --check` says whose rights it carries; make the webhook with an
 employee whose rights fit the work, and only the scopes it needs.
 
-Every write is checked against the permissions and kept in the send journal. `B24_READ_ONLY=1` refuses every write. Assigning a record to another employee,
-and through `api call` every write that sends messages, starts the portal's automation or creates tasks, is refused
-until you allow it. A stage change can still start the portal's own robots, which may write to your clients: set
-`permissions.deals.move` and `permissions.leads.move` to `ask` or `deny` if your portal has such robots.
+Every write is checked against the permissions and kept in the send journal. `B24_READ_ONLY=1` refuses every write.
+Assigning a record to another employee is refused until you allow it. A stage change can still start the portal's own
+robots, which may write to your clients: set `permissions.deals.move` and `permissions.leads.move` to `ask` or `deny`
+if your portal has such robots. Every write that sets a stage checks them, `update` and `create` with a `stageId` in
+`--body` too.
+
+`api call` works from an allow list. It allows the CRM, catalog and user reads `b24` makes itself, and the deal, lead,
+contact and company writes, which also check the command's own key (`api call crm.item.update` with `entityTypeId` 2
+checks `deals.update`). A delete asks. Every other method asks too, and is refused without a terminal unless you pass
+`--yes`. Methods that message people, publish or send data out are refused until you allow them: `im`,
+`imopenlines`, `imbot`, `imconnector`, `log.blogpost`, SMS, mail, telephony, workflows, CRM activities, tasks,
+`user.add`, public file links, `event.bind` and `batch`. `api show <method>` names a method's level. `api call` is
+not offered over MCP.
+
+A write that got no answer is not sent again: it is `outcome_unknown` with its `operation_id`. Check the portal, and
+repeat it with `--operation-id` only if it is not there.
 
 `b24 personal mcp serve --http` listens on `127.0.0.1` only, for browser apps that reach it through your own
 tunnel. Each app logs in with a one-time code, and the server keeps a hash of each login it gives, in the state

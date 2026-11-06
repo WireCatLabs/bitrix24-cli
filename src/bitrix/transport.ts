@@ -36,10 +36,8 @@ export interface BitrixTransportOptions {
 }
 
 export interface CallOptions {
-  /** A write's operation id, sent as REST 3.0's `Idempotency-Key`, which makes the write safe to repeat. */
+  /** A write's operation id, sent as REST 3.0's `Idempotency-Key`, so the owner can repeat it by hand. */
   idempotencyKey?: string
-  /** Overrides the method table, for `api call --rest`. */
-  api?: RestVersion
 }
 
 /** REST 2 lists carry `total` and `next` beside `result`; REST 3.0 answers carry neither. */
@@ -48,16 +46,6 @@ export interface BitrixAnswer {
   total?: number
   next?: number
 }
-
-/** A keyed write that never got an answer may have run: the caller repeats it with the same operation id. */
-const lastOf = (method: string, error: CliError, reads: boolean): CliError =>
-  reads || (error.code !== "timeout" && error.code !== "network_error")
-    ? error
-    : new CliError(
-        "outcome_unknown",
-        `${method} got no answer; repeat it with the same --operation-id, which Bitrix24 will not run twice`,
-        { operation: method, retryable: true },
-      )
 
 /**
  * Bitrix24's REST API over an incoming webhook, method by method.
@@ -95,27 +83,26 @@ export class BitrixTransport {
   }
 
   /**
-   * Reads are tried again on a refused rate or a lost answer. A write is tried again only on REST 3.0 with an
-   * `Idempotency-Key`, which Bitrix24 answers from its store instead of running twice; any other write that got no
-   * answer is `outcome_unknown`.
+   * Reads are tried again on a refused rate or a lost answer. A write is sent once: whether Bitrix24 honours
+   * `Idempotency-Key` is not checked on a live portal, so a write that got no answer is `outcome_unknown` and the
+   * owner repeats it by hand.
    */
   async call(method: string, params: Record<string, unknown> = {}, options: CallOptions = {}): Promise<BitrixAnswer> {
     const known = methodOf(method)
-    const api = options.api ?? known.api
+    const api = known.api
     const reads = known.effect === "read"
     const key = api === 3 && !reads ? options.idempotencyKey : undefined
-    const repeatable = reads || key !== undefined
     let waited: number | undefined
     for (let attempt = 1; ; attempt++) {
       try {
         await this.#turn(method)
         return await this.#once(method, params, { api, reads, key, attempt, waited })
       } catch (error) {
-        if (!isCliError(error) || !repeatable) throw error
+        if (!isCliError(error) || !reads) throw error
         const asked = error.details.retry_after_ms
         const wait = typeof asked === "number" ? asked : backoffMs(attempt, RETRY, this.#random)
         const again = error.code === "rate_limited" || error.details.retryable === true
-        if (!again || wait > RETRY.maxRetryAfterMs || attempt > RETRY.retries) throw lastOf(method, error, reads)
+        if (!again || wait > RETRY.maxRetryAfterMs || attempt > RETRY.retries) throw error
         if (error.code === "rate_limited") await this.#pacer?.holdFor(wait)
         await this.#wait(wait, method)
         waited = wait
@@ -182,7 +169,7 @@ export class BitrixTransport {
           signal,
         })
       } catch (error) {
-        const failure = this.#unanswered(method, error, run.reads || run.key !== undefined)
+        const failure = this.#unanswered(method, error, run)
         end({ errorCode: failure.code })
         throw failure
       }
@@ -191,7 +178,7 @@ export class BitrixTransport {
         body = await readJsonResponse(response, { maxBytes: LARGEST_ANSWER, signal })
       } catch (error) {
         if (signal.aborted) {
-          const failure = this.#unanswered(method, error, run.reads || run.key !== undefined)
+          const failure = this.#unanswered(method, error, run)
           end({ status: response.status, errorCode: failure.code })
           throw failure
         }
@@ -226,13 +213,14 @@ export class BitrixTransport {
     }
   }
 
-  #unanswered(method: string, error: unknown, repeatable: boolean): CliError {
+  #unanswered(method: string, error: unknown, run: { reads: boolean; key: string | undefined }): CliError {
     if (this.#signal?.aborted && (this.#signal.reason as { name?: string })?.name !== "TimeoutError")
       return new CliError("cancelled", `${method} was cancelled`, { operation: method })
-    if (!repeatable)
+    // A keyed write's caller names how to repeat it; a REST 2 write has no key to repeat it safely with.
+    if (!run.reads)
       return new CliError(
         "outcome_unknown",
-        `${method} got no answer; Bitrix24 may or may not have carried it out — check before repeating it`,
+        `${method} got no answer; Bitrix24 may or may not have carried it out${run.key ? "" : " — check before repeating it"}`,
         { operation: method, retryable: false },
       )
     const timedOut = (error as { name?: string })?.name === "TimeoutError"

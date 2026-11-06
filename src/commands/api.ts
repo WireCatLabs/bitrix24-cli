@@ -13,12 +13,13 @@ import {
   renderAnswer,
   snakeKeys,
   termField,
+  terminalAsker,
   withQuery,
 } from "@wirecat/cli-core/cli"
 import { levelFor } from "@wirecat/cli-core/sends"
 import { Command } from "commander"
 import * as v from "valibot"
-import { apiDefault, apiKey, commandKeysOf } from "../api-keys.js"
+import { apiDefault, apiKey, assigneeOf, callDefaults, commandKeysOf, fieldsOf, normalMethod } from "../api-keys.js"
 import { KNOWN_METHODS, type Method, methodOf } from "../bitrix/methods.js"
 import { ASSIGN_KEY, permissions } from "../config.js"
 import { IDENTITY } from "../identity.js"
@@ -42,7 +43,7 @@ const methodName = (raw: string) => {
     throw new CliError("validation_error", "a method is named like crm.deal.list, as `api list` prints it", {
       reason: "method.unknown",
     })
-  return raw.toLowerCase()
+  return normalMethod(raw)
 }
 
 const described = (method: Method, body?: Record<string, unknown>) => ({
@@ -126,15 +127,16 @@ const pathOf = (command: Command) => {
  */
 const preview = (command: Command, method: Method, body: Record<string, unknown>) => {
   const { settings } = contextOf(command)
-  const levelOf = (key: string) => levelFor(settings.permissions, key, permissions.defaults).level
+  const defaults = callDefaults(method.name, method.effect, body, permissions.defaults)
+  const levelOf = (key: string) => levelFor(settings.permissions, key, defaults).level
   const writes = method.effect !== "read"
-  const fields = (body.fields ?? {}) as Record<string, unknown>
+  const fields = fieldsOf(body)
   const checked = [
     ...[apiKey(method.name), ...(writes ? commandKeysOf(method.name, body) : [])].map((key) => ({
       key,
       level: levelOf(key),
     })),
-    ...(writes && fields.assignedById !== undefined
+    ...(writes && assigneeOf(fields) !== undefined
       ? [{ key: ASSIGN_KEY, level: levelOf(ASSIGN_KEY), when: "assignedById is not the webhook's own user" }]
       : []),
   ]
@@ -200,12 +202,14 @@ const callCommand = () =>
         ...(answer.next === undefined ? {} : { next: answer.next }),
         untrusted: UNTRUSTED,
       })
+      const defaults = callDefaults(method.name, method.effect, body, permissions.defaults)
       if (method.effect !== "read") {
-        const fields = (body.fields ?? {}) as Record<string, unknown>
+        const fields = fieldsOf(body)
         return write(this, {
           key,
           extra: commandKeysOf(method.name, body),
-          assignee: fields.assignedById === undefined ? undefined : String(fields.assignedById),
+          defaults,
+          assignee: assigneeOf(fields),
           keyed: method.api === 3,
           operationId: options.operationId,
           act: async (portal, operationId) =>
@@ -213,7 +217,8 @@ const callCommand = () =>
         })
       }
       const { settings } = contextOf(this)
-      const { level, key: named } = levelFor(settings.permissions, key, permissions.defaults)
+      const { level, key: named } = levelFor(settings.permissions, key, defaults)
+      if (level === "ask") await terminalAsker(this)(key, { chatId: null, kind: "read", key })
       if (level === "deny")
         throw new CliError(
           "permission_error",

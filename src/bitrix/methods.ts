@@ -18,11 +18,13 @@ const REST3_TYPES = /^crm\.(deal|lead|contact|company|quote|smartinvoice|smartpr
 const REST2_ONLY = /^crm\.[a-z]+\.userfield\./
 
 const READ_ACTIONS = new Set(["list", "get", "fields", "current", "search", "aggregate", "admin", "access"])
+/** Reads whose names end in no read action. */
+const READ_METHODS = new Set(["profile", "methods", "scope", "server.time", "app.info"])
 
 const effectOf = (name: string): Effect => {
   const action = name.slice(name.lastIndexOf(".") + 1)
   if (action === "delete" || action === "deletefieldvalue") return "destructive"
-  if (READ_ACTIONS.has(action) || name.endsWith(".field.list")) return "read"
+  if (READ_ACTIONS.has(action) || READ_METHODS.has(name) || name.endsWith(".field.list")) return "read"
   return "write"
 }
 

@@ -88,18 +88,23 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
      yet seen on the owner's portal;
    - `B24_READ_ONLY` refuses every write;
    - `api call <method>` checks `api.<method>` and also the key of the command that does the same thing, so
-     `api call crm.deal.update` cannot get round `deals.update: deny`; an update that sets a stage also checks
-     `deals.move` or `leads.move`.
-   - Through `api call`, the writes of method families that reach people or start the portal's automation are
-     `deny` until the owner allows them: `im`, `imopenlines`, `imbot`, `messageservice`, `mailservice`,
-     `telephony`, `voximplant`, `bizproc`, `crm.automation`, `crm.activity`, `tasks`, `task`, `user.add` and
-     `batch`, which can hold any of them. A method whose name ends in `delete` asks.
+     `api call crm.deal.update` cannot get round `deals.update: deny`. `crm.item.*` with `entityTypeId` 1 to 4 is
+     the lead, deal, contact or company. A create or update that sets a stage (`stageId` in any letter case, a
+     lead's `STATUS_ID`) also checks `deals.move` or `leads.move`, on the commands too. The method name is
+     lowercased and loses a `.json` suffix before any key is read.
+   - `api call` defaults come from an allow list: the reads `b24` makes (`crm`, `catalog`, `user`, `profile` and
+     the method listings) and the four CRM types' create and update are `allow`; a method whose name ends in
+     `delete` and every other method are `ask`; the writes of families that reach people, publish or send data out
+     are `deny` until the owner allows them: `im`, `imopenlines`, `imbot`, `imconnector`, `log.blogpost`,
+     `messageservice`, `mailservice`, `telephony`, `voximplant`, `bizproc`, `crm.automation`, `crm.activity`,
+     `tasks`, `task`, `user.add`, `disk.file.getexternallink`, `disk.folder.getexternallink`, `event.bind` and
+     `batch`, which can hold any of them.
    - Never allowed, whatever the permissions: a bulk or filtered delete. A delete takes one id.
    - Messages to clients and employees (`im`, `imopenlines`) are not part of slice 1.
 3. **Writes are safe to repeat.** Each write gets an `operation_id`, goes through cli-core's write guard and is
-   journalled (WC-OUT-10, WC-PERM-13). On REST 3.0 the `operation_id` is sent as the `Idempotency-Key` header, so a
-   retry with `--operation-id` does not create a second record. A write that got no answer is `outcome_unknown` and
-   is never retried by `b24` itself.
+   journalled (WC-OUT-10, WC-PERM-13). On REST 3.0 the `operation_id` is sent as the `Idempotency-Key` header, which
+   Bitrix24's documentation says answers a repeat from its record; that is not checked on a live portal yet. A write
+   is sent once: one that got no answer is `outcome_unknown`, and the owner repeats it with `--operation-id`.
 
 ### Writes
 
