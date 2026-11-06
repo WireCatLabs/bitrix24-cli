@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**60 ✅ · 6 ⛔ · 0 ❌** — 25 commands, 41 options.
+**100 ✅ · 6 ⛔ · 0 ❌** — 41 commands, 65 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -19,6 +19,46 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `session status` | `--check` | ✅ |  |
 | `session end` |  | ✅ |  |
 | `session list` |  | ✅ |  |
+| `deals list` |  | ✅ |  |
+| `deals list` | `--limit` | ✅ |  |
+| `deals list` | `--page` | ✅ |  |
+| `deals list` | `--all` | ✅ |  |
+| `deals show` |  | ✅ |  |
+| `leads list` |  | ✅ |  |
+| `leads list` | `--limit` | ✅ |  |
+| `leads list` | `--page` | ✅ |  |
+| `leads list` | `--all` | ✅ |  |
+| `leads show` |  | ✅ |  |
+| `people list` |  | ✅ |  |
+| `people list` | `--limit` | ✅ |  |
+| `people list` | `--page` | ✅ |  |
+| `people list` | `--all` | ✅ |  |
+| `people show` |  | ✅ |  |
+| `organizations list` |  | ✅ |  |
+| `organizations list` | `--limit` | ✅ |  |
+| `organizations list` | `--page` | ✅ |  |
+| `organizations list` | `--all` | ✅ |  |
+| `organizations show` |  | ✅ |  |
+| `pipelines list` |  | ✅ |  |
+| `pipelines list` | `--limit` | ✅ |  |
+| `pipelines list` | `--page` | ✅ |  |
+| `pipelines list` | `--all` | ✅ |  |
+| `pipelines show` |  | ✅ |  |
+| `stages list` |  | ✅ |  |
+| `stages list` | `--limit` | ✅ |  |
+| `stages list` | `--page` | ✅ |  |
+| `stages list` | `--all` | ✅ |  |
+| `stages show` |  | ✅ |  |
+| `products list` |  | ✅ |  |
+| `products list` | `--limit` | ✅ |  |
+| `products list` | `--page` | ✅ |  |
+| `products list` | `--all` | ✅ |  |
+| `products show` |  | ✅ |  |
+| `users list` |  | ✅ |  |
+| `users list` | `--limit` | ✅ |  |
+| `users list` | `--page` | ✅ |  |
+| `users list` | `--all` | ✅ |  |
+| `users show` |  | ✅ |  |
 | `doctor` |  | ✅ |  |
 | `skill show` |  | ✅ |  |
 | `skill show` | `--for` | ✅ |  |
