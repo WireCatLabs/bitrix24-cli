@@ -8,7 +8,7 @@ export const apiKey = (method: string): string => `api.${method}`
  * imopenlines, imbot, imconnector's Open Lines; read-only for now, NEED-2278 A), Live Feed posts, SMS and mail
  * services, telephony, workflows, CRM activities (an e-mail activity sends the mail), tasks (the assignee is told),
  * invitations (`user.add` mails one), public file links, event handlers that send portal data to a URL, and `batch`,
- * which can hold any of them. Denied until the owner allows them.
+ * which can hold any of them. Denied until the owner allows them, reads too: they hold messages, e-mails and tasks.
  */
 export const DENIED_FAMILIES = [
   "im",
@@ -99,14 +99,14 @@ export const stageKeysOf = (noun: string, fields: Record<string, unknown>): stri
 
 /**
  * A method's default, as WC-PERM-22 has it, from an allow list: the reads `b24` makes and the CRM writes the command
- * keys govern are allowed, a delete and anything else asks, and the families that reach people are denied.
+ * keys govern are allowed, a delete and anything else asks, and the families that reach people are denied, reads too.
  */
 export const apiDefault = (
   method: string,
   effect: Effect = methodOf(method).effect,
   body: Record<string, unknown> = {},
 ): Level => {
-  if (effect !== "read" && inFamily(DENIED_FAMILIES, method)) return "deny"
+  if (inFamily(DENIED_FAMILIES, method)) return "deny"
   if (effect === "destructive") return "ask"
   if (effect === "read") return inFamily(READ_FAMILIES, method) ? "allow" : "ask"
   return crmWriteOf(method, body) ? "allow" : "ask"

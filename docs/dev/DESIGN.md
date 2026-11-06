@@ -94,8 +94,8 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
      lowercased and loses a `.json` suffix before any key is read.
    - `api call` defaults come from an allow list: the reads `b24` makes (`crm`, `catalog`, `user`, `profile` and
      the method listings) and the four CRM types' create and update are `allow`; a method whose name ends in
-     `delete` and every other method are `ask`; the writes of families that reach people, publish or send data out
-     are `deny` until the owner allows them: `im`, `imopenlines`, `imbot`, `imconnector`, `log.blogpost`,
+     `delete` and every other method are `ask`; the families that reach people, publish or send data out are
+     `deny`, reads included, until the owner allows them: `im`, `imopenlines`, `imbot`, `imconnector`, `log.blogpost`,
      `messageservice`, `mailservice`, `telephony`, `voximplant`, `bizproc`, `crm.automation`, `crm.activity`,
      `tasks`, `task`, `user.add`, `disk.file.getexternallink`, `disk.folder.getexternallink`, `event.bind` and
      `batch`, which can hold any of them.
