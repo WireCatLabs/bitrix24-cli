@@ -21,3 +21,16 @@ regex = '''(?:^|[^A-Za-z0-9/])(1//[A-Za-z0-9_-]{30,})'''
 secretGroup = 1
 entropy = 3.5
 keywords = ["1//"]
+
+# A Bitrix24 incoming webhook is a password: its secret is a segment of the address,
+# https://<portal>/rest/<user id>/<secret>/<method> (apidocs "Webhooks"). The tests' fake secret starts with
+# wirecatfake.
+[[rules]]
+id = "bitrix24-webhook"
+description = "Bitrix24 incoming webhook address"
+regex = '''/rest/(?:api/)?\d+/([A-Za-z0-9]{8,})/'''
+secretGroup = 1
+keywords = ["/rest/"]
+
+[[rules.allowlists]]
+regexes = ['''^wirecatfake''']

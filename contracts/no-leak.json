@@ -1,3 +1,4 @@
 {
-  "paths": ["contracts/help.snap", "contracts/mcp-tools.json", "contracts/no-leak.json", "contracts/plan.json"]
+  "paths": ["contracts/help.snap", "contracts/mcp-tools.json", "contracts/plan.json"],
+  "canaries": ["wirecatfake0secret42"]
 }
