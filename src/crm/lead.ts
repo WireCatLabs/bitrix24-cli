@@ -16,6 +16,7 @@ export const fromBitrixLead = (raw: Raw, metadata?: Metadata): CrmItem => ({
   createdAt: epoch(raw.createdTime),
   updatedAt: epoch(raw.updatedTime),
   url: text(raw.url),
+  assignee: id(raw.assignedById),
   ...(metadata ? { metadata } : {}),
 })
 
@@ -34,6 +35,7 @@ export const LEAD: ItemType<CrmItem> = {
     "createdTime",
     "updatedTime",
     "url",
+    "assignedById",
   ],
   words: ["title"],
   nameOf: (lead) => lead.title,

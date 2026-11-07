@@ -173,7 +173,7 @@ b24 deals list [query] [options]
 | `--limit <n>` | deals per page, 1–500. Default: `50`. |
 | `--page <n>` | which page, starting at 1. Default: `1`. |
 
-**Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 22 more; every field: b24 commands info deals list
+**Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 24 more; every field: b24 commands info deals list
 
 **Example:** `b24 work deals list status:open --json`, `b24 work deals list stage:"Quote sent"`
 
@@ -189,7 +189,7 @@ b24 deals show <ref>
 |---|---|---|
 | `ref` | required | deal:<id>, as a list shows it. |
 
-**Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 22 more; every field: b24 commands info deals show
+**Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 24 more; every field: b24 commands info deals show
 
 **Example:** `b24 work deals show deal:12`
 
@@ -213,7 +213,7 @@ b24 deals create [options]
 | `--currency <code>` | an ISO 4217 code, such as EUR. |
 | `--close-date <date>` | the day it is expected to close, YYYY-MM-DD. |
 | `--owner <user>` | the CRM user it is assigned to; anyone but the sign-in's own user checks crm.assign-others. |
-| `--field <key=value>` | one of the CRM's own fields, by its code; repeat for more, empty clears it. Default: ``. |
+| `--field <key=value>` | one of the CRM's own fields, by its code or label as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field; an empty value clears it. Default: ``. |
 
 **Returns:** crm write — operation_id, untrusted, deal, lead; every field: b24 commands info deals create
 
@@ -243,7 +243,7 @@ b24 deals update <ref> [options]
 | `--currency <code>` | an ISO 4217 code, such as EUR. |
 | `--close-date <date>` | the day it is expected to close, YYYY-MM-DD. |
 | `--owner <user>` | the CRM user it is assigned to; anyone but the sign-in's own user checks crm.assign-others. |
-| `--field <key=value>` | one of the CRM's own fields, by its code; repeat for more, empty clears it. Default: ``. |
+| `--field <key=value>` | one of the CRM's own fields, by its code or label as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field; an empty value clears it. Default: ``. |
 
 **Returns:** crm write — operation_id, untrusted, deal, lead; every field: b24 commands info deals update
 
@@ -339,7 +339,7 @@ b24 leads list [query] [options]
 | `--limit <n>` | leads per page, 1–500. Default: `50`. |
 | `--page <n>` | which page, starting at 1. Default: `1`. |
 
-**Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 22 more; every field: b24 commands info leads list
+**Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 24 more; every field: b24 commands info leads list
 
 **Example:** `b24 work leads list status:open --json`, `b24 work leads list stage:"Quote sent"`
 
@@ -355,7 +355,7 @@ b24 leads show <ref>
 |---|---|---|
 | `ref` | required | lead:<id>, as a list shows it. |
 
-**Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 22 more; every field: b24 commands info leads show
+**Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 24 more; every field: b24 commands info leads show
 
 **Example:** `b24 work leads show lead:12`
 
@@ -379,7 +379,7 @@ b24 leads create [options]
 | `--currency <code>` | an ISO 4217 code, such as EUR. |
 | `--close-date <date>` | the day it is expected to close, YYYY-MM-DD. |
 | `--owner <user>` | the CRM user it is assigned to; anyone but the sign-in's own user checks crm.assign-others. |
-| `--field <key=value>` | one of the CRM's own fields, by its code; repeat for more, empty clears it. Default: ``. |
+| `--field <key=value>` | one of the CRM's own fields, by its code or label as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field; an empty value clears it. Default: ``. |
 
 **Returns:** crm write — operation_id, untrusted, deal, lead; every field: b24 commands info leads create
 
@@ -409,7 +409,7 @@ b24 leads update <ref> [options]
 | `--currency <code>` | an ISO 4217 code, such as EUR. |
 | `--close-date <date>` | the day it is expected to close, YYYY-MM-DD. |
 | `--owner <user>` | the CRM user it is assigned to; anyone but the sign-in's own user checks crm.assign-others. |
-| `--field <key=value>` | one of the CRM's own fields, by its code; repeat for more, empty clears it. Default: ``. |
+| `--field <key=value>` | one of the CRM's own fields, by its code or label as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field; an empty value clears it. Default: ``. |
 
 **Returns:** crm write — operation_id, untrusted, deal, lead; every field: b24 commands info leads update
 
@@ -539,6 +539,33 @@ b24 stages list [query]
 **Returns:** stage — name, position, outcome, external_id, open, pipeline, pipeline_name, kind, and 3 more; every field: b24 commands info stages list
 
 **Example:** `b24 work stages list --json`, `b24 work stages list kind:lead`
+
+## `b24 fields`
+
+the CRM's own fields on deals, leads, people and organizations, as last synced
+
+### `b24 fields list`
+
+the CRM's custom fields of one kind, in its order, with a list field's options
+
+```sh
+b24 fields list <kind> [query] [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `kind` | required | deals, leads, people, organizations. |
+| `query` | optional | field:value terms; this list filters by none yet. |
+
+| Option | What it does |
+|---|---|
+| `--limit <n>` | fields per page, 1–500. Default: `50`. |
+| `--page <n>` | which page, starting at 1. |
+| `--all` | every field, no paging. |
+
+**Returns:** crm field — code, label, type, multiple, filterable, untrusted, options; every field: b24 commands info fields list
+
+**Example:** `b24 work fields list deals`, `b24 work fields list people --json`
 
 ## `b24 search`
 
@@ -831,33 +858,6 @@ b24 users show <id>
 **Returns:** user — id, name, email, position, active, department_ids; every field: b24 commands info users show
 
 **Example:** `b24 work users show 42`, `b24 work users show 42 --json`
-
-## `b24 fields`
-
-read the portal's own fields on deals, leads, people and organizations
-
-### `b24 fields list`
-
-list the portal's custom fields of one kind, with a list field's options
-
-```sh
-b24 fields list <kind> [query] [options]
-```
-
-| Argument | | What it is |
-|---|---|---|
-| `kind` | required | deals, leads, people, organizations. |
-| `query` | optional | field:value terms; this list filters by none yet. |
-
-| Option | What it does |
-|---|---|
-| `--limit <n>` | how many to show. |
-| `--page <n>` | which page, starting at 1. |
-| `--all` | every row, no paging. |
-
-**Returns:** crm field — code, label, type, multiple, filterable, options; every field: b24 commands info fields list
-
-**Example:** `b24 work fields list deals`, `b24 work fields list people --json`
 
 ## `b24 api`
 

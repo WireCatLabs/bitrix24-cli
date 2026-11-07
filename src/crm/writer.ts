@@ -3,7 +3,7 @@ import type { CrmItem, DealKind } from "@wirecat/cli-core"
 import type { CrmFields, CrmWriteOptions, CrmWriter } from "@wirecat/cli-core/crm"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { BITRIX_WRITES } from "./capabilities.js"
-import { customValues, findField } from "./fields.js"
+import { findField, optionOf } from "./fields.js"
 import { LEAD_PIPELINE } from "./lead.js"
 import { REST3_FIELDS } from "./rest3-fields.js"
 import type { BitrixCrmSource } from "./source.js"
@@ -47,14 +47,15 @@ export const bitrixCrmWriter = (portal: () => BitrixTransport, source: BitrixCrm
       fields.companyId = given.organization === null ? 0 : Number(given.organization)
     if (given.owner != null) fields.assignedById = Number(given.owner)
     if (custom.length === 0) return fields
+    // Core resolves by the stored definitions, but a store not synced since they were added passes names as typed:
+    // they are checked here against the portal's, or `Number("Website")` would clear a list field.
     const defined = await source.fields(kind)
-    const set = custom.filter((pair): pair is [string, string] => pair[1] !== null)
-    Object.assign(fields, customValues(defined, set))
-    for (const [name, value] of custom)
-      if (value === null) {
-        const field = findField(defined, name)
-        fields[field.code] = field.multiple ? [] : null
-      }
+    for (const [name, value] of custom) {
+      const field = findField(defined, name)
+      const typed = (one: string) => (field.options ? Number(optionOf(field, one)) : one)
+      if (value === null) fields[field.code] = field.multiple ? [] : null
+      else fields[field.code] = Array.isArray(value) ? value.map(typed) : typed(value)
+    }
     return fields
   }
 

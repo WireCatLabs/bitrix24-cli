@@ -52,6 +52,9 @@ git fetch -q origin
 pnpm install --frozen-lockfile
 package=$(node -p 'require("./package.json").name')
 version=$(node -p 'require("./package.json").version')
+# The code released is the code a person checked against the real service (WC-REL-17). Only the template
+# has kit/, and no service; template.json is in every CLI made from it.
+[ -d kit ] || pnpm exec cli-dev live check --version "$version"
 # A 404 for a package npm has never seen is "not published", like any other failure of `npm view`.
 published() {
   npm view "$package@$version" version --prefer-online >/dev/null 2>&1
@@ -76,10 +79,10 @@ land() {
   pr=$(gh pr create --base main --head "$branch" --title "$title" --body "$body")
   # Checks register a few seconds after the pull request; --watch with none exits at once.
   for _ in $(seq 30); do
-    [ "$(gh pr checks "$pr" --json name --jq length 2>/dev/null || echo 0)" -gt 0 ] && break
+    [ "$(gh pr checks "$pr" --required --json name --jq length 2>/dev/null || echo 0)" -gt 0 ] && break
     sleep 2
   done
-  gh pr checks "$pr" --watch --fail-fast >/dev/null ||
+  gh pr checks "$pr" --watch --required --fail-fast >/dev/null ||
     { echo "checks failed on $pr — nothing is published" >&2; exit 1; }
   git fetch -q origin
   [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)" ] ||
@@ -125,7 +128,11 @@ if [ "$next" != "$version" ]; then
     const today = new Date().toLocaleDateString("en-GB").replaceAll("/", ".")
     if (taken) swap("CHANGELOG.md", "\n## Unreleased\n", `\n## ${n} — ${today}\n`)
     else swap("CHANGELOG.md", `\n## ${o} — `, `\n## ${n} — `)' "$version" "$next" "$taken"
-  body="bin/release: $why. Only the number changes: package.json, src/version.ts, the CHANGELOG heading."
+  body="bin/release: $why. Only the number changes: package.json, src/version.ts, the CHANGELOG heading.
+
+## Conformance
+
+The release pull request of $version recorded the checks; this one changes only its number."
   land "release/$next" "chore(release): $next" "$body"
   rerun_if_changed "$@"
   version=$next

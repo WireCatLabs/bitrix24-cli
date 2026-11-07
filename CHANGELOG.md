@@ -21,15 +21,24 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   Their lists and `show` read the local store, so run `sync` first; `--offline` works for them now.
 - A deal or lead is named by its ref, `deal:12` or `lead:7`, as a list prints it, not by its Bitrix24 id or title.
 - A deal or lead answers `ref`, `pipeline` and `pipeline_name`, `stage` (its name), `status` (`open`, `won` or `lost`),
-  `close_date`, and `amount` as a decimal string in `currency`, both `null` with no amount. `stage_id`, `pipeline_id`,
-  `outcome`, `closes_on`, `assigned_to`, `person_ids` and `provider_metadata` are gone from them; contacts are in
-  `people`, the company in `organization`.
+  `close_date`, `amount` as a decimal string in `currency`, both `null` with no amount, `assignee` as
+  `<portal>/user/<id>`, and the portal's own fields in `provider_metadata` by code. `stage_id`, `pipeline_id`,
+  `outcome`, `closes_on`, `assigned_to` and `person_ids` are gone from them; contacts are in `people`, the company in
+  `organization`.
 - Their list query takes `status`, `stage`, `pipeline` and `organization`; the free word, the time windows and the
   portal's own fields are gone from it. `--all` is gone from those lists.
 - `deals move <ref> <stage>` takes the stage as an argument, not `--stage`.
-- Deal and lead writes have no `--body`. `--field <code>=<value>` sets a custom field by its code, once per field;
-  an empty value clears it. A code that names a standard field (`stageId`, `categoryId`, `assignedById`, a lead's
+- Deal and lead writes have no `--body`. `--field <label or code>=<value>` sets a custom field by the definitions the
+  last `sync` stored: a list field takes its option's label or id, a multiple field one `--field` per value, and an
+  empty value clears it. A code that names a standard field (`stageId`, `categoryId`, `assignedById`, a lead's
   `STATUS_ID`) is refused.
+- `fields list <deals|leads|people|organizations>` is cli-core's: it reads the definitions `sync` stored, so run
+  `sync` first, and each field names its `untrusted` parts.
+- `api.crm.deal.update` (and the other deal and lead `api.*` keys) at `ask` now asks on `deals update`, `move` and
+  `close` too, not only on `api call`. `--dry-run` of a deal or lead write names every key it may check: the
+  `api.*` key, and the move, close and `crm.assign-others` keys with the option that would make each apply.
+- `sync` reads the portal's field definitions of each kind, one more request per kind, so `--max-pages` reaches the
+  records later. A webhook without the rights to read them still syncs; any other failure there fails the sync.
 - Leads stand in one pipeline named `Leads`, since Bitrix24's leads have none.
 - `deals.delete` and `leads.delete` default to `ask`; `api call` that sets a stage checks `deals.close` (or
   `leads.close`) as well as `deals.move`.

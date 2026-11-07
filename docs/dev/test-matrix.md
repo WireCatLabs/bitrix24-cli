@@ -88,6 +88,10 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `pipelines list` |  | ✅ |  |
 | `pipelines show` |  | ✅ |  |
 | `stages list` |  | ✅ |  |
+| `fields list` |  | ✅ |  |
+| `fields list` | `--limit` | ✅ |  |
+| `fields list` | `--page` | ✅ |  |
+| `fields list` | `--all` | ✅ |  |
 | `search all` |  | ✅ |  |
 | `search all` | `--only` | ✅ |  |
 | `search all` | `--source` | ✅ |  |
@@ -138,10 +142,6 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `users list` | `--page` | ✅ |  |
 | `users list` | `--all` | ✅ |  |
 | `users show` |  | ✅ |  |
-| `fields list` |  | ✅ |  |
-| `fields list` | `--limit` | ✅ |  |
-| `fields list` | `--page` | ✅ |  |
-| `fields list` | `--all` | ✅ |  |
 | `api list` |  | ✅ |  |
 | `api show` |  | ✅ |  |
 | `api call` |  | ✅ |  |

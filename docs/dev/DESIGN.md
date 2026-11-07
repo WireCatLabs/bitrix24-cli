@@ -97,9 +97,9 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
      `api call crm.deal.update` cannot get round `deals.update: deny`. `crm.item.*` with `entityTypeId` 1 to 4 is
      the lead, deal, contact or company. A create or update that sets a stage (`stageId` in any letter case, a
      lead's `STATUS_ID`) also checks `deals.move` and `deals.close`, or the leads' keys, since the stage may be won or
-     lost. The other way round, `api.crm.deal.update: deny` stops `deals update`, `move` and `close` before any
-     request; cli-core's write guard takes no further keys, so at `ask` it asks only on `api call`. The method name is
-     lowercased and loses a `.json` suffix before any key is read.
+     lost. The other way round, `api.crm.deal.update` is checked by `deals update`, `move` and `close` through
+     cli-core's `CrmWrites.alsoChecks`: `deny` stops them before any request, `ask` asks, and `--dry-run` names it.
+     The method name is lowercased and loses a `.json` suffix before any key is read.
    - `api call` defaults come from an allow list: the reads `b24` makes (`crm`, `catalog`, `user`, `profile` and
      the method listings) and the four CRM types' create and update are `allow`; a method whose name ends in
      `delete` and every other method are `ask`; the families that reach people, publish or send data out are
@@ -131,10 +131,11 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
 
 ### Custom fields
 
-- **Definitions.** `fields list <kind>` and every lookup read two calls that need only read rights: REST 3.0
-  `crm.<type>.field.list` (title, filterable) and REST 2 `crm.<type>.userfield.list` (the real type and a list
-  field's options). `field.list` alone shows a list field as `int` with no options. They are read once per command
-  run, only when a command needs them, and never kept.
+- **Definitions.** Every lookup reads two calls that need only read rights: REST 3.0 `crm.<type>.field.list`
+  (title, filterable) and REST 2 `crm.<type>.userfield.list` (the real type and a list field's options).
+  `field.list` alone shows a list field as `int` with no options. `sync` reads them for all four kinds and cli-core
+  keeps them, so `fields list <kind>` and a deal's or lead's `--field` read the store; `people` and `organizations`
+  read them once per command run, only when a command needs them.
 - **A list field's value** is its option's label, with the id beside it: `{ "label", "value": "Wholesale",
   "option_id": "45" }`, both arrays for a multiple field. Every other field keeps `{ label, value }`.
 - **Names.** A custom field is named by its code or its whole label, ignoring case, spaces and underscores, so

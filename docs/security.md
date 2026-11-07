@@ -22,7 +22,7 @@ robots, which may write to your clients: set `permissions.deals.move` and `permi
 if your portal has such robots. Every write that sets a stage checks them; a won or lost stage, and `close`, check
 `deals.close` or `leads.close` too, and `api call` with a `stageId` checks both. A deal or lead `--field` that names a
 stage, a pipeline or an owner is refused. Deleting a deal or a lead asks first. `api.crm.deal.update: deny` also stops
-`deals update`, `move` and `close`; at `ask` it asks only on `api call`.
+`deals update`, `move` and `close`, and at `ask` they ask too.
 
 `api call` works from an allow list. It allows the CRM, catalog and user reads `b24` makes itself, and the deal, lead,
 contact and company writes, which also check the command's own key (`api call crm.item.update` with `entityTypeId` 2

@@ -41,8 +41,52 @@ describe("sync", () => {
   })
 })
 
+describe("fields list", () => {
+  it("lists the portal's fields of each kind as the sync stored them, a contact's included", async () => {
+    const { portal } = await synced()
+    const before = portal.calls.length
+    const people = items(await b24(["work", "--offline", "fields", "list", "people", "--json"], { portal }))
+    expect(people).toEqual([
+      {
+        code: "UF_CRM_CHANNEL",
+        label: "Channel",
+        type: "enumeration",
+        multiple: true,
+        filterable: true,
+        options: [
+          { id: "51", label: "Phone" },
+          { id: "52", label: "Fair" },
+        ],
+        untrusted: ["label", "options.label"],
+      },
+    ])
+    const deals = items(await b24(["work", "--offline", "fields", "list", "deals", "--json"], { portal }))
+    expect(deals.map(({ code }) => code)).toEqual(["UF_CRM_SOURCE", "UF_CRM_NOTE", "UF_CRM_TAGS"])
+    const second = await b24(["work", "fields", "list", "deals", "--limit", "1", "--page", "2", "--json"], { portal })
+    expect(items(second).map(({ code }) => code)).toEqual(["UF_CRM_NOTE"])
+    expect(items(await b24(["work", "fields", "list", "deals", "--all", "--json"], { portal }))).toHaveLength(3)
+    expect(portal.calls.length).toBe(before)
+  })
+})
+
+describe("sync and field definitions", () => {
+  it("syncs the records without definitions when the webhook may not read them", async () => {
+    const portal = seededCrm({ "crm.deal.field.list": { status: 403, body: { error: "ACCESS_DENIED" } } })
+    expect((await b24(["work", "sync", "--json"], { portal })).code).toBe(0)
+    expect(items(await b24(["work", "--offline", "fields", "list", "deals", "--json"], { portal }))).toEqual([])
+    expect(items(await b24(["work", "--offline", "deals", "list", "--json"], { portal }))).toHaveLength(2)
+  })
+
+  it("fails the sync on any other failure, rather than mark the stored definitions deleted", async () => {
+    const { portal } = await synced()
+    const failing = seededCrm({ "crm.deal.field.list": { status: 503, body: { error: "INTERNAL_SERVER_ERROR" } } })
+    expect((await b24(["work", "sync", "--json"], { portal: failing })).code).not.toBe(0)
+    expect(items(await b24(["work", "--offline", "fields", "list", "deals", "--json"], { portal }))).toHaveLength(3)
+  })
+})
+
 describe("lists read the store, --offline too", () => {
-  it("deals and leads in core's shape: status, pipeline, stage, close date, a decimal amount", async () => {
+  it("deals and leads in core's shape: status, pipeline, stage, close date, a decimal amount, assignee, custom values", async () => {
     const { portal } = await synced()
     const before = portal.calls.length
     const deals = items(await b24(["work", "--offline", "deals", "list", "status:open", "--json"], { portal }))
@@ -56,6 +100,8 @@ describe("lists read the store, --offline too", () => {
       close_date: "2026-12-01",
       organization: { name: "Example Ltd" },
       people: [{ name: "Anna Example", role: "contact" }],
+      assignee: "example.bitrix24.test/user/7",
+      provider_metadata: { UF_CRM_SOURCE: { label: "Source", value: "Website", option_id: "41" } },
     })
     const [lead] = items(await b24(["work", "leads", "list", "--json"], { portal }))
     expect(lead).toMatchObject({ pipeline_name: "Leads", stage: "In progress", amount: "300.00" })
