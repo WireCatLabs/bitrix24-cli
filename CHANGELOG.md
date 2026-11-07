@@ -94,13 +94,10 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   command's own key.
 - `api call --dry-run` names every key the call checks with its level, such as `api.crm.deal.delete` at `ask`, instead
   of "no key, allowed".
-- `api call crm.item.add|update|delete` with `entityTypeId` 1 to 4 checks the lead, deal, contact or company command
-  key, as `crm.deal.update` already did: `deals.delete: deny` now stops `crm.item.delete` for a deal.
-- Every method whose name ends in `delete` asks, not only the listed ones. A method name in capitals or with a `.json`
-  suffix is read as its plain name, so it no longer gets round a key.
-- A write that sets a stage checks `deals.move` or `leads.move`: `update` and `create` with `stageId` in `--body`, over
-  MCP too, and `api call` with `STAGE_ID` or a lead's `STATUS_ID`. `ASSIGNED_BY_ID` checks `crm.assign-others` like
-  `assignedById`.
+- `api call` checks the command key of every CRM write it makes, whichever method it goes through.
+- Every delete method asks, and a method is checked under one name however it is spelled.
+- A write that sets a stage checks the move key, and one that names another employee checks `crm.assign-others`,
+  however the field is spelled and over MCP too.
 - A write is sent once. A REST 3.0 write that got no answer was sent up to three more times with the same
   `Idempotency-Key`, which is not yet checked on a live portal; it is now `outcome_unknown` at once, and its message
   names `--operation-id` once.
