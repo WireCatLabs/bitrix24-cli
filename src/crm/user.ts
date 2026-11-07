@@ -1,4 +1,5 @@
 import { CliError } from "@wirecat/cli-base"
+import type { CrmDepartment, CrmUser } from "@wirecat/cli-core"
 import * as v from "valibot"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { type Condition, rest2Filter } from "./conditions.js"
@@ -59,3 +60,41 @@ export const getUser = async (portal: BitrixTransport, reference: string): Promi
   if (!found) throw new CliError("not_found", `there is no user ${reference}`)
   return fromBitrixUser(found)
 }
+
+const rowsOf = (result: unknown): Raw[] => (Array.isArray(result) ? (result as Raw[]) : [])
+
+/** A REST 2 list read whole: its pages are always 50 rows, `start` the number before (apidocs user.get). */
+const everyRow = async (portal: BitrixTransport, method: string, params: Record<string, unknown>) =>
+  (
+    await walk({ offset: 0 }, 50, async (start) => {
+      const answer = await portal.call(method, { ...params, start })
+      return { rows: rowsOf(answer.result), more: answer.next !== undefined }
+    })
+  ).items
+
+export const toCrmUser = (raw: Raw): CrmUser => {
+  const user = fromBitrixUser(raw)
+  return {
+    externalId: user.id,
+    name: user.name,
+    position: user.position,
+    active: user.active,
+    // A field the webhook's scope lacks is left out of the answer (apidocs user-scope): unknown, not empty.
+    ...("EMAIL" in raw ? { email: user.email } : {}),
+    ...(Array.isArray(raw.UF_DEPARTMENT) ? { departments: user.department_ids } : {}),
+  }
+}
+
+/** Every employee, those who left too, so core can withdraw what a departed one held. */
+export const portalUsers = async (portal: BitrixTransport): Promise<CrmUser[]> =>
+  (await everyRow(portal, "user.get", { FILTER: { USER_TYPE: "employee" }, sort: "ID", order: "ASC" }))
+    .map(toCrmUser)
+    .filter(({ externalId }) => externalId !== "")
+
+export const portalDepartments = async (portal: BitrixTransport): Promise<CrmDepartment[]> =>
+  (await everyRow(portal, "department.get", { sort: "ID", order: "ASC" })).flatMap((raw) => {
+    const externalId = id(raw.ID)
+    return externalId
+      ? [{ externalId, name: text(raw.NAME) ?? externalId, parent: id(raw.PARENT), head: id(raw.UF_HEAD) }]
+      : []
+  })

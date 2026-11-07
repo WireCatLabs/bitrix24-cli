@@ -29,12 +29,12 @@ describe("sync", () => {
     expect(portal.calls).toHaveLength(0)
   })
 
-  it("store status says how far each kind is", async () => {
+  it("store status says how far each kind is, the own company and the employee among them", async () => {
     await synced()
     const rows = items(await b24(["work", "store", "status", "--json"]))
     expect(rows.map(({ kind, state, stored }) => [kind, state, stored])).toEqual([
-      ["organization", "complete", 1],
-      ["person", "complete", 1],
+      ["organization", "complete", 2],
+      ["person", "complete", 2],
       ["deal", "complete", 2],
       ["lead", "complete", 1],
     ])
@@ -99,7 +99,10 @@ describe("lists read the store, --offline too", () => {
       currency: "EUR",
       close_date: "2026-12-01",
       organization: { name: "Example Ltd" },
-      people: [{ name: "Anna Example", role: "contact" }],
+      people: [
+        { name: "Anna Example", role: "contact" },
+        { name: "Example Owner", role: "owner" },
+      ],
       assignee: "example.bitrix24.test/user/7",
       provider_metadata: { UF_CRM_SOURCE: { label: "Source", value: "Website", option_id: "41" } },
     })

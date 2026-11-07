@@ -95,9 +95,10 @@ const refusedValue = (): Reply => ({
   body: { error: { code: "BITRIX_REST_V3_EXCEPTION_VALIDATION_REQUESTVALIDATIONEXCEPTION", message: "Invalid value" } },
 })
 
-const OPERATORS = new Set(["=", "!=", ">", ">=", "<", "<="])
+const OPERATORS = new Set(["=", "!=", ">", ">=", "<", "<=", "in"])
 
 const compare = (left: unknown, op: string, right: unknown) => {
+  if (op === "in") return Array.isArray(right) && right.map(String).includes(String(left))
   const time = typeof right === "string" && /^\d{4}-\d{2}-\d{2}T/.test(right)
   const a = time ? Date.parse(String(left)) : typeof right === "number" ? Number(left) : String(left)
   const b = time ? Date.parse(right) : right
@@ -108,6 +109,39 @@ const compare = (left: unknown, op: string, right: unknown) => {
   if (op === "<") return (a as number) < (b as number)
   return (a as number) <= (b as number)
 }
+
+/** What a filter on a contact's `companiesId` gets (apidocs fields-contact: "currently returns INTERNAL_SERVER_ERROR"). */
+const brokenFilter = (): Reply => ({
+  status: 500,
+  body: { error: { code: "INTERNAL_SERVER_ERROR", message: "Internal server error" } },
+})
+
+/** The scope each method needs, from the top of its page in the API reference. */
+type Scope = "crm" | "user" | "department"
+const scopeOf = (method: string): Scope =>
+  method.startsWith("user.") ? "user" : method.startsWith("department.") ? "department" : "crm"
+/** REST 3.0 serves the CRM objects by type, but not their REST 2 `userfield` lists (apidocs rest-v3). */
+const apiOf = (method: string): 2 | 3 =>
+  /^crm\.(deal|lead|contact|company|mycompany)\./.test(method) && !/\.userfield\./.test(method) ? 3 : 2
+
+/** A webhook without the method's scope: REST 2 answers 401, REST 3.0 403 (apidocs error-codes, rest-v3). */
+const noScope = (api: 2 | 3): Reply =>
+  api === 3
+    ? {
+        status: 403,
+        body: { error: { code: "BITRIX_REST_V3_EXCEPTION_INSUFFICIENTSCOPEEXCEPTION", message: "Insufficient scope" } },
+      }
+    : {
+        status: 401,
+        body: {
+          error: "insufficient_scope",
+          error_description: "The request requires higher privileges than provided by the webhook token",
+        },
+      }
+
+/** `crm.mycompany.basic.list` takes these and nothing else (apidocs crm-my-company-basic-list-rest-v3). */
+const MY_SELECT = ["id", "title", "email", "phone", "requisites", "bankRequisites"]
+const MY_FILTER = ["id", "title", "email.value", "phone.value"]
 
 /** Portal time, with its own offset as Bitrix24 gives it. */
 const portalTime = (ms: number) => new Date(ms + 3 * 3_600_000).toISOString().replace(/\.\d+Z$/, "+03:00")
@@ -133,6 +167,25 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
   }
   let lose = false
   let writes = 0
+  const mine = new Map<number, Raw>()
+  /** `user.get` and `department.get` rows, in the REST 2 shape: upper-case names, ids as strings. */
+  const users = new Map<string, Raw>([
+    [
+      "7",
+      {
+        ID: "7",
+        ACTIVE: true,
+        NAME: "Example",
+        LAST_NAME: "Owner",
+        EMAIL: "owner@example.test",
+        WORK_POSITION: "",
+        UF_DEPARTMENT: [1],
+        USER_TYPE: "employee",
+      },
+    ],
+  ])
+  const departments = new Map<string, Raw>([["1", { ID: "1", NAME: "Example company", SORT: 500, UF_HEAD: "7" }]])
+  const withheld = new Set<Scope | "user_basic">()
 
   const known = (type: Type, name: string) =>
     REST3_FIELDS[type].includes(name) || CUSTOM[type].some((field) => field.code === name)
@@ -179,6 +232,7 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
       if (!Array.isArray(filter)) return invalid("filter is an array of conditions")
       const bad = firstUnknown(type, [...select, ...(filter as unknown[][]).map((one) => String(one[0]))])
       if (bad) return unknown(bad)
+      if (type === "contact" && (filter as unknown[][]).some((one) => one[0] === "companiesId")) return brokenFilter()
       if ((filter as unknown[][]).some((one) => !OPERATORS.has(String(one[1])))) return invalid("unknown operator")
       if (
         (filter as unknown[][]).some(
@@ -251,6 +305,46 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
         })),
       )
   }
+  methods["crm.mycompany.basic.list"] = ({ body }) => {
+    const select = (body.select ?? ["id", "title"]) as string[]
+    const filter = (body.filter ?? []) as unknown[][]
+    const bad = [...select, ...filter.map((one) => String(one[0])), ...Object.keys(body.order ?? {})].find(
+      (name) => !MY_SELECT.includes(name) && !MY_FILTER.includes(name),
+    )
+    if (bad) return unknown(bad)
+    if (filter.some((one) => one.length === 3 && one[1] !== "=" && one[1] !== "in"))
+      return {
+        status: 400,
+        body: { error: { code: "BITRIX_REST_V3_EXCEPTION_INVALIDFILTEREXCEPTION", message: "Invalid filter" } },
+      }
+    const { limit = 50, offset = 0 } = (body.pagination ?? {}) as { limit?: number; offset?: number }
+    const found = [...mine.values()]
+      .filter((row) => filter.every(([field, op, value]) => compare(row[String(field)], String(op), value)))
+      .sort((a, b) => Number(a.id) - Number(b.id))
+      .slice(offset, offset + limit)
+    return ok({ items: found.map((row) => selected(row, select)) })
+  }
+  /** REST 2 pages by 2 here, so a reader that stops at the first page loses rows. */
+  const paged = (all: Raw[], start: number) =>
+    ok(
+      all.slice(start, start + 2),
+      start + 2 < all.length ? { next: start + 2, total: all.length } : { total: all.length },
+    )
+  methods["user.get"] = ({ body }) => {
+    const filter = (body.FILTER ?? {}) as Record<string, unknown>
+    const all = [...users.values()]
+      .filter(
+        (row) =>
+          (filter.ID === undefined || String(filter.ID) === row.ID) &&
+          (filter.USER_TYPE === undefined || filter.USER_TYPE === row.USER_TYPE) &&
+          (filter.ACTIVE !== true || row.ACTIVE === true),
+      )
+      .map((row) =>
+        withheld.has("user_basic") ? Object.fromEntries(Object.entries(row).filter(([key]) => key !== "EMAIL")) : row,
+      )
+    return paged(all, Number(body.start ?? 0))
+  }
+  methods["department.get"] = ({ body }) => paged([...departments.values()], Number(body.start ?? 0))
   methods["crm.category.list"] = () => ok({ categories: CATEGORIES })
   methods["crm.status.list"] = ({ body }) => {
     const directory = (body.filter as { ENTITY_ID?: string } | undefined)?.ENTITY_ID
@@ -261,18 +355,41 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
     return ok(page, start + 2 < all.length ? { next: start + 2, total: all.length } : { total: all.length })
   }
 
-  const portal = fakePortal({ ...methods, ...more })
+  const guarded = Object.fromEntries(
+    Object.entries(methods).map(([name, answer]) => [
+      name,
+      (call: PortalCall): Reply => {
+        if (call.api !== apiOf(name))
+          return { status: 404, body: { error: "ERROR_METHOD_NOT_FOUND", error_description: "Method not found!" } }
+        return withheld.has(scopeOf(name)) ? noScope(call.api) : answer(call)
+      },
+    ]),
+  )
+  const portal = fakePortal({ ...guarded, ...more })
   return {
     ...portal,
-    /** Puts a row as the portal would hold it; `updatedTime` moves on. */
+    /** Puts a row as the portal would hold it; `updatedTime` moves on, and the read-only main links follow the lists. */
     put(type: Type, fields: Raw): number {
       const at = tick()
       const row: Raw = { assignedById: 7, createdTime: at, ...fields, id: fields.id ?? nextId++, updatedTime: at }
+      if (type === "contact" && Array.isArray(row.companiesId)) row.companyId = row.companiesId[0] ?? null
+      if ((type === "deal" || type === "lead") && Array.isArray(row.contactsId))
+        row.contactId = row.contactsId[0] ?? null
       const refused = settle(type, row)
       if (refused) throw new Error(`fake portal refused a row: ${JSON.stringify(refused)}`)
       rows[type].set(Number(row.id), row)
       return Number(row.id)
     },
+    /** One of the account's own companies, which only `crm.mycompany.*` lists. */
+    putMine(fields: Raw): number {
+      const id = Number(fields.id ?? nextId++)
+      mine.set(id, { ...fields, id })
+      return id
+    },
+    putUser: (fields: Raw) => users.set(String(fields.ID), { ACTIVE: true, USER_TYPE: "employee", ...fields }),
+    putDepartment: (fields: Raw) => departments.set(String(fields.ID), { SORT: 500, ...fields }),
+    /** The webhook loses a scope; `user_basic` leaves `user.get` without `EMAIL`, as a `user_brief` webhook gets. */
+    withhold: (scope: Scope | "user_basic") => withheld.add(scope),
     row: (type: Type, id: number) => rows[type].get(id),
     remove: (type: Type, id: number) => rows[type].delete(id),
     loseNextAnswer: () => {
@@ -285,6 +402,7 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
 /** A portal with one of each kind on it, every deal and lead in a listed stage. */
 export const seededCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
   const crm = fakeCrm(more)
+  crm.putMine({ id: 1, title: "Example own company" })
   const company = crm.put("company", { title: "Example Ltd" })
   const contact = crm.put("contact", {
     name: "Anna",

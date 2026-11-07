@@ -13,7 +13,7 @@ export interface Method {
  * stages, products and users stay on REST 2: lead stages have no REST 3.0 method yet, and one path for all stages
  * keeps the outcome rule in one place.
  */
-const REST3_TYPES = /^crm\.(deal|lead|contact|company|quote|smartinvoice|smartprocess\d+)\./
+const REST3_TYPES = /^crm\.(deal|lead|contact|company|mycompany|quote|smartinvoice|smartprocess\d+)\./
 /** `crm.<type>.userfield.*` is REST 2 only; REST 3.0's own is `crm.<type>.field.custom.*`. */
 const REST2_ONLY = /^crm\.[a-z]+\.userfield\./
 
@@ -28,9 +28,11 @@ const effectOf = (name: string): Effect => {
   return "write"
 }
 
+const SCOPES = new Set(["crm", "user", "catalog", "task", "department"])
+
 const scopeOf = (name: string) => {
   const first = name.slice(0, name.indexOf("."))
-  return first === "crm" || first === "user" || first === "catalog" || first === "task" ? first : "basic"
+  return SCOPES.has(first) ? first : "basic"
 }
 
 /** Which REST version answers a method, what it does, and its scope; unknown methods go to REST 2, the older API. */
@@ -49,5 +51,5 @@ export const KNOWN_METHODS: readonly Method[] = [
     ),
   ),
   ...["crm.item.list", "crm.category.list", "crm.status.list", "crm.product.list", "crm.product.get"].map(methodOf),
-  ...["user.current", "user.get", "user.admin"].map(methodOf),
+  ...["user.current", "user.get", "user.admin", "department.get", "crm.mycompany.basic.list"].map(methodOf),
 ]
