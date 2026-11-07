@@ -79,8 +79,8 @@ describe("every remote command runs inside cli-core's run", () => {
     },
     skip: {
       "mcp serve": "listens until stopped; src/mcp.test.ts and src/permissions.test.ts run it",
-      "schedule run": "starts b24 again as its own process, which then runs inside its own run; src/schedule.test.ts",
-      "schedule exec": "the timer's entry: starts b24 again as its own process; src/schedule.test.ts",
+      "schedule run": "starts the schedule's entry as its own process; src/schedule.test.ts runs it against a fake one",
+      "schedule exec": "the timer's entry, which starts a process; src/schedule.test.ts runs it against a fake one",
       doctor: "cli-core's appDoctorCommand: 0.598.0 answers --online under the process run, a cli-core fix",
     },
     answering: () => options(portal().fetch),

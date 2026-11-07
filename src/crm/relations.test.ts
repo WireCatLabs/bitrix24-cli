@@ -16,8 +16,8 @@ const ALICE = {
  * Northstar is the own company, Acme the client. Emma, a portal user, owns the Acme renewal and reports to Grace,
  * the head of her department; Alice and Bob are Acme's contacts on the deal.
  */
-const northstar = () => {
-  const crm = fakeCrm()
+const northstar = (more: Parameters<typeof fakeCrm>[0] = {}) => {
+  const crm = fakeCrm(more)
   const own = crm.putMine({ id: 1, title: "Northstar Consulting" })
   crm.putDepartment({ ID: "1", NAME: "Northstar", UF_HEAD: "8" })
   crm.putUser({ ID: "7", NAME: "Emma", LAST_NAME: "Stone", EMAIL: "emma@northstar.example", UF_DEPARTMENT: [1] })
@@ -200,7 +200,12 @@ describe("relationships from the portal", () => {
     expect(report.item.issues).toEqual([expect.objectContaining({ kind: "user", reason: "crm.not-reported" })])
     const { store, person } = await opened()
     expect(await crmGapsOf(store, PORTAL)).toEqual([
-      expect.objectContaining({ what: "departments", reason: "refused", code: "permission_error" }),
+      expect.objectContaining({
+        kind: "departments",
+        reason: "refused",
+        code: "permission_error",
+        scope: "department",
+      }),
     ])
     const emma = await person("emma@northstar.example")
     expect((await store.knowledge.relations(null, emma)).map(({ kind, standing }) => [kind, standing]).sort()).toEqual([
@@ -219,16 +224,77 @@ describe("relationships from the portal", () => {
       expect.arrayContaining([expect.objectContaining({ name: "Emma Stone", role: "owner" })]),
     )
     expect(await store.people.personOf({ provider: "email", id: "emma@northstar.example" })).toBeFalsy()
+    expect(await crmGapsOf(store, PORTAL)).toEqual([
+      expect.objectContaining({ kind: "users", scope: "user_basic", message: expect.stringContaining("no e-mail") }),
+    ])
   })
 
-  it("gives a converted lead the deal the portal made from it", async () => {
-    const { crm, acme } = northstar()
-    const lead = crm.put("lead", { title: "Acme enquiry", stageId: "CONVERTED", companyId: acme })
-    const deal = crm.put("deal", { title: "Acme enquiry", categoryId: 0, stageId: "NEW", leadId: lead })
+  it("names a webhook without the user scope as a gap, and still syncs the deal and its contacts", async () => {
+    const { crm, deal } = northstar()
+    crm.withhold("user")
     const { ref } = await synced(crm)
-    expect(await rows("SELECT deal_id FROM leads WHERE external_id = ?", String(lead))).toEqual([
-      { deal_id: Number(ref("deals", deal).slice("deal:".length)) },
-    ])
+    const { store, person } = await opened()
+    expect(await crmGapsOf(store, PORTAL)).toEqual(
+      expect.arrayContaining([expect.objectContaining({ kind: "users", reason: "refused", scope: "user" })]),
+    )
+    expect((await store.deals.get(ref("deals", deal))).people.map(({ ref: one }) => one)).toEqual(
+      expect.arrayContaining([await person("alice@acme.example"), await person("bob@acme.example")]),
+    )
+  })
+
+  it("completes the companies' round and id pass when the portal refuses its own companies, and names the gap", async () => {
+    const { crm } = northstar({
+      "crm.mycompany.basic.list": {
+        status: 403,
+        body: { error: { code: "BITRIX_REST_V3_EXCEPTION_ACCESSDENIEDEXCEPTION", message: "Access denied" } },
+      },
+    })
+    await synced(crm)
+    const report = await resync(crm)
+    expect((report.item as unknown as { synced: { kind: string }[] }).synced[0]).toMatchObject({
+      kind: "organization",
+      state: "complete",
+      pass: "complete",
+    })
+    const { store } = await opened()
+    expect(await crmGapsOf(store, PORTAL)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "organization", message: expect.stringContaining("own") }),
+      ]),
+    )
+  })
+
+  it("spends one request of the budget for each page past the first", async () => {
+    const { crm } = northstar()
+    const { BitrixTransport } = await import("../bitrix/transport.js")
+    const { FAKE_WEBHOOK } = await import("../testing/fake-portal.js")
+    const { bitrixCrmSource } = await import("./source.js")
+    const source = bitrixCrmSource(
+      () => new BitrixTransport({ webhook: FAKE_WEBHOOK, fetch: crm.fetch, sleep: async () => {} }),
+    )
+    let spent = 0
+    const context = {
+      spend: () => {
+        spent += 1
+      },
+      gap: () => {},
+    }
+    const before = crm.calls.length
+    expect(await source.users?.(context)).toHaveLength(3)
+    expect([crm.calls.length - before, spent]).toEqual([2, 1])
+  })
+
+  it("gives each converted lead the deal the portal made from it, over several pages of leads", async () => {
+    const { crm, acme } = northstar()
+    const pairs = Array.from({ length: 55 }, (_, at) => {
+      const lead = crm.put("lead", { title: `Acme enquiry ${at}`, stageId: "CONVERTED", companyId: acme })
+      return [lead, crm.put("deal", { title: `Acme order ${at}`, categoryId: 0, stageId: "NEW", leadId: lead })]
+    })
+    await synced(crm)
+    const linked = await rows(
+      "SELECT l.external_id AS lead, d.external_id AS deal FROM leads l JOIN deals d ON d.id = l.deal_id ORDER BY l.id",
+    )
+    expect(linked).toEqual(pairs.map(([lead, deal]) => ({ lead: String(lead), deal: String(deal) })))
   })
 
   it("makes Acme a customer of Northstar only once the owner maps its company type", async () => {

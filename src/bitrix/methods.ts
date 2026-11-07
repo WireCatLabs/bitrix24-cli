@@ -29,10 +29,12 @@ const effectOf = (name: string): Effect => {
 }
 
 const SCOPES = new Set(["crm", "user", "catalog", "task", "department"])
+/** Named under `user.` but in scope `basic` (apidocs common/users: user-admin, user-access). */
+const BASIC = new Set(["user.admin", "user.access"])
 
-const scopeOf = (name: string) => {
+export const scopeOf = (name: string): string => {
   const first = name.slice(0, name.indexOf("."))
-  return SCOPES.has(first) ? first : "basic"
+  return SCOPES.has(first) && !BASIC.has(name) ? first : "basic"
 }
 
 /** Which REST version answers a method, what it does, and its scope; unknown methods go to REST 2, the older API. */

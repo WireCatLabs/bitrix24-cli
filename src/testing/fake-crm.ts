@@ -1,5 +1,5 @@
 import { REST3_FIELDS } from "../crm/rest3-fields.js"
-import { fakePortal, ok, type PortalCall, type Reply } from "./fake-portal.js"
+import { fakePortal, methodNotFound, ok, type PortalCall, type Reply } from "./fake-portal.js"
 
 type Raw = Record<string, unknown>
 type Type = keyof typeof REST3_FIELDS
@@ -142,6 +142,7 @@ const noScope = (api: 2 | 3): Reply =>
 /** `crm.mycompany.basic.list` takes these and nothing else (apidocs crm-my-company-basic-list-rest-v3). */
 const MY_SELECT = ["id", "title", "email", "phone", "requisites", "bankRequisites"]
 const MY_FILTER = ["id", "title", "email.value", "phone.value"]
+const MY_ORDER = ["id", "title"]
 
 /** Portal time, with its own offset as Bitrix24 gives it. */
 const portalTime = (ms: number) => new Date(ms + 3 * 3_600_000).toISOString().replace(/\.\d+Z$/, "+03:00")
@@ -308,11 +309,15 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
   methods["crm.mycompany.basic.list"] = ({ body }) => {
     const select = (body.select ?? ["id", "title"]) as string[]
     const filter = (body.filter ?? []) as unknown[][]
-    const bad = [...select, ...filter.map((one) => String(one[0])), ...Object.keys(body.order ?? {})].find(
-      (name) => !MY_SELECT.includes(name) && !MY_FILTER.includes(name),
-    )
+    const bad =
+      select.find((name) => !MY_SELECT.includes(name)) ??
+      Object.keys(body.order ?? {}).find((name) => !MY_ORDER.includes(name))
     if (bad) return unknown(bad)
-    if (filter.some((one) => one.length === 3 && one[1] !== "=" && one[1] !== "in"))
+    if (
+      filter.some(
+        (one) => !MY_FILTER.includes(String(one[0])) || (one.length === 3 && one[1] !== "=" && one[1] !== "in"),
+      )
+    )
       return {
         status: 400,
         body: { error: { code: "BITRIX_REST_V3_EXCEPTION_INVALIDFILTEREXCEPTION", message: "Invalid filter" } },
@@ -355,17 +360,24 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
     return ok(page, start + 2 < all.length ? { next: start + 2, total: all.length } : { total: all.length })
   }
 
+  const answers = { ...methods, ...more }
+  const answerOf = (name: string, call: PortalCall): Reply => {
+    const entry = answers[name]
+    if (typeof entry === "function") return entry(call)
+    if (Array.isArray(entry)) return entry.shift() ?? { status: 500, body: { error: "EXHAUSTED" } }
+    return entry as Reply
+  }
+  // A test's own answers go through the same version and scope checks as the fake's.
   const guarded = Object.fromEntries(
-    Object.entries(methods).map(([name, answer]) => [
+    Object.keys(answers).map((name) => [
       name,
       (call: PortalCall): Reply => {
-        if (call.api !== apiOf(name))
-          return { status: 404, body: { error: "ERROR_METHOD_NOT_FOUND", error_description: "Method not found!" } }
-        return withheld.has(scopeOf(name)) ? noScope(call.api) : answer(call)
+        if (call.api !== apiOf(name)) return methodNotFound(call.api, name)
+        return withheld.has(scopeOf(name)) ? noScope(call.api) : answerOf(name, call)
       },
     ]),
   )
-  const portal = fakePortal({ ...guarded, ...more })
+  const portal = fakePortal(guarded)
   return {
     ...portal,
     /** Puts a row as the portal would hold it; `updatedTime` moves on, and the read-only main links follow the lists. */

@@ -46,7 +46,8 @@ Find your way with the tool itself, not this file:
 - Bitrix24 has no deal contact roles (decision-maker, influencer), no reporting lines between contacts, no parent
   company and no relationship dates. Never infer them; say they are unknown unless the owner made the link.
 - A sync whose webhook lacks `user` or `department` reads the rest and names the gap in `issues`; answer "unknown",
-  not "none". Without `user_basic` employees have no e-mail, so they are not joined to the same person in mail.
+  not "none". Without `user_basic` employees have no e-mail, so they are not joined to the same person in mail; that gap,
+  and refused own companies, are kept as the account's gaps, not in `issues`.
 - `b24 work session status --check` says whose rights the webhook carries. Only the owner installs a sync timer
   (`schedule command crm --every 1h -- sync`); MCP does not offer `schedule`.
 

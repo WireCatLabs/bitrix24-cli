@@ -24,6 +24,9 @@ const RETRY: RetryConfig = { retries: 3, baseDelayMs: 1_000, maxDelayMs: 10_000,
 /** A pace wait longer than this ends the run instead of sitting in it, as cli-core's messenger pacing does. */
 const LONGEST_PACE_WAIT_MS = 60_000
 
+/** What a reader needs of the transport: a source call passes one that counts its requests. */
+export type BitrixCaller = Pick<BitrixTransport, "call">
+
 export type FetchLike = (url: string, init: RequestInit) => Promise<Response>
 
 export interface BitrixTransportOptions {

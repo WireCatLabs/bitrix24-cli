@@ -28,6 +28,16 @@ describe("api list and show", () => {
     })
   })
 
+  it.each([
+    ["user.admin", "basic", "2"],
+    ["user.access", "basic", "2"],
+    ["user.get", "user", "2"],
+    ["department.get", "department", "2"],
+    ["crm.mycompany.basic.list", "crm", "3.0"],
+  ])("show names %s's scope as its page in the API reference does", async (method, scope, rest) => {
+    expect((await b24(["api", "show", method, "--json"])).json().item).toMatchObject({ scope, rest })
+  })
+
   it("show tells a messaging write is denied and calls nothing", async () => {
     const ran = await b24(["api", "show", "im.message.add", "--json"])
     expect(ran.json().item).toMatchObject({ rest: "2", effect: "write", default_level: "deny" })

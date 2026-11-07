@@ -46,7 +46,8 @@ not offered over MCP.
 
 `schedule command` installs a timer (systemd, launchd or Task Scheduler) that runs `b24` on its own, with no
 terminal. The timer runs `b24 schedule exec <file>`, and the schedule file in the state folder holds the words, the
-profile and your `PATH`, never the webhook's address. Each run checks the permissions again. `B24_READ_ONLY` refuses
+profile, your `PATH` and the folders `b24` uses (`B24_CONFIG_DIR`, `B24_STATE_DIR`, `MESSAGING_STORE`), never the
+webhook's address. Each run checks the permissions again. `B24_READ_ONLY` refuses
 `schedule command`, `remove`, `run` and `exec`, and no MCP tool offers `schedule`.
 
 A write that got no answer is not sent again: it is `outcome_unknown` with its `operation_id`. Check the portal, and

@@ -42,10 +42,7 @@ export const fakePortal = (script: Record<string, Reply | Reply[] | ((call: Port
         ? entry(call)
         : Array.isArray(entry)
           ? (entry.shift() ?? { status: 500, body: { error: "EXHAUSTED" } })
-          : (entry ?? {
-              status: 404,
-              body: { error: "ERROR_METHOD_NOT_FOUND", error_description: "Method not found!" },
-            })
+          : (entry ?? methodNotFound(api, method))
     if (reply instanceof Error) throw reply
     return new Response(reply.text ?? JSON.stringify(reply.body ?? {}), {
       status: reply.status ?? 200,
@@ -58,3 +55,17 @@ export const fakePortal = (script: Record<string, Reply | Reply[] | ((call: Port
 export const ok = (result: unknown, extra: Record<string, unknown> = {}): Reply => ({
   body: { result, ...extra, time: { start: 0, finish: 0, duration: 0 } },
 })
+
+/** Each API's answer to a method it does not have (apidocs error-codes; REST 3.0 method pages: HTTP 404). */
+export const methodNotFound = (api: 2 | 3, method: string): Reply =>
+  api === 3
+    ? {
+        status: 404,
+        body: {
+          error: {
+            code: "BITRIX_REST_V3_EXCEPTION_METHODNOTFOUNDEXCEPTION",
+            message: `Method "${method}" was not found.`,
+          },
+        },
+      }
+    : { status: 404, body: { error: "ERROR_METHOD_NOT_FOUND", error_description: "Method not found!" } }

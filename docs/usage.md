@@ -94,7 +94,9 @@ b24 work config set crm.bitrix24:example.bitrix24.com.company-types CUSTOMER=cus
 
 When the webhook lacks the `user` or the `department` scope, the sync reads the rest and says what it could not read
 in `issues`. Nothing it stored before is ended for that. Without `user_basic` the employees come without their e-mail
-addresses and no message says so, so an employee is not joined to the same person in your mail.
+addresses, so an employee is not joined to the same person in your mail; a portal that refuses its own companies
+leaves its employees in no company. The sync keeps these two as gaps of the account, which memo's answers name, not
+in `issues`.
 
 ### Keep it up to date
 

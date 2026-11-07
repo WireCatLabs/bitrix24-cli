@@ -1,7 +1,7 @@
 import { CliError } from "@wirecat/cli-base"
 import type { CrmField } from "@wirecat/cli-core"
 import { fieldNamed, optionOf } from "@wirecat/cli-core/crm"
-import type { BitrixTransport } from "../bitrix/transport.js"
+import type { BitrixCaller } from "../bitrix/transport.js"
 import type { ItemType } from "./items.js"
 import { isCustom, type Metadata, type Raw, text, yes } from "./values.js"
 
@@ -18,7 +18,7 @@ const rows = (result: unknown): Raw[] => {
  * title and whether a list can filter by it, and REST 2's `userfield.list` the real type and a list field's options,
  * which `field.list` shows only as `int` (apidocs crm.<type>.field.custom.enum.list).
  */
-export const loadFields = async (portal: BitrixTransport, type: ItemType<unknown>["type"]): Promise<Field[]> => {
+export const loadFields = async (portal: BitrixCaller, type: ItemType<unknown>["type"]): Promise<Field[]> => {
   const described = await portal.call(`crm.${type}.field.list`, {
     select: ["name", "title", "type", "multiple", "filterable"],
   })

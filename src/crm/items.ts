@@ -4,7 +4,7 @@ import type { BitrixTransport } from "../bitrix/transport.js"
 import { type Condition, needsRest2, rest2Filter, rest3Filter } from "./conditions.js"
 import { type Field, loadFields, metadataOf } from "./fields.js"
 import { customFields, type Metadata, type Raw } from "./values.js"
-import { type Window, walk } from "./walk.js"
+import { rest2Rows, rest3Rows, type Window } from "./walk.js"
 
 /** A CRM object REST 3.0 serves as `crm.<type>.*`, and REST 2 as `crm.item.*` with its `entityTypeId`. */
 export interface ItemType<T> {
@@ -20,12 +20,6 @@ export interface ItemType<T> {
 }
 
 const REST3_PAGE = 1000
-const REST2_PAGE = 50
-
-const itemsOf = (result: unknown): Raw[] => {
-  const items = (result as { items?: unknown })?.items
-  return Array.isArray(items) ? (items as Raw[]) : []
-}
 
 /** Newest first; REST 3.0 adds `id` itself for stable pages. */
 const ORDER = { id: "DESC" }
@@ -45,30 +39,25 @@ export const listItems = async <T>(
 ) => {
   const select = [...type.select, ...custom.codes]
   const { items, has_more } = needsRest2(conditions)
-    ? await walk(window, REST2_PAGE, async (start) => {
-        const answer = await portal.call("crm.item.list", {
+    ? await rest2Rows(
+        portal,
+        "crm.item.list",
+        {
           entityTypeId: type.entityTypeId,
           select,
           filter: rest2Filter(conditions, { [type.words[0] ?? "title"]: type.words }),
           order: ORDER,
-          start,
           useOriginalUfNames: "Y",
-        })
-        return { rows: itemsOf(answer.result), more: answer.next !== undefined }
-      })
-    : await walk(window, REST3_PAGE, async (offset, limit) => {
-        const rows = itemsOf(
-          (
-            await portal.call(`crm.${type.type}.list`, {
-              select,
-              filter: rest3Filter(conditions),
-              order: ORDER,
-              pagination: { limit, offset },
-            })
-          ).result,
-        )
-        return { rows, more: rows.length === limit }
-      })
+        },
+        window,
+      )
+    : await rest3Rows(
+        portal,
+        `crm.${type.type}.list`,
+        { select, filter: rest3Filter(conditions), order: ORDER },
+        REST3_PAGE,
+        window,
+      )
   return { items: items.map((raw) => type.map(raw, metadataIn(raw, custom))), has_more }
 }
 
