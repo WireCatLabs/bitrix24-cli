@@ -13,7 +13,9 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   `deals delete` and `leads delete`, which ask first.
 - `deals create` and `update` take `--pipeline`, `--stage`, `--amount` with `--currency`, `--close-date` and
   `--owner`; leads take the same but `--close-date`. A stage checks the move key, a won or lost one the close key too.
-- `search all` finds stored deals and leads beside the other WireCat tools' messages, notes and events.
+- `search all` finds stored deals and leads beside the other WireCat tools' messages, notes and events. Under
+  `deals.list: deny` it leaves deals out and names them in `missing` and on stderr, and the same for leads; with every
+  kind it was asked for denied, it is refused (`search.all-denied`).
 - `b24 --help` and a bare `b24` open with what `b24` is for, what to try first, and where to start.
 
 ### Changed — may break callers
@@ -32,7 +34,11 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 - Deal and lead writes have no `--body`. `--field <label or code>=<value>` sets a custom field by the definitions the
   last `sync` stored: a list field takes its option's label or id, a multiple field one `--field` per value, and an
   empty value clears it. A code that names a standard field (`stageId`, `categoryId`, `assignedById`, a lead's
-  `STATUS_ID`) is refused.
+  `STATUS_ID`) is refused, and so is a `--field` with no key before its `=`.
+- A custom field's label and a list option's label are matched as cli-core matches names, for every `--field` and
+  query: `е` finds `ё`, and a letter typed as two code points finds the same letter typed as one. `people show` and
+  `organizations show` compare a name with the portal's matches the same way. A label that matched one field may now
+  match two, which is refused with both.
 - `fields list <deals|leads|people|organizations>` is cli-core's: it reads the definitions `sync` stored, so run
   `sync` first, and each field names its `untrusted` parts.
 - `api.crm.deal.update` (and the other deal and lead `api.*` keys) at `ask` now asks on `deals update`, `move` and

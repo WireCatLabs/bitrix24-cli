@@ -3,7 +3,7 @@ import type { DealKind } from "@wirecat/cli-core"
 import type { CrmVerb } from "@wirecat/cli-core/crm"
 import type { Level } from "@wirecat/cli-core/sends"
 import { type Effect, KNOWN_METHODS, methodOf } from "./bitrix/methods.js"
-import { type Body, isRecord, jsonNumber } from "./body.js"
+import { type Body, foldCode, isRecord, jsonNumber } from "./body.js"
 
 export const apiKey = (method: string): string => `api.${method}`
 
@@ -47,8 +47,8 @@ export const normalMethod = (raw: string): string => raw.toLowerCase().replace(/
 
 /** A field in any letter case, with or without underscores: `parseBody` has refused a body that spells one twice. */
 export const fieldOf = (record: Body, name: string): unknown => {
-  const wanted = name.toLowerCase()
-  const found = Object.keys(record).find((one) => one.replaceAll("_", "").toLowerCase() === wanted)
+  const wanted = foldCode(name)
+  const found = Object.keys(record).find((one) => foldCode(one) === wanted)
   return found === undefined ? undefined : record[found]
 }
 

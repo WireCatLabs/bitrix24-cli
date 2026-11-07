@@ -1,8 +1,9 @@
 import { CliError } from "@wirecat/cli-base"
 import { type FieldSpec, type Predicate, parseLucene, type QueryRegistry, walkQuery } from "@wirecat/cli-base/query"
 import { LIST_QUERY_GUIDE } from "@wirecat/cli-core/cli"
+import { fieldNamed, optionOf, unknownField } from "@wirecat/cli-core/crm"
 import type { Condition } from "./conditions.js"
-import { type Field, findField, optionOf, unknownField } from "./fields.js"
+import type { Field } from "./fields.js"
 
 /** The field names a query uses that the list's own fields do not have: the portal's custom fields, if any. */
 export const customNames = (
@@ -22,7 +23,7 @@ export const customNames = (
 /** The custom fields a query names, each as typed, refused unless the portal can filter a list by it. */
 export const filterableFields = (fields: readonly Field[], names: readonly string[]): [string, Field][] =>
   names.map((name) => {
-    const field = findField(fields, name)
+    const field = fieldNamed(fields, name)
     if (!field.filterable)
       throw new CliError("validation_error", `the portal cannot filter a list by ${field.label ?? field.code}`, {
         reason: "field.not-filterable",

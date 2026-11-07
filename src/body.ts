@@ -19,7 +19,8 @@ export const jsonNumber = (value: unknown): string | undefined =>
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value) && jsonNumber(value) === undefined
 
-const folded = (name: string) => name.replaceAll("_", "").toLowerCase()
+/** Bitrix24 takes `stageId` and `STAGE_ID` alike: one field code in any letter case, with or without underscores. */
+export const foldCode = (name: string) => name.replaceAll("_", "").toLowerCase()
 
 /**
  * Bitrix24 takes `stageId` and `STAGE_ID` alike, and which of two it applies is not documented: a body that names a
@@ -30,10 +31,10 @@ export const unambiguous = (value: unknown): void => {
   if (!isRecord(value)) return
   const seen = new Map<string, string>()
   for (const [key, inner] of Object.entries(value)) {
-    const other = seen.get(folded(key))
+    const other = seen.get(foldCode(key))
     if (other !== undefined)
       throw refused(`${other} and ${key} name the same Bitrix24 field, which may then take either value; keep one`)
-    seen.set(folded(key), key)
+    seen.set(foldCode(key), key)
     unambiguous(inner)
   }
 }

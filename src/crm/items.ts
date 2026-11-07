@@ -1,4 +1,5 @@
 import { CliError, isCliError } from "@wirecat/cli-base"
+import { foldName } from "@wirecat/cli-core"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { type Condition, needsRest2, rest2Filter, rest3Filter } from "./conditions.js"
 import { type Field, loadFields, metadataOf } from "./fields.js"
@@ -101,7 +102,7 @@ const fieldsOrNone = async (portal: BitrixTransport, type: ItemType<unknown>["ty
   }
 }
 
-const folded = (value: string | null) => value?.trim().toLocaleLowerCase() ?? ""
+const folded = (value: string | null) => foldName(value?.trim() ?? "")
 
 /**
  * An id as it is, or a name matched whole against the portal's substring search; two matches are refused with both,

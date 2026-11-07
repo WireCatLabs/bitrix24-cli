@@ -575,3 +575,23 @@ describe("an id that is not a number is refused before any request", () => {
     expect(portal.calls).toHaveLength(0)
   })
 })
+
+describe("search all under a denied list key", () => {
+  it("leaves deals out and names them; with leads denied too it refuses", async () => {
+    const { portal } = await synced()
+    await withPermissions({ "deals.list": "deny" }, async () => {
+      const ran = await b24(["work", "search", "all", "Example", "--only", "crm", "--json"], { portal })
+      expect(ran.code).toBe(0)
+      const answer = ran.json() as { items: { kind: string }[]; missing?: unknown }
+      expect(answer.items.length).toBeGreaterThan(0)
+      expect(answer.items.every((item) => item.kind === "lead")).toBe(true)
+      expect(answer.missing).toEqual([{ field: "items", why: "deal left out: profile work denies deals.list" }])
+      expect(ran.err).toContain("deal left out: profile work denies deals.list")
+    })
+    await withPermissions({ "deals.list": "deny", "leads.list": "deny" }, async () => {
+      const ran = await b24(["work", "search", "all", "Example", "--only", "crm", "--json"], { portal })
+      expect(ran.code).toBe(5)
+      expect(ran.json().error).toMatchObject({ code: "permission_error", reason: "search.all-denied" })
+    })
+  })
+})
