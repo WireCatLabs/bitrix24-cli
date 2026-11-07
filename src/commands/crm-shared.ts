@@ -82,7 +82,7 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
       self: webhookOf(command).userId,
       warn: outputFor(command).renderer.warn,
       alsoChecks: crmApiKeys,
-      // contextOf, not resolveSettings: it carries the levels `mcp serve --permission` tightened (SEC-140). The portal
+      // contextOf, not resolveSettings: it carries the levels `mcp serve --permission` tightened. The portal
       // limits its own rate; the guard is here for the levels and the journal, not a send limit.
       settings: () => ({
         ...contextOf(command).settings,

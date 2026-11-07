@@ -157,6 +157,25 @@ describe("the Bitrix24 adapter", () => {
     })
     await writer.update("deal", "102", { custom: { UF_CRM_NOTE: null } }, { operationId: "op-7" })
     expect(crm.row("deal", 102)?.UF_CRM_NOTE).toBeNull()
+    await writer.update("deal", "102", { custom: { UF_CRM_TAGS: ["61", "62"] } }, { operationId: "op-8" })
+    expect(crm.row("deal", 102)?.UF_CRM_TAGS).toEqual([61, 62])
+    await writer.update("deal", "102", { custom: { UF_CRM_TAGS: null } }, { operationId: "op-9" })
+    expect(crm.row("deal", 102)?.UF_CRM_TAGS).toEqual([])
+  })
+
+  it("resolves a label and an option label core passed as typed, from a store with no definitions yet", async () => {
+    const crm = seededCrm()
+    const { writer } = over(crm)
+    await writer.update("deal", "102", { custom: { Source: "Website" } }, { operationId: "op-10" })
+    expect(crm.row("deal", 102)).toMatchObject({ UF_CRM_SOURCE: 41 })
+    const before = crm.writes()
+    await expect(
+      writer.update("deal", "102", { custom: { UF_CRM_SOURCE: "Nowhere" } }, { operationId: "op-11" }),
+    ).rejects.toMatchObject({ code: "validation_error", details: { reason: "field.unknown-option" } })
+    await expect(
+      writer.update("deal", "102", { custom: { Unknown: "x" } }, { operationId: "op-12" }),
+    ).rejects.toMatchObject({ details: { reason: "field.unknown" } })
+    expect(crm.writes()).toBe(before)
   })
 
   it("closes a deal in the first won or lost stage of its own pipeline, and refuses a reason", async () => {

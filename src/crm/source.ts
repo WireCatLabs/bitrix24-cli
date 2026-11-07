@@ -66,8 +66,8 @@ export const bitrixCrmSource = (portal: () => BitrixTransport, now: () => number
   const fields = (kind: CrmKind) => {
     let found = loaded.get(kind)
     if (!found) {
-      // A webhook without the rights to read field definitions still syncs the records. Any other failure fails
-      // the sync: an empty list would mark every stored definition deleted.
+      // A webhook without the rights to read field definitions still syncs its records, with no definitions. Any
+      // other failure fails the sync rather than mark every stored definition deleted over a passing fault.
       found = loadFields(portal(), TYPES[kind].type).catch((error: unknown) => {
         if (isCliError(error) && error.code === "permission_error") return []
         throw error

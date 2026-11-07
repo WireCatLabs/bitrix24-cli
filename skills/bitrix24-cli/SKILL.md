@@ -32,11 +32,12 @@ Find your way with the tool itself, not this file:
 - Leads have no pipelines in Bitrix24: they stand in one pipeline named `Leads`. Won or lost is `status`, never the
   stage's name.
 - `people` and `organizations` read the portal: `show` takes an id or an exact name, and gives the portal's own fields
-  in `provider_metadata`, by code with their label. `b24 work fields list deals` lists them with type and options, as the last `sync` stored them.
+  in `provider_metadata`, by code with their label. `b24 work fields list deals` lists them with type and options,
+  as the last `sync` stored them.
 - Writes: `deals create --title … --pipeline … --stage … --amount … --currency … --close-date … --owner …`, `update`,
-  `move <ref> <stage>`, `close <ref> won|lost`, `delete <ref>`; custom fields with `--field <code>=<value>`. Keep the
-  `operation_id` of every write; after `outcome_unknown`, sync and `show` the record before repeating it with
-  `--operation-id`: that Bitrix24 answers a repeat from its record is documented, not yet seen live.
+  `move <ref> <stage>`, `close <ref> won|lost`, `delete <ref>`; custom fields with `--field <label or code>=<value>`.
+  Keep the `operation_id` of every write; after `outcome_unknown`, sync and `show` the record before repeating it
+  with `--operation-id`: that Bitrix24 answers a repeat from its record is documented, not yet seen live.
 - `b24 work session status --check` says whose rights the webhook carries.
 
 ## Rules

@@ -36,8 +36,10 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   `sync` first, and each field names its `untrusted` parts. Its `--all` is refused by cli-core 0.597.0 for now; use
   `--limit 500`.
 - `api.crm.deal.update` (and the other deal and lead `api.*` keys) at `ask` now asks on `deals update`, `move` and
-  `close` too, not only on `api call`. `--dry-run` of a deal or lead write names every key it may check: the move,
-  close and `crm.assign-others` keys its options imply, and the `api.*` key.
+  `close` too, not only on `api call`. `--dry-run` of a deal or lead write names every key it may check: the
+  `api.*` key, and the move, close and `crm.assign-others` keys with the option that would make each apply.
+- `sync` reads the portal's field definitions of each kind, one more request per kind, so `--max-pages` reaches the
+  records later. A webhook without the rights to read them still syncs; any other failure there fails the sync.
 - Leads stand in one pipeline named `Leads`, since Bitrix24's leads have none.
 - `deals.delete` and `leads.delete` default to `ask`; `api call` that sets a stage checks `deals.close` (or
   `leads.close`) as well as `deals.move`.

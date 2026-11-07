@@ -3,6 +3,7 @@ import type { CrmItem, DealKind } from "@wirecat/cli-core"
 import type { CrmFields, CrmWriteOptions, CrmWriter } from "@wirecat/cli-core/crm"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { BITRIX_WRITES } from "./capabilities.js"
+import { findField, optionOf } from "./fields.js"
 import { LEAD_PIPELINE } from "./lead.js"
 import { REST3_FIELDS } from "./rest3-fields.js"
 import type { BitrixCrmSource } from "./source.js"
@@ -46,13 +47,14 @@ export const bitrixCrmWriter = (portal: () => BitrixTransport, source: BitrixCrm
       fields.companyId = given.organization === null ? 0 : Number(given.organization)
     if (given.owner != null) fields.assignedById = Number(given.owner)
     if (custom.length === 0) return fields
-    // core has resolved labels and options by the synced definitions; the portal wants a list option as a number.
-    const defined = new Map((await source.fields(kind)).map((field) => [field.code, field]))
-    for (const [code, value] of custom) {
-      const field = defined.get(code)
-      const typed = (one: string) => (field?.options ? Number(one) : one)
-      if (value === null) fields[code] = field?.multiple ? [] : null
-      else fields[code] = Array.isArray(value) ? value.map(typed) : typed(value)
+    // Core resolves by the stored definitions, but a store not synced since they were added passes names as typed:
+    // they are checked here against the portal's, or `Number("Website")` would clear a list field.
+    const defined = await source.fields(kind)
+    for (const [name, value] of custom) {
+      const field = findField(defined, name)
+      const typed = (one: string) => (field.options ? Number(optionOf(field, one)) : one)
+      if (value === null) fields[field.code] = field.multiple ? [] : null
+      else fields[field.code] = Array.isArray(value) ? value.map(typed) : typed(value)
     }
     return fields
   }

@@ -66,9 +66,9 @@ its `currency`; `--offline` reads the same. Bitrix24's leads have no pipelines, 
 
 `people` and `organizations` read the portal itself. Their `show` gives the portal's own fields under
 `provider_metadata`, each by its code with its label; a list field gives its option's label, and the option's id as
-`option_id`. `b24 work fields list deals` lists those fields with their type and options, as the last `sync` stored
-them; `leads`, `people` and `organizations` work the same way. Their lists filter by those fields too, by code or label, when the portal can
-filter by them, and `--json` can add them:
+`option_id`. `b24 work fields list deals` lists those fields with their type and options, as the last `sync`
+stored them; `leads`, `people` and `organizations` work the same way. Their lists filter by those fields too, by
+code or label, when the portal can filter by them, and `--json` can add them:
 
 ```sh
 b24 work organizations list industry:IT
@@ -93,7 +93,7 @@ b24 work organizations update 9 --field "Lead source=Fair" --body '{"revenue":10
 
 A deal or lead write sends one request, then reads the record back into the store. `--stage` takes a stage of the
 record's own pipeline by name or id, and checks the `move` key too; a won or lost stage checks the `close` key as
-well. `close` moves it to the first won or lost stage of its pipeline. `--field <code>=<value>` sets one of the
+well. `close` moves it to the first won or lost stage of its pipeline. `--field <label or code>=<value>` sets one of the
 portal's own fields, as `fields list` names them; a list field takes its option's label or id, and an empty value
 clears the field. A field that names a stage, a pipeline or an owner is refused: those have their own options.
 

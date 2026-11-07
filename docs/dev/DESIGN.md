@@ -97,9 +97,9 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
      `api call crm.deal.update` cannot get round `deals.update: deny`. `crm.item.*` with `entityTypeId` 1 to 4 is
      the lead, deal, contact or company. A create or update that sets a stage (`stageId` in any letter case, a
      lead's `STATUS_ID`) also checks `deals.move` and `deals.close`, or the leads' keys, since the stage may be won or
-     lost. The other way round, `api.crm.deal.update` is checked by `deals update`, `move` and `close` through cli-core's
-     `CrmWrites.alsoChecks`: `deny` stops them before any request, `ask` asks, and `--dry-run` names the key. The method name is
-     lowercased and loses a `.json` suffix before any key is read.
+     lost. The other way round, `api.crm.deal.update` is checked by `deals update`, `move` and `close` through
+     cli-core's `CrmWrites.alsoChecks`: `deny` stops them before any request, `ask` asks, and `--dry-run` names it.
+     The method name is lowercased and loses a `.json` suffix before any key is read.
    - `api call` defaults come from an allow list: the reads `b24` makes (`crm`, `catalog`, `user`, `profile` and
      the method listings) and the four CRM types' create and update are `allow`; a method whose name ends in
      `delete` and every other method are `ask`; the families that reach people, publish or send data out are
