@@ -2,6 +2,23 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Added
+
+- `sync` stores who is who in the local store: a contact is a member of each of its companies with the role
+  `contact`, its job title beside it; a deal's and a lead's contacts are on it with the main one marked, and the
+  person responsible is its `owner`; employees are members of your own companies, read every sync, and report to
+  their department's head; a converted lead points to its deal. These relationships are `reported` until you confirm
+  them, end instead of being deleted when the portal stops saying them, and never change one you made. Watch for: the
+  webhook needs the `user_basic` and `department` scopes for employees' e-mails and reporting lines; without them the
+  sync reads the rest.
+- `schedule` installs a timer that runs `sync`, or another `b24` command, on its own. MCP does not offer it.
+
+### Fixed
+
+- `api list scope:department` lists `department.get`, which was shown under the scope `basic`.
+
 ## 0.8.0 — 08.11.2026
 
 ### Added

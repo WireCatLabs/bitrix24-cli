@@ -27,15 +27,16 @@ const harness = () => {
     pause: async () => {},
   }
   const b24 = async (...argv: string[]) => {
+    const out: string[] = []
     const err: string[] = []
     const code = await run(argv, {
-      streams: { data: () => {}, diagnostic: (text) => err.push(text) },
+      streams: { data: (text) => out.push(text), diagnostic: (text) => err.push(text) },
       tty: false,
       env,
       keyring: signedIn(),
       system,
     } as Parameters<typeof run>[1])
-    return { code, err: err.join("\n") }
+    return { code, out: out.join(""), err: err.join("\n") }
   }
   return { b24, env, ran, root }
 }
@@ -57,6 +58,17 @@ describe("b24 schedule", () => {
       "systemctl --user daemon-reload",
       "systemctl --user enable --now b24-schedule-crm.timer",
     ])
+  })
+
+  it("lists the sync schedule, then removes it and its timer", async () => {
+    const { b24, ran } = harness()
+    await b24("work", "schedule", "command", "crm", "--every", "1h", "--", "sync")
+    const listed = await b24("work", "schedule", "list", "--json")
+    expect(listed.code, listed.err).toBe(0)
+    expect(listed.out).toContain('"crm"')
+    expect((await b24("work", "schedule", "remove", "crm")).code).toBe(0)
+    expect(ran.map((argv) => argv.join(" "))).toContain("systemctl --user disable --now b24-schedule-crm.timer")
+    expect((await b24("work", "schedule", "list", "--json")).out).not.toContain('"crm"')
   })
 
   it("refuses to install a timer under B24_READ_ONLY", async () => {

@@ -14,7 +14,10 @@ the fields it refused, never Bitrix24's description, which can quote what was ty
 
 The webhook acts with the rights of the employee who made it. A webhook made by an admin lets an agent read and
 change everything in the CRM. `session status --check` says whose rights it carries; make the webhook with an
-employee whose rights fit the work, and only the scopes it needs.
+employee whose rights fit the work, and only the scopes it needs. `sync` uses `crm`, `user_basic` for employees'
+e-mail addresses and `department` for the company structure. `user_basic` is enough: `sync` never changes an
+employee, and the full `user` scope adds the right to invite and edit them. The sync stores each employee's name,
+e-mail address, position and department head in the local store, where every WireCat tool can read them.
 
 Every write is checked against the permissions and kept in the send journal. `B24_READ_ONLY=1` refuses every write.
 Assigning a record to another employee is refused until you allow it. A stage change can still start the portal's own
@@ -39,6 +42,11 @@ anything is sent. A delete asks. Every other method asks too, and is refused wit
 `user.add`, public file links, `event.bind` and `batch`. Their reads are refused too, since they hold messages,
 e-mails and tasks. `api show <method>` names a method's level. `api call` is
 not offered over MCP.
+
+`schedule command` installs a timer (systemd, launchd or Task Scheduler) that runs `b24` on its own, with no
+terminal. The timer runs `b24 schedule exec <file>`, and the schedule file in the state folder holds the words, the
+profile and your `PATH`, never the webhook's address. Each run checks the permissions again. `B24_READ_ONLY` refuses
+`schedule command`, `remove`, `run` and `exec`, and no MCP tool offers `schedule`.
 
 A write that got no answer is not sent again: it is `outcome_unknown` with its `operation_id`. Check the portal, and
 write it again only if it is not there: Bitrix24 would make a repeat a second time.

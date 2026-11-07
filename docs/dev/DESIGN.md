@@ -54,8 +54,8 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
 1. **Kept locally.** Pipelines, stages, deals and leads as CRM records in cli-core, read by cli-core's shared
    `deals`, `leads`, `pipelines` and `stages` commands (`addCrmCommands`);
    contacts as `people` identities, joined to a person only by an exact email (WC-ACCT-11); companies as
-   organizations through the records mapping, where a same-name match is only a candidate for review (WC-DATA-1,
-   WC-DATA-2). Custom fields of deals, leads and companies go into the record's metadata with their labels; cli-core's
+   organizations through the records mapping, each its own organization: cli-core never matches one by name, not
+   even as a candidate (WC-DATA-1, WC-DATA-2; cli-core `src/store/sqlite/crm.ts` `saveOrganizations`). Custom fields of deals, leads and companies go into the record's metadata with their labels; cli-core's
    answer does not show them yet. A lead stands in one pipeline b24 makes, `Leads` (`0`), since Bitrix24's leads
    have none.
 2. **How it syncs.** On demand, with cli-core's `sync` over b24's `CrmSource` (`src/crm/source.ts`): REST 3.0 lists
@@ -66,6 +66,36 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
    full id pass has finished (WC-DATA-7).
 4. **Deleting local data.** Per account, through cli-core's shared commands, as every CLI does; there is no command
    of `b24`'s own for it.
+
+### Relationships
+
+Decided 2026-11-07 with the owner's CRM relationships plan; cli-core writes them as a diff that never overrides the
+owner (WC-DATA-6) and withdraws what the portal stops reporting (WC-DATA-7). `b24` only maps the portal's fields onto
+cli-core's contract (`CrmPerson.organizations`, `CrmItem.people`, `CrmUser`, `CrmDepartment`, `CrmOrganization.own`
+and `type`); field names are from the REST 3.0 field pages and the `user.get` and `department.get` pages, not live.
+
+- **Contact → company.** REST 3.0 `companiesId`, first is primary, from the contact list the sync already pages; no
+  call per contact. A filter on `companiesId` answers HTTP 500, so `b24` never filters on it. `post` is the
+  position. A contact read without `companiesId` leaves its companies as stored.
+- **Deal and lead people.** `contactsId` with `contactId` as the primary; `assignedById` is the assignee, which core
+  makes the `owner`. `ROLE_ID` of `crm.deal.contact.items.get` is reserved and always `0`, so no decision-maker or
+  influencer comes from the portal, and `b24` makes no such call.
+- **Lead → deal.** A lead has no field for the deal it became; the deal has `leadId`. Each page of leads costs one
+  more `crm.deal.list` with `["leadId", "in", …]`.
+- **Users.** `user.get` with `USER_TYPE: employee` and no `ACTIVE` filter, so a user who left reaches core inactive
+  and loses the own company. A missing `EMAIL` key (no `user_basic`) and a missing `UF_DEPARTMENT` are unknown, not
+  empty. Core has no field-level gap, so a webhook without `user_basic` is not named in the sync's `issues`.
+- **Departments.** `department.get` (scope `department`); `reports-to` is core's department-head derivation,
+  `metadata.derived: department-head`. A refused scope fails only this list: core records the gap and changes no
+  reporting line.
+- **Own companies.** REST 3.0 `crm.mycompany.basic.list`, which needs no CRM admin right and takes only `id`,
+  `title` and the like, `=` and `in`: read whole by offset at the end of every round of companies, and listed in the
+  id pass so it never marks them deleted. `crm.company.*` never returns them.
+- **Company type.** `typeId` goes to core as `type`; it means a relationship only through the owner's
+  `crm.bitrix24:<portal>.company-types` setting.
+- **No parent company, no dates.** Bitrix24 has neither, so neither is stored.
+- **On a timer.** `schedule` is cli-core's shared command, mounted as gcal mounts it and off MCP, so `b24 <profile>
+  schedule command <name> --every 1h -- sync` keeps the store fresh.
 
 ### Search
 
