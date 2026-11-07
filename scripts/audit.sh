@@ -33,7 +33,7 @@ require("fs").writeFileSync(process.argv[2], JSON.stringify(info.schemas))
 require("fs").writeFileSync(process.argv[3], JSON.stringify(info.reasons))' \
   "$scratch/info.json" "$scratch/schemas.json" "$scratch/reasons.json"
 "$root/node_modules/.bin/cli-dev" audit --cli "$root/dist/bin/$command.js" "${others[@]}" --for "$command" \
-  --lint "$command=$root/lint" --schemas "$command=$scratch/schemas.json" --reasons "$command=$scratch/reasons.json" \
+  --lint "$command=$root/lint" --differences "$root/lint/audit-differences.json" --schemas "$command=$scratch/schemas.json" --reasons "$command=$scratch/reasons.json" \
   >"$scratch/scorecard.txt" || { cat "$scratch/scorecard.txt"; exit 1; }
 awk -v cli="$command" 'NR == 1 || $1 == cli' "$scratch/scorecard.txt"
 grep -q "^$command  *total " "$scratch/scorecard.txt" || { echo "audit: no scorecard row for $command" >&2; exit 1; }
