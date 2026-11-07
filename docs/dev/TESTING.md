@@ -14,8 +14,8 @@ How the tests run, and what they never touch. The rules are the handbook's
   `scripts/test-matrix-untested.ts`.
 - `src/testing/fake-crm.ts` is a portal's CRM in memory that refuses what the real one refuses: a REST 3.0 field name
   its reference does not document (`src/crm/rest3-fields.ts`, the one list the adapter and the fake share), a stage
-  of another pipeline, and an `Idempotency-Key` reused for another request; it answers a repeated key from its
-  record. `src/crm/contracts.test.ts` runs cli-core's `crmSourceContract`, `crmSyncContract` and
+  of another pipeline. Like the live portal, it ignores `Idempotency-Key`, so a repeated write is made a second time.
+  `src/crm/contracts.test.ts` runs cli-core's `crmSourceContract`, `crmSyncContract` and
   `crmWriteContract` against it, and `src/testing/sandbox.ts` gives each test its own state folder and store, since
   the portal's pace and a sync's cursor live there.
 - `pnpm contracts:check` runs the built CLI against `contracts/plan.json`: help, discovery, errors and the MCP tool
