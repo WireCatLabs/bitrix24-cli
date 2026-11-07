@@ -34,7 +34,7 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 - Deal and lead writes have no `--body`. `--field <label or code>=<value>` sets a custom field by the definitions the
   last `sync` stored: a list field takes its option's label or id, a multiple field one `--field` per value, and an
   empty value clears it. A code that names a standard field (`stageId`, `categoryId`, `assignedById`, a lead's
-  `STATUS_ID`) is refused.
+  `STATUS_ID`) is refused, and so is a `--field` with no key before its `=`.
 - A custom field's label and a list option's label are matched as cli-core matches names, for every `--field` and
   query: `е` finds `ё`, and a letter typed as two code points finds the same letter typed as one. `people show` and
   `organizations show` compare a name with the portal's matches the same way. A label that matched one field may now

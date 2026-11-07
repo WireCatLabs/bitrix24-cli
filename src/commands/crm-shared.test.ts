@@ -150,6 +150,19 @@ describe("writes", () => {
     expect(item(shown)).toMatchObject({ title: "WireCat test deal" })
   })
 
+  it("--field with no key before its = is refused before any request", async () => {
+    const { portal, ref, calls } = await synced()
+    const before = calls()
+    for (const pair of ["=x", " =x"]) {
+      const ran = await b24(["work", "deals", "update", ref("deals", 102), "--field", pair, "--json"], { portal })
+      expect(ran.code).toBe(2)
+      const error = ran.json().error as { code: string; message: string }
+      expect(error.code).toBe("validation_error")
+      expect(error.message).toContain("--field")
+    }
+    expect(calls()).toBe(before)
+  })
+
   it("a write whose answer is lost is sent once, is outcome_unknown, and its --operation-id repeat is replayed", async () => {
     const { portal, ref } = await synced()
     portal.loseNextAnswer()
