@@ -77,6 +77,17 @@ describe("the Bitrix24 adapter", () => {
     ).rejects.toMatchObject({ details: { provider_error: "BITRIX_REST_V3_EXCEPTION_UNKNOWNDTOPROPERTYEXCEPTION" } })
   })
 
+  it("runs against a fake that makes a repeated create a second record, as the live portal did", async () => {
+    const crm = fakeCrm()
+    const transport = new BitrixTransport({ webhook: FAKE_WEBHOOK, fetch: crm.fetch, sleep: async () => {} })
+    const create = () =>
+      transport.call("crm.lead.add", { fields: { title: "Example" } }, { idempotencyKey: "op-repeat" })
+    const first = await create()
+    const second = await create()
+    expect(second.result).not.toEqual(first.result)
+    expect(crm.writes()).toBe(2)
+  })
+
   it("reads every stage of a directory, page by page, and none of another directory", async () => {
     const { source } = over(fakeCrm())
     const [sales] = await source.pipelines("deal")

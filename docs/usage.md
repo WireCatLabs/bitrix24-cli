@@ -102,19 +102,21 @@ several values takes `--field` once per value; `--body` takes the other fields i
 
 Each write answers an `operation_id`, which the run journal keeps. A write is sent once. If it ends with
 `outcome_unknown`, the portal may have made it: look at the record first (`sync`, then `show`), and write it again only
-if it is not there, because Bitrix24 would make a repeat a second time. `--dry-run` sends nothing and names every permission key the command checks, with the option that
-adds each one: a stage's move and close keys, and `crm.assign-others` for another owner. Assigning a record to another
-employee is refused until you allow it, because Bitrix24 tells that employee:
+if it is not there, because Bitrix24 would make a repeat a second time. `--dry-run` sends nothing and names every
+permission key the command checks, with the option that adds each one: a stage's move and close keys, and
+`crm.assign-others` for another owner. Assigning a record to another employee is refused until you allow it, because
+Bitrix24 tells that employee:
 `b24 work config set permissions.crm.assign-others allow`.
 
-`b24 work api call crm.deal.get --body '{"id":12}'` calls any other Bitrix24 method, here a read of deal 12. It checks the same permissions as the
-command that does the same thing, and refuses writes that send messages, start the portal's automation or create
-tasks until you allow them. `b24 api list` and `b24 api show crm.deal.update` show what each method checks.
+`b24 work api call crm.deal.get --body '{"id":12}'` calls any other Bitrix24 method, here a read of deal 12. It
+checks the same permissions as the command that does the same thing, and refuses writes that send messages, start the
+portal's automation or create tasks until you allow them. `b24 api list` and `b24 api show crm.deal.update` show what
+each method checks.
 
 ## Output for scripts
 
-Every command except `mcp serve` on stdin and stdout takes `--json`, and prints one JSON value on stdout. Errors are JSON on stderr, with a code to branch
-on. The [command reference](commands.md) lists the codes.
+Every command except `mcp serve` on stdin and stdout takes `--json`, and prints one JSON value on stdout. Errors are
+JSON on stderr, with a code to branch on. The [command reference](commands.md) lists the codes.
 
 ## Agents
 

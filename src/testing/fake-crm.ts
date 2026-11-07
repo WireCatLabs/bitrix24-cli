@@ -114,8 +114,9 @@ const portalTime = (ms: number) => new Date(ms + 3 * 3_600_000).toISOString().re
 
 /**
  * A portal's CRM held in memory, answering REST 3.0 `crm.<type>.*` and the REST 2 directories as the API reference
- * shows them, and refusing what the real one refuses: a name REST 3.0 does not document, a stage of another pipeline,
- * and an `Idempotency-Key` reused for another request. Never real portal data.
+ * shows them, and refusing what the real one refuses: a name REST 3.0 does not document and a stage of another
+ * pipeline. Like the live portal (2026-11-07), it ignores `Idempotency-Key`: a repeated write is made again. Never
+ * real portal data.
  */
 export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
   const rows: Record<Type, Map<number, Raw>> = {
@@ -130,7 +131,6 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
     clock += 1_000
     return portalTime(clock)
   }
-  const replays = new Map<string, { body: string; reply: Reply }>()
   let lose = false
   let writes = 0
 
@@ -159,22 +159,10 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
   const selected = (row: Raw, select: readonly string[]) =>
     Object.fromEntries(select.filter((name) => name in row).map((name) => [name, row[name]]))
 
-  /** One REST 3.0 write, answered once per `Idempotency-Key` and request, and lost on demand after it is made. */
-  const writing = (call: PortalCall, act: () => Reply): Reply => {
+  /** One REST 3.0 write, counted, and lost on demand after it is made. */
+  const writing = (act: () => Reply): Reply => {
     writes += 1
-    const key = call.headers["Idempotency-Key"]
-    const body = JSON.stringify(call.body)
-    const replay = key === undefined ? undefined : replays.get(key)
-    if (replay) {
-      if (replay.body !== body)
-        return {
-          status: 422,
-          body: { error: { code: "BITRIX_REST_V3_EXCEPTION_IDEMPOTENCYKEYREUSEDEXCEPTION", message: "reused" } },
-        }
-      return replay.reply
-    }
     const reply = act()
-    if (key !== undefined && !(reply instanceof Error) && (reply.status ?? 200) < 400) replays.set(key, { body, reply })
     if (lose) {
       lose = false
       return new TypeError("fetch failed: the connection was reset")
@@ -218,7 +206,7 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
       return row ? ok({ item: selected(row, select) }) : missing()
     }
     methods[`crm.${type}.add`] = (call) =>
-      writing(call, () => {
+      writing(() => {
         const fields = (call.body.fields ?? {}) as Raw
         const bad = firstUnknown(type, Object.keys(fields))
         if (bad) return unknown(bad)
@@ -230,7 +218,7 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
         return ok({ id: row.id })
       })
     methods[`crm.${type}.update`] = (call) =>
-      writing(call, () => {
+      writing(() => {
         const fields = (call.body.fields ?? {}) as Raw
         const bad = firstUnknown(type, Object.keys(fields))
         if (bad) return unknown(bad)
@@ -243,7 +231,7 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
         return ok({ result: true })
       })
     methods[`crm.${type}.delete`] = (call) =>
-      writing(call, () => (rows[type].delete(Number(call.body.id)) ? ok({ result: true }) : missing()))
+      writing(() => (rows[type].delete(Number(call.body.id)) ? ok({ result: true }) : missing()))
     methods[`crm.${type}.field.list`] = () =>
       ok({
         items: CUSTOM[type].map((field) => ({
