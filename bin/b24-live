@@ -6,7 +6,8 @@
 #   pnpm build
 #   bin/b24-live            # syncs into the throwaway store and reads; changes nothing on the portal
 #   bin/b24-live --write    # also creates one lead (twice with one operation id) and one deal "WireCat test …",
-#                           # changes, moves and deletes each, then syncs again
+#                           # changes, moves and deletes each, then syncs again; when every step passed, appends
+#                           # the version and commit to docs/dev/live-checks.txt, which bin/release checks
 #   B24_KEYRING_ACCOUNT=other bin/b24-live
 set -euo pipefail
 
@@ -25,7 +26,9 @@ b24() {
     XDG_CACHE_HOME="$sandbox/cache" MESSAGING_STORE="$sandbox/wirecat.db" DBUS_SESSION_BUS_ADDRESS=disabled: \
     node "$root/dist/bin/b24.js" live "$@"
 }
-step() { printf '\n== b24 live %s\n' "$*"; b24 "$@" || echo "!! exit $?"; }
+failed=0
+fail() { echo "!! $*"; failed=1; }
+step() { printf '\n== b24 live %s\n' "$*"; b24 "$@" || fail "exit $?"; }
 # One value out of a JSON answer on stdin, by a dotted path: `item.lead.ref`.
 value() {
   node -e '
@@ -48,13 +51,13 @@ step people list --limit 3 --json=id,name
 step organizations list --limit 3 --json=id,name
 step products list --limit 3
 step users list --limit 3 --json=id,name
-step fields list deals --all
-step fields list leads --all
+step fields list deals --limit 500
+step fields list leads --limit 500
 
 # Picks a custom field from `fields list` at run time, so no portal's own codes are written here:
 # `list` prints `<code>:<option id>` of a list field a list can filter by, `string` the code of a one-value text field.
 pick() {
-  b24 fields list "$1" --all --json 2>/dev/null | node -e '
+  b24 fields list "$1" --limit 500 --json 2>/dev/null | node -e '
     let s = ""
     process.stdin.on("data", (d) => (s += d)).on("end", () => {
       let items = []
@@ -74,7 +77,11 @@ else
   echo "no list field on companies that a list can filter by — skipped the filtered organizations list"
 fi
 
-[ "${1:-}" = "--write" ] || exit 0
+if [ "${1:-}" != "--write" ]; then
+  [ "$failed" = 0 ] || exit 1
+  echo "read-only run passed; the release record needs bin/b24-live --write"
+  exit 0
+fi
 
 title="WireCat test $(date +%Y-%m-%dT%H:%M)"
 
@@ -91,7 +98,7 @@ lead=$(b24 leads create --title "$title" "${field[@]}" --operation-id "$made" --
 echo "created $lead: $title"
 again=$(b24 leads create --title "$title" "${field[@]}" --operation-id "$made" --json | value item.lead.ref)
 if [ "$again" = "$lead" ]; then echo "ok: the repeated create answered $lead from the record"; else
-  echo "!! the repeated create answered '$again', not $lead — Idempotency-Key is not honoured"
+  fail "the repeated create answered '$again', not $lead — Idempotency-Key is not honoured"
   [ -z "$again" ] || step leads delete "$again" --yes --json=ref,removed
 fi
 step leads show "$lead" --json=ref,title,stage,status
@@ -125,7 +132,11 @@ echo "deleted $deal"
 step sync --json=state,synced,issues
 step sync --rescan --json=state,synced,issues
 for ref in "$lead" "$deal"; do
-  if b24 --offline "${ref%%:*}s" show "$ref" --json >/dev/null 2>&1; then echo "!! $ref is still in the store"; else
+  if b24 --offline "${ref%%:*}s" show "$ref" --json >/dev/null 2>&1; then fail "$ref is still in the store"; else
     echo "ok: $ref is gone from the store"
   fi
 done
+
+[ "$failed" = 0 ] || { echo "a step failed: no live record" >&2; exit 1; }
+(cd "$root" && pnpm exec cli-dev live record --script bin/b24-live)
+echo "every step passed: commit docs/dev/live-checks.txt in the release pull request"

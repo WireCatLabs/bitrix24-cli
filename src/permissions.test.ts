@@ -44,15 +44,38 @@ describe("a denied command key", () => {
     })
     expect(calls()).toBe(before)
   })
+
+  it("api.crm.deal.update: ask makes deals update ask, and --yes answers it", async () => {
+    const { portal, ref, calls } = await synced()
+    const before = calls()
+    await withPermissions({ "api.crm.deal.update": "ask" }, async () => {
+      expect(
+        (await b24(["work", "deals", "update", ref("deals", 102), "--title", "x", "--json"], { portal })).code,
+      ).toBe(7)
+      expect(calls()).toBe(before)
+      expect(
+        (await b24(["work", "deals", "update", ref("deals", 102), "--title", "x", "--yes", "--json"], { portal })).code,
+      ).toBe(0)
+    })
+  })
 })
 
 describe("--dry-run", () => {
-  it("deals update names its key and the api key its request checks", async () => {
+  it("deals update names its key, the keys its options imply and the api key its request checks", async () => {
     const portal = fakePortal()
     const ran = await b24(["work", "deals", "update", "deal:1", "--title", "x", "--dry-run", "--json"], { portal })
     expect(ran.code).toBe(0)
     expect(ran.json().item).toMatchObject({
-      permission: { key: "deals.update", level: "allow", also: [{ key: "api.crm.deal.update", level: "allow" }] },
+      permission: {
+        key: "deals.update",
+        level: "allow",
+        also: [
+          { key: "deals.move", level: "allow", when: "--stage" },
+          { key: "deals.close", level: "allow", when: "a won or lost stage" },
+          { key: "crm.assign-others", level: "deny", when: "--owner other than the sign-in's user" },
+          { key: "api.crm.deal.update", level: "allow" },
+        ],
+      },
     })
     expect(portal.calls).toHaveLength(0)
   })
@@ -86,7 +109,16 @@ describe("--dry-run", () => {
       const ran = await b24(["work", "deals", "update", "deal:1", "--title", "x", "--dry-run", "--json"])
       expect(ran.code).toBe(0)
       expect(ran.json().item).toMatchObject({
-        permission: { key: "deals.update", level: "allow", also: [{ key: "api.crm.deal.update", level: "ask" }] },
+        permission: {
+          key: "deals.update",
+          level: "allow",
+          also: [
+            { key: "deals.move", level: "allow", when: "--stage" },
+            { key: "deals.close", level: "allow", when: "a won or lost stage" },
+            { key: "crm.assign-others", level: "deny", when: "--owner other than the sign-in's user" },
+            { key: "api.crm.deal.update", level: "ask" },
+          ],
+        },
       })
     })
   })

@@ -3,7 +3,6 @@ import type { CrmItem, DealKind } from "@wirecat/cli-core"
 import type { CrmFields, CrmWriteOptions, CrmWriter } from "@wirecat/cli-core/crm"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { BITRIX_WRITES } from "./capabilities.js"
-import { customValues, findField } from "./fields.js"
 import { LEAD_PIPELINE } from "./lead.js"
 import { REST3_FIELDS } from "./rest3-fields.js"
 import type { BitrixCrmSource } from "./source.js"
@@ -47,14 +46,14 @@ export const bitrixCrmWriter = (portal: () => BitrixTransport, source: BitrixCrm
       fields.companyId = given.organization === null ? 0 : Number(given.organization)
     if (given.owner != null) fields.assignedById = Number(given.owner)
     if (custom.length === 0) return fields
-    const defined = await source.fields(kind)
-    const set = custom.filter((pair): pair is [string, string] => pair[1] !== null)
-    Object.assign(fields, customValues(defined, set))
-    for (const [name, value] of custom)
-      if (value === null) {
-        const field = findField(defined, name)
-        fields[field.code] = field.multiple ? [] : null
-      }
+    // core has resolved labels and options by the synced definitions; the portal wants a list option as a number.
+    const defined = new Map((await source.fields(kind)).map((field) => [field.code, field]))
+    for (const [code, value] of custom) {
+      const field = defined.get(code)
+      const typed = (one: string) => (field?.options ? Number(one) : one)
+      if (value === null) fields[code] = field?.multiple ? [] : null
+      else fields[code] = Array.isArray(value) ? value.map(typed) : typed(value)
+    }
     return fields
   }
 

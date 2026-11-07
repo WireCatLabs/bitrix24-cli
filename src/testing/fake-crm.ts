@@ -21,7 +21,18 @@ const CUSTOM: Record<Type, CustomField[]> = {
     { code: "UF_CRM_NOTE", title: "Note", type: "string" },
   ],
   lead: [{ code: "UF_CRM_NOTE", title: "Note", type: "string" }],
-  contact: [],
+  contact: [
+    {
+      code: "UF_CRM_CHANNEL",
+      title: "Channel",
+      type: "enumeration",
+      multiple: true,
+      options: [
+        { ID: "51", VALUE: "Phone" },
+        { ID: "52", VALUE: "Fair" },
+      ],
+    },
+  ],
   company: [],
 }
 

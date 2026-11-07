@@ -117,6 +117,7 @@ const listCommand = () =>
     .action(function (this: Command) {
       const environment = environmentOf<B24Environment>(this)
       const env = environment.env ?? process.env
+      // biome-ignore lint/plugin/no-own-settings: baseContext needs a profile, and this local read names none
       const { configuredProfiles } = configuration.resolveSettings({}, { env, needsProfile: false })
       const store = tokens(env, environment.keyring)
       const items = profilesHere(IDENTITY, configuredProfiles, env).map((profile) => {

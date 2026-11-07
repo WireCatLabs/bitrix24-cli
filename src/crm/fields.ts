@@ -1,21 +1,11 @@
 import { CliError } from "@wirecat/cli-base"
-import * as v from "valibot"
+import type { CrmField } from "@wirecat/cli-core"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import type { ItemType } from "./items.js"
 import { isCustom, type Metadata, type Raw, text, yes } from "./values.js"
 
-export const fieldSchema = v.strictObject({
-  code: v.string(),
-  label: v.nullable(v.string()),
-  type: v.string(),
-  multiple: v.boolean(),
-  filterable: v.boolean(),
-  /** A list field's options; absent on any other field. */
-  options: v.optional(v.array(v.strictObject({ id: v.string(), label: v.string() }))),
-})
-
 /** One of the portal's own fields on deals, leads, contacts or companies. */
-export type Field = v.InferOutput<typeof fieldSchema>
+export type Field = CrmField
 
 const rows = (result: unknown): Raw[] => {
   const items = Array.isArray(result) ? result : (result as { items?: unknown })?.items

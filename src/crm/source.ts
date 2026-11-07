@@ -1,9 +1,9 @@
 import { CliError, isCliError } from "@wirecat/cli-base"
-import type { CrmItem, CrmKind, CrmOrganization, CrmPerson, CrmRecords } from "@wirecat/cli-core"
+import type { CrmField, CrmItem, CrmKind, CrmOrganization, CrmPerson, CrmRecords } from "@wirecat/cli-core"
 import type { CrmChanges, CrmIdPage, CrmSource } from "@wirecat/cli-core/crm"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { DEAL } from "./deal.js"
-import { type Field, loadFields, metadataOf } from "./fields.js"
+import { loadFields, metadataOf } from "./fields.js"
 import type { ItemType } from "./items.js"
 import { LEAD } from "./lead.js"
 import { ORGANIZATION } from "./organization.js"
@@ -54,7 +54,7 @@ export interface BitrixCrmSource extends CrmSource {
   /** One deal or lead as the portal holds it now, custom fields included: what a write answers. */
   item(kind: "deal" | "lead", externalId: string): Promise<CrmItem>
   /** The portal's custom fields of a kind, read once per source. */
-  fields(kind: CrmKind): Promise<Field[]>
+  fields(kind: CrmKind): Promise<CrmField[]>
 }
 
 /**
@@ -62,21 +62,23 @@ export interface BitrixCrmSource extends CrmSource {
  * event feed, and a list of every id to find deletions.
  */
 export const bitrixCrmSource = (portal: () => BitrixTransport, now: () => number = Date.now): BitrixCrmSource => {
-  const loaded = new Map<CrmKind, Promise<Field[]>>()
+  const loaded = new Map<CrmKind, Promise<CrmField[]>>()
   const fields = (kind: CrmKind) => {
     let found = loaded.get(kind)
     if (!found) {
-      // Labels are extra: a webhook without the rights to read field definitions still syncs the records.
+      // A webhook without the rights to read field definitions still syncs the records. Any other failure fails
+      // the sync: an empty list would mark every stored definition deleted.
       found = loadFields(portal(), TYPES[kind].type).catch((error: unknown) => {
-        if (isCliError(error) && error.code === "cancelled") throw error
-        return []
+        if (isCliError(error) && error.code === "permission_error") return []
+        throw error
       })
       loaded.set(kind, found)
     }
     return found
   }
+  // core's CrmPerson has no metadata, so a contact's values are not read; its definitions still are, for `fields list`.
   const custom = async (kind: CrmKind) => (kind === "person" ? [] : await fields(kind))
-  const mapped = (kind: CrmKind, raw: Raw, defined: readonly Field[]): unknown => {
+  const mapped = (kind: CrmKind, raw: Raw, defined: readonly CrmField[]): unknown => {
     const values = customFields(raw)
     const metadata = Object.keys(values).length ? metadataOf(values, defined) : undefined
     if (kind === "person") return toPerson(raw)
@@ -130,6 +132,6 @@ export const bitrixCrmSource = (portal: () => BitrixTransport, now: () => number
       if (!raw) throw new CliError("not_found", `the portal has no ${kind} ${externalId}`)
       return mapped(kind, raw, defined) as CrmItem
     },
-    fields: custom,
+    fields,
   }
 }

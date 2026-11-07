@@ -1,3 +1,5 @@
+import type { DealKind } from "@wirecat/cli-core"
+import type { CrmVerb } from "@wirecat/cli-core/crm"
 import type { Level } from "@wirecat/cli-core/sends"
 import { type Effect, KNOWN_METHODS, methodOf } from "./bitrix/methods.js"
 
@@ -115,22 +117,27 @@ export const callDefaults = (
   defaults: Readonly<Record<string, Level>>,
 ): Record<string, Level> => ({ ...defaults, [apiKey(method)]: apiDefault(method, effect, body) })
 
-const METHODS_OF_COMMANDS: Record<string, string> = {
+const METHODS: Record<CrmVerb, string> = {
   create: "add",
   update: "update",
   move: "update",
   close: "update",
-  delete: "delete",
+  remove: "delete",
 }
 
 /**
- * The other way round: the `api.*` key a CRM write command's own request checks, so `api.crm.deal.update: deny` holds
- * on `deals update` too. Both the run and its `--dry-run` preview read it.
+ * The `api.*` key a deal's or lead's write sends its request under, so `api.crm.deal.update: deny` holds on `deals
+ * update` too: core's `CrmWrites.alsoChecks` and, through `crmAlsoChecks`, its `--dry-run`.
  */
+export const crmApiKeys = (kind: DealKind, verb: CrmVerb): string[] => [apiKey(`crm.${kind}.${METHODS[verb]}`)]
+
+const OWN_WRITES: Record<string, string> = { people: "contact", organizations: "company" }
+
+/** The same for b24's own `people` and `organizations` writes, by command path. */
 export const apiKeysOf = (path: readonly string[]): string[] => {
   const [noun, command, ...rest] = path
-  const type = Object.keys(NOUNS).find((one) => NOUNS[one] === noun)
-  const method = METHODS_OF_COMMANDS[command ?? ""]
+  const type = OWN_WRITES[noun ?? ""]
+  const method = command === "create" ? "add" : command === "update" ? "update" : undefined
   return type && method && rest.length === 0 ? [apiKey(`crm.${type}.${method}`)] : []
 }
 

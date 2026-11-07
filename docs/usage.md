@@ -66,8 +66,8 @@ its `currency`; `--offline` reads the same. Bitrix24's leads have no pipelines, 
 
 `people` and `organizations` read the portal itself. Their `show` gives the portal's own fields under
 `provider_metadata`, each by its code with its label; a list field gives its option's label, and the option's id as
-`option_id`. `b24 work fields list deals` lists those fields with their type and options; `leads`, `people` and
-`organizations` work the same way. Their lists filter by those fields too, by code or label, when the portal can
+`option_id`. `b24 work fields list deals` lists those fields with their type and options, as the last `sync` stored
+them; `leads`, `people` and `organizations` work the same way. Their lists filter by those fields too, by code or label, when the portal can
 filter by them, and `--json` can add them:
 
 ```sh

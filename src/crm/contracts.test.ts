@@ -136,7 +136,7 @@ describe("the Bitrix24 adapter", () => {
     expect(Date.parse(String(cursor)) - Date.parse(String(filter[0]?.[2]))).toBe(10 * 60_000)
   })
 
-  it("refuses a custom code that is a standard field before any request, and sets custom fields by label", async () => {
+  it("refuses a custom code that is a standard field before any request, and sends a list option as a number", async () => {
     const crm = seededCrm()
     const { writer } = over(crm)
     const before = crm.calls.length
@@ -147,11 +147,16 @@ describe("the Bitrix24 adapter", () => {
     const changed = await writer.update(
       "deal",
       "102",
-      { custom: { Source: "Website", UF_CRM_NOTE: "Example note" } },
+      { custom: { UF_CRM_SOURCE: "41", UF_CRM_NOTE: "Example note" } },
       { operationId: "op-2" },
     )
     expect(crm.row("deal", 102)).toMatchObject({ UF_CRM_SOURCE: 41, UF_CRM_NOTE: "Example note" })
-    expect(changed.metadata).toMatchObject({ UF_CRM_NOTE: { label: "Note", value: "Example note" } })
+    expect(changed.metadata).toMatchObject({
+      UF_CRM_SOURCE: { label: "Source", value: "Website", option_id: "41" },
+      UF_CRM_NOTE: { label: "Note", value: "Example note" },
+    })
+    await writer.update("deal", "102", { custom: { UF_CRM_NOTE: null } }, { operationId: "op-7" })
+    expect(crm.row("deal", 102)?.UF_CRM_NOTE).toBeNull()
   })
 
   it("closes a deal in the first won or lost stage of its own pipeline, and refuses a reason", async () => {

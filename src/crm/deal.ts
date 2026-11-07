@@ -15,6 +15,7 @@ export const fromBitrixDeal = (raw: Raw, metadata?: Metadata): CrmItem => ({
   createdAt: epoch(raw.createdTime),
   updatedAt: epoch(raw.updatedTime),
   url: text(raw.url),
+  assignee: id(raw.assignedById),
   ...(metadata ? { metadata } : {}),
 })
 
@@ -35,6 +36,7 @@ export const DEAL: ItemType<CrmItem> = {
     "createdTime",
     "updatedTime",
     "url",
+    "assignedById",
   ],
   words: ["title"],
   nameOf: (deal) => deal.title,

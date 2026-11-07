@@ -22,7 +22,6 @@ import { apiCommand } from "./commands/api.js"
 import { crmCommands } from "./commands/crm.js"
 import { crmSharedCommands } from "./commands/crm-shared.js"
 import { addWrites } from "./commands/crm-writes.js"
-import { fieldsCommand } from "./commands/fields.js"
 import { sessionCommand } from "./commands/session.js"
 import { configuration } from "./config.js"
 import { IDENTITY, PACKAGE, SKILL } from "./identity.js"
@@ -35,6 +34,7 @@ const update = appUpdate({
   entry: import.meta.url,
   statePath: (env) =>
     join(resolvePaths({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env }).state, "update-check.json"),
+  // biome-ignore lint/plugin/no-own-settings: the update check runs before any command exists to give baseContext
   enabled: (env) => configuration.resolveSettings({}, { env, needsProfile: false }).updateCheck,
   offVariables: [`${IDENTITY.envPrefix}_NO_UPDATE_CHECK`],
 })
@@ -78,7 +78,6 @@ export const definition = (): ProgramDefinition => ({
     sessionCommand(),
     ...crmSharedCommands(),
     ...crmCommands().map(addWrites),
-    fieldsCommand(),
     apiCommand(),
     appDoctorCommand(IDENTITY, configuration, { packageName: PACKAGE }),
     skillCommand(IDENTITY, SKILL),
