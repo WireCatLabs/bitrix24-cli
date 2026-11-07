@@ -97,7 +97,8 @@ and `type`); field names are from the REST 3.0 field pages and the `user.get` an
   `BITRIX_REST_V3_EXCEPTION_INSUFFICIENTSCOPEEXCEPTION` ([error codes](https://apidocs.bitrix24.com/error-codes.html),
   [REST 3.0](https://apidocs.bitrix24.com/api-reference/rest-v3.html)); the strict fake answers both.
 - **Own companies.** A refusal (403 or a missing method) leaves them out as a gap; client companies and their id pass
-  still complete. The id pass then cannot list them either.
+  still complete. The id pass then lists the own companies the portal last gave, kept in the state folder
+  (`crm/<profile>/own-companies.json`), so a refusal never marks them deleted (WC-DATA-7); the gap says so.
 - **Own companies, read**
   ([crm.mycompany.basic.list](https://apidocs.bitrix24.com/api-reference/crm/rest-v3/items/crm-my-company-basic-list-rest-v3.html)). REST 3.0 `crm.mycompany.basic.list`, which needs no CRM admin right and takes only `id`,
   `title` and the like, `=` and `in`: read whole by offset at the end of every round of companies, and listed in the

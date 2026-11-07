@@ -7,6 +7,7 @@ import { loadFields, metadataOf } from "./fields.js"
 import type { ItemType } from "./items.js"
 import { LEAD } from "./lead.js"
 import { ORGANIZATION } from "./organization.js"
+import { NO_MEMORY, type OwnMemory } from "./own-memory.js"
 import { PERSON } from "./person.js"
 import { bitrixPipelines } from "./pipelines.js"
 import { portalDepartments, portalUsers } from "./user.js"
@@ -66,7 +67,11 @@ export interface BitrixCrmSource extends CrmSource {
  * The portal's CRM for core's sync: REST 3.0 lists by id with `updatedTime` for changes, since a webhook gets no
  * event feed, and a list of every id to find deletions.
  */
-export const bitrixCrmSource = (portal: () => BitrixTransport, now: () => number = Date.now): BitrixCrmSource => {
+export const bitrixCrmSource = (
+  portal: () => BitrixTransport,
+  now: () => number = Date.now,
+  own: OwnMemory = NO_MEMORY,
+): BitrixCrmSource => {
   /** The portal for one call of core's: core paid for its first request, each further one is spent from the budget. */
   const metered = (context?: CrmCallContext): BitrixCaller => {
     let paid = false
@@ -113,7 +118,7 @@ export const bitrixCrmSource = (portal: () => BitrixTransport, now: () => number
    * filters only by `=` and `in`, so it is read whole by offset, at the end of every round of companies. A portal that
    * refuses it, or lacks it, still syncs its client companies and their deletions; its own companies are a gap.
    */
-  const ownCompanies = async (caller: BitrixCaller, context?: CrmCallContext): Promise<CrmOrganization[]> => {
+  const ownCompanies = async (caller: BitrixCaller, context?: CrmCallContext): Promise<CrmOrganization[] | null> => {
     let rows: Raw[]
     try {
       rows = (
@@ -124,15 +129,19 @@ export const bitrixCrmSource = (portal: () => BitrixTransport, now: () => number
       const scope = error.details?.scope
       context?.gap({
         kind: "organization",
-        message: `the portal did not list its own companies (${error.code}): users are nobody's employees`,
+        message:
+          `the portal did not list its own companies (${error.code}): users are nobody's employees, and the own ` +
+          "companies stored before are kept, never taken for deleted",
         ...(typeof scope === "string" ? { scope } : {}),
       })
-      return []
+      return null
     }
-    return rows.flatMap((raw) => {
+    const found = rows.flatMap((raw) => {
       const externalId = id(raw.id)
       return externalId ? [{ externalId, name: text(raw.title) ?? "", own: true }] : []
     })
+    own.write(found.map(({ externalId }) => externalId))
+    return found
   }
   /** REST 3.0 gives a lead no field for the deal it became; the deal names its lead in `leadId` (apidocs fields-deal). */
   const dealsOf = async (caller: BitrixCaller, leads: readonly string[]): Promise<Map<string, string>> => {
@@ -183,7 +192,8 @@ export const bitrixCrmSource = (portal: () => BitrixTransport, now: () => number
       const last = id(rows.at(-1)?.id)
       // An empty page ends the round, not a short one: a portal that caps pages below PAGE still lists every row.
       if (last !== null) return { items, nextPage: `${last}@${started}` }
-      if (kind === "organization") items = [...items, ...((await ownCompanies(caller, context)) as CrmRecords[K][])]
+      if (kind === "organization")
+        items = [...items, ...(((await ownCompanies(caller, context)) ?? []) as CrmRecords[K][])]
       return { items, cursor: new Date(started).toISOString() }
     },
     async ids(kind, page, context): Promise<CrmIdPage> {
@@ -193,8 +203,9 @@ export const bitrixCrmSource = (portal: () => BitrixTransport, now: () => number
       const listed = rows.map((raw) => id(raw.id)).filter((one): one is string => one !== null)
       const last = listed.at(-1)
       if (last !== undefined) return { ids: listed, nextPage: last }
-      // The id pass marks deleted whatever this list leaves out, so the own companies are in it too.
-      if (kind === "organization") return { ids: (await ownCompanies(caller)).map(({ externalId }) => externalId) }
+      // The id pass marks deleted whatever this list leaves out: refused, the own companies last listed stand in (WC-DATA-7).
+      if (kind === "organization")
+        return { ids: (await ownCompanies(caller))?.map(({ externalId }) => externalId) ?? own.read() }
       return { ids: listed }
     },
     async item(kind, externalId) {

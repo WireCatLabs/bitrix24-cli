@@ -16,8 +16,8 @@ const ALICE = {
  * Northstar is the own company, Acme the client. Emma, a portal user, owns the Acme renewal and reports to Grace,
  * the head of her department; Alice and Bob are Acme's contacts on the deal.
  */
-const northstar = (more: Parameters<typeof fakeCrm>[0] = {}) => {
-  const crm = fakeCrm(more)
+const northstar = () => {
+  const crm = fakeCrm()
   const own = crm.putMine({ id: 1, title: "Northstar Consulting" })
   crm.putDepartment({ ID: "1", NAME: "Northstar", UF_HEAD: "8" })
   crm.putUser({ ID: "7", NAME: "Emma", LAST_NAME: "Stone", EMAIL: "emma@northstar.example", UF_DEPARTMENT: [1] })
@@ -243,12 +243,8 @@ describe("relationships from the portal", () => {
   })
 
   it("completes the companies' round and id pass when the portal refuses its own companies, and names the gap", async () => {
-    const { crm } = northstar({
-      "crm.mycompany.basic.list": {
-        status: 403,
-        body: { error: { code: "BITRIX_REST_V3_EXCEPTION_ACCESSDENIEDEXCEPTION", message: "Access denied" } },
-      },
-    })
+    const { crm } = northstar()
+    crm.deny("crm.mycompany.basic.list")
     await synced(crm)
     const report = await resync(crm)
     expect((report.item as unknown as { synced: { kind: string }[] }).synced[0]).toMatchObject({
@@ -260,6 +256,40 @@ describe("relationships from the portal", () => {
     expect(await crmGapsOf(store, PORTAL)).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ kind: "organization", message: expect.stringContaining("own") }),
+      ]),
+    )
+  })
+
+  it("keeps the stored own company when the portal later refuses its own companies, two syncs in a row", async () => {
+    const { crm } = northstar()
+    await synced(crm)
+    crm.deny("crm.mycompany.basic.list")
+    await resync(crm)
+    await resync(crm)
+    const { BitrixTransport } = await import("../bitrix/transport.js")
+    const { FAKE_WEBHOOK } = await import("../testing/fake-portal.js")
+    const { bitrixCrmSource } = await import("./source.js")
+    const { ownMemoryAt, ownMemoryFile } = await import("./own-memory.js")
+    const source = bitrixCrmSource(
+      () => new BitrixTransport({ webhook: FAKE_WEBHOOK, fetch: crm.fetch, sleep: async () => {} }),
+      Date.now,
+      ownMemoryAt(ownMemoryFile(process.env, "work")),
+    )
+    let page: string | undefined
+    let last: string[] = []
+    do {
+      const answer = await source.ids?.("organization", page)
+      last = answer?.ids ?? []
+      page = answer?.nextPage
+    } while (page)
+    expect(last).toEqual(["1"])
+    const { store, person, organization } = await opened()
+    expect(await memberships(store, await person("emma@northstar.example"))).toEqual([
+      expect.objectContaining({ to: await organization("Northstar Consulting"), standing: "reported" }),
+    ])
+    expect(await crmGapsOf(store, PORTAL)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "organization", message: expect.stringContaining("never taken for deleted") }),
       ]),
     )
   })

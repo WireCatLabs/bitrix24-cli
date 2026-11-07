@@ -139,6 +139,12 @@ const noScope = (api: 2 | 3): Reply =>
         },
       }
 
+/** A REST 3.0 call the webhook's employee has no right to (apidocs rest-v3: HTTP 403). */
+const accessDenied = (): Reply => ({
+  status: 403,
+  body: { error: { code: "BITRIX_REST_V3_EXCEPTION_ACCESSDENIEDEXCEPTION", message: "Access denied" } },
+})
+
 /** `crm.mycompany.basic.list` takes these and nothing else (apidocs crm-my-company-basic-list-rest-v3). */
 const MY_SELECT = ["id", "title", "email", "phone", "requisites", "bankRequisites"]
 const MY_FILTER = ["id", "title", "email.value", "phone.value"]
@@ -187,6 +193,7 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
   ])
   const departments = new Map<string, Raw>([["1", { ID: "1", NAME: "Example company", SORT: 500, UF_HEAD: "7" }]])
   const withheld = new Set<Scope | "user_basic">()
+  const denied = new Set<string>()
 
   const known = (type: Type, name: string) =>
     REST3_FIELDS[type].includes(name) || CUSTOM[type].some((field) => field.code === name)
@@ -373,7 +380,8 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
       name,
       (call: PortalCall): Reply => {
         if (call.api !== apiOf(name)) return methodNotFound(call.api, name)
-        return withheld.has(scopeOf(name)) ? noScope(call.api) : answerOf(name, call)
+        if (withheld.has(scopeOf(name))) return noScope(call.api)
+        return denied.has(name) ? accessDenied() : answerOf(name, call)
       },
     ]),
   )
@@ -402,6 +410,9 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
     putDepartment: (fields: Raw) => departments.set(String(fields.ID), { SORT: 500, ...fields }),
     /** The webhook loses a scope; `user_basic` leaves `user.get` without `EMAIL`, as a `user_brief` webhook gets. */
     withhold: (scope: Scope | "user_basic") => withheld.add(scope),
+    /** The webhook's employee loses the right to one REST 3.0 method; `allow` gives it back. */
+    deny: (method: string) => denied.add(method),
+    allow: (method: string) => denied.delete(method),
     row: (type: Type, id: number) => rows[type].get(id),
     remove: (type: Type, id: number) => rows[type].delete(id),
     loseNextAnswer: () => {
