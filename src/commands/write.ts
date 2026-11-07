@@ -16,28 +16,14 @@ import { permissions } from "../config.js"
 import { IDENTITY } from "../identity.js"
 import { contextOf, transportFor, webhookOf } from "../portal.js"
 
-/** REST 3.0's `Idempotency-Key`: 1 to 255 printable ASCII characters (apidocs "REST 3.0"). */
-const OPERATION_ID = /^[\x21-\x7e]{1,255}$/
-
-export const operationIdOf = (given: string | undefined): string => {
-  if (given !== undefined && !OPERATION_ID.test(given))
-    throw new CliError("validation_error", "--operation-id takes 1 to 255 printable characters with no spaces", {
-      param: "--operation-id",
-    })
-  return given ?? newOperationId()
-}
-
 export interface Write {
   key: string
   /** The employee the record is assigned to, when the write sets one. */
   assignee?: string | undefined
-  /** False for a REST 2 write, which Bitrix24 does not answer from a record when it is repeated. */
-  keyed?: boolean
   /** Keys checked beside `key`, such as the command key a raw `api call` does the same as. */
   extra?: readonly string[]
   /** The built-in levels, when the call adds its own key's (`callDefaults`). */
   defaults?: Readonly<Record<string, Level>>
-  operationId?: string | undefined
   /** A lookup the write needs, in its own run before the write is checked and sent, as gcal-cli's `api call` reads. */
   prepare?: (portal: BitrixTransport) => Promise<void>
   act: (portal: BitrixTransport, operationId: string) => Promise<Record<string, unknown>>
@@ -49,21 +35,12 @@ export interface Write {
  */
 export const write = async (
   command: Command,
-  {
-    key,
-    assignee,
-    extra: also = [],
-    defaults = permissions.defaults,
-    keyed = true,
-    operationId: given,
-    prepare,
-    act,
-  }: Write,
+  { key, assignee, extra: also = [], defaults = permissions.defaults, prepare, act }: Write,
 ) => {
   const { env, settings, run } = contextOf(command)
   const lock = readOnlyLockOf(IDENTITY, env)
   if (lock) throw readOnlyRefusal(lock, "change the Bitrix24 portal")
-  const operationId = operationIdOf(given)
+  const operationId = newOperationId()
   const webhook = webhookOf(command)
   const self = webhook.userId
   const extra = [...also, ...(assignee !== undefined && assignee !== self ? [CRM_ASSIGN_OTHERS_KEY] : [])]
@@ -91,11 +68,10 @@ export const write = async (
       run((events) => act(transportFor(command, webhook, events), operationId)),
     )
   } catch (error) {
-    if (keyed && error instanceof CliError && error.code === "outcome_unknown")
+    if (error instanceof CliError && error.code === "outcome_unknown")
       throw new CliError(
         "outcome_unknown",
-        `${error.message} — check the portal, and repeat it with --operation-id ${operationId} only if it is not ` +
-          "there: Bitrix24's documentation says a repeat with that key is answered from its record, not run again",
+        `${error.message} — check the portal before you write it again: Bitrix24 would make it a second time`,
         { ...error.details, operation_id: operationId },
       )
     throw error

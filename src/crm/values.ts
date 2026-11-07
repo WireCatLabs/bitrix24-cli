@@ -114,3 +114,10 @@ export const metadataSchema = v.optional(
   ),
 )
 export type Metadata = NonNullable<v.InferOutput<typeof metadataSchema>>
+
+/**
+ * A filter's time as REST 3.0 takes it, whole seconds with an offset: a live portal refused a filter with
+ * `toISOString()`'s milliseconds and `Z` (REQUESTVALIDATIONEXCEPTION, 2026-11-07).
+ */
+export const portalTime = (ms: number) =>
+  new Date(Math.floor(ms / 1000) * 1000).toISOString().replace(".000Z", "+00:00")

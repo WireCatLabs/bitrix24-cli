@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**188 ✅ · 23 ⛔ · 0 ❌** — 64 commands, 147 options.
+**173 ✅ · 23 ⛔ · 0 ❌** — 64 commands, 132 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -28,7 +28,6 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `deals list` | `--page` | ✅ |  |
 | `deals show` |  | ✅ |  |
 | `deals create` |  | ✅ |  |
-| `deals create` | `--operation-id` | ✅ |  |
 | `deals create` | `--title` | ✅ |  |
 | `deals create` | `--pipeline` | ✅ |  |
 | `deals create` | `--stage` | ✅ |  |
@@ -38,7 +37,6 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `deals create` | `--owner` | ✅ |  |
 | `deals create` | `--field` | ✅ |  |
 | `deals update` |  | ✅ |  |
-| `deals update` | `--operation-id` | ✅ |  |
 | `deals update` | `--title` | ✅ |  |
 | `deals update` | `--pipeline` | ✅ |  |
 | `deals update` | `--stage` | ✅ |  |
@@ -48,18 +46,14 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `deals update` | `--owner` | ✅ |  |
 | `deals update` | `--field` | ✅ |  |
 | `deals move` |  | ✅ |  |
-| `deals move` | `--operation-id` | ✅ |  |
 | `deals close` |  | ✅ |  |
-| `deals close` | `--operation-id` | ✅ |  |
 | `deals close` | `--reason` | ✅ |  |
 | `deals delete` |  | ✅ |  |
-| `deals delete` | `--operation-id` | ✅ |  |
 | `leads list` |  | ✅ |  |
 | `leads list` | `--limit` | ✅ |  |
 | `leads list` | `--page` | ✅ |  |
 | `leads show` |  | ✅ |  |
 | `leads create` |  | ✅ |  |
-| `leads create` | `--operation-id` | ✅ |  |
 | `leads create` | `--title` | ✅ |  |
 | `leads create` | `--pipeline` | ✅ |  |
 | `leads create` | `--stage` | ✅ |  |
@@ -69,7 +63,6 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `leads create` | `--owner` | ✅ |  |
 | `leads create` | `--field` | ✅ |  |
 | `leads update` |  | ✅ |  |
-| `leads update` | `--operation-id` | ✅ |  |
 | `leads update` | `--title` | ✅ |  |
 | `leads update` | `--pipeline` | ✅ |  |
 | `leads update` | `--stage` | ✅ |  |
@@ -79,12 +72,9 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `leads update` | `--owner` | ✅ |  |
 | `leads update` | `--field` | ✅ |  |
 | `leads move` |  | ✅ |  |
-| `leads move` | `--operation-id` | ✅ |  |
 | `leads close` |  | ✅ |  |
-| `leads close` | `--operation-id` | ✅ |  |
 | `leads close` | `--reason` | ✅ |  |
 | `leads delete` |  | ✅ |  |
-| `leads delete` | `--operation-id` | ✅ |  |
 | `pipelines list` |  | ✅ |  |
 | `pipelines show` |  | ✅ |  |
 | `stages list` |  | ✅ |  |
@@ -110,13 +100,11 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `people create` | `--last-name` | ✅ |  |
 | `people create` | `--body` | ✅ |  |
 | `people create` | `--field` | ✅ |  |
-| `people create` | `--operation-id` | ✅ |  |
 | `people update` |  | ✅ |  |
 | `people update` | `--first-name` | ✅ |  |
 | `people update` | `--last-name` | ✅ |  |
 | `people update` | `--body` | ✅ |  |
 | `people update` | `--field` | ✅ |  |
-| `people update` | `--operation-id` | ✅ |  |
 | `organizations list` |  | ✅ |  |
 | `organizations list` | `--limit` | ✅ |  |
 | `organizations list` | `--page` | ✅ |  |
@@ -126,12 +114,10 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `organizations create` | `--name` | ✅ |  |
 | `organizations create` | `--body` | ✅ |  |
 | `organizations create` | `--field` | ✅ |  |
-| `organizations create` | `--operation-id` | ✅ |  |
 | `organizations update` |  | ✅ |  |
 | `organizations update` | `--name` | ✅ |  |
 | `organizations update` | `--body` | ✅ |  |
 | `organizations update` | `--field` | ✅ |  |
-| `organizations update` | `--operation-id` | ✅ |  |
 | `products list` |  | ✅ |  |
 | `products list` | `--limit` | ✅ |  |
 | `products list` | `--page` | ✅ |  |
@@ -146,7 +132,6 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `api show` |  | ✅ |  |
 | `api call` |  | ✅ |  |
 | `api call` | `--body` | ✅ |  |
-| `api call` | `--operation-id` | ✅ |  |
 | `api call` | `--dry-run` | ✅ |  |
 | `doctor` |  | ✅ |  |
 | `doctor` | `--online` | ✅ |  |

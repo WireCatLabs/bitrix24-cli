@@ -1,6 +1,7 @@
 import { CliError } from "@wirecat/cli-base"
 import type { Predicate } from "@wirecat/cli-base/query"
 import { timeBounds } from "@wirecat/cli-core/cli"
+import { portalTime } from "./values.js"
 
 export type Operator = "=" | ">" | ">=" | "<" | "<=" | "like"
 
@@ -60,8 +61,8 @@ export const conditionsOf = (terms: ReadonlyMap<string, Predicate>, fields: Read
     if (map.kind === "time") {
       const { since, until } = timeBounds(node)
       return [
-        ...(since === undefined ? [] : [{ field: map.field, op: ">=" as const, value: new Date(since).toISOString() }]),
-        ...(until === undefined ? [] : [{ field: map.field, op: "<=" as const, value: new Date(until).toISOString() }]),
+        ...(since === undefined ? [] : [{ field: map.field, op: ">=" as const, value: portalTime(since) }]),
+        ...(until === undefined ? [] : [{ field: map.field, op: "<=" as const, value: portalTime(until) }]),
       ]
     }
     if (node.operator === "range") return range(node, map, name)

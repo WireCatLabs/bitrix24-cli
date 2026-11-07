@@ -55,9 +55,15 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   body that names one field twice in any spelling, an `entityTypeId` that is not a plain number, a `fields` that is
   not an object, a method with any suffix but one `.json`, and a `crm.item` method without `entityTypeId`. Send each
   field once, under one spelling.
+- `--operation-id` is gone from every write. On a live portal a create repeated with the same id made a second
+  record, so a repeat is never safe: after `outcome_unknown`, `sync` and `show` the record and write it again only if
+  it is not there. A deal or lead write given `--operation-id` is refused before anything is sent.
 
 ### Fixed
 
+- A `sync` after the first one works. It asked the portal for what changed with a time the portal refuses, so
+  every kind failed and nothing new was copied. Times in a filter now go in whole seconds with an offset, which also
+  fixes `updated_at:` and `created_at:` in `people list` and `organizations list`.
 - A write answered with a server or gateway failure (500, 502, 504) is `outcome_unknown`, not `provider_unavailable`:
   the portal may have made it. A write a cancel cuts is `outcome_unknown` too, never `cancelled`.
 - Stages are read page by page: a directory past REST 2's first 50 rows lost its later stages.

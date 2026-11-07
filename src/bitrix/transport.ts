@@ -40,7 +40,7 @@ export interface BitrixTransportOptions {
 }
 
 export interface CallOptions {
-  /** A write's operation id, sent as REST 3.0's `Idempotency-Key`, so the owner can repeat it by hand. */
+  /** A write's operation id, sent as REST 3.0's `Idempotency-Key`; a live portal still did a repeat again. */
   idempotencyKey?: string
 }
 

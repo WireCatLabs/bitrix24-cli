@@ -39,23 +39,13 @@ describe("create", () => {
     expect(call.headers["Idempotency-Key"]).toBe(item.operation_id)
   })
 
-  it("repeats with the --operation-id it is given", async () => {
-    const portal = added()
-    await b24(
-      ["work", "people", "create", "--first-name", "WireCat", "--last-name", "test", "--operation-id", "op-7"],
-      { portal },
-    )
-    expect(portal.calls[0]?.headers["Idempotency-Key"]).toBe("op-7")
-    expect(portal.calls[0]?.body).toEqual({ fields: { name: "WireCat", lastName: "test" } })
-  })
-
-  it("refuses a create without its name, a bad --body and a bad --operation-id, before the portal", async () => {
+  it("refuses a create without its name, a bad --body and --operation-id, before the portal", async () => {
     const portal = added()
     expect((await b24(["work", "people", "create"], { portal })).code).toBe(2)
     expect((await b24(["work", "organizations", "create", "--name", "x", "--body", "{"], { portal })).code).toBe(2)
     expect((await b24(["work", "organizations", "create", "--name", "x", "--body", "[1]"], { portal })).code).toBe(2)
     expect(
-      (await b24(["work", "organizations", "create", "--name", "x", "--operation-id", "two words"], { portal })).code,
+      (await b24(["work", "organizations", "create", "--name", "x", "--operation-id", "op-7"], { portal })).code,
     ).toBe(2)
     expect(portal.calls).toHaveLength(0)
   })
@@ -92,13 +82,13 @@ describe("create", () => {
     expect(portal.calls).toHaveLength(0)
   })
 
-  it("a create that gets no answer is sent once, is outcome_unknown, and names the retry once", async () => {
+  it("a create that gets no answer is sent once, is outcome_unknown, and says to look before writing again", async () => {
     const portal = fakePortal({ "crm.company.add": new TypeError("socket hang up") })
     const ran = await b24(["work", "organizations", "create", "--name", "x", "--json"], { portal })
     expect(ran.code).toBe(14)
     const error = ran.json().error as Record<string, unknown>
-    expect(String(error.message).split("--operation-id")).toHaveLength(2)
-    expect(String(error.message)).not.toContain("check before repeating")
+    expect(String(error.message)).toContain("check the portal before you write it again")
+    expect(String(error.message)).not.toContain("--operation-id")
     expect(portal.calls).toHaveLength(1)
   })
 
@@ -293,25 +283,19 @@ describe("every write takes its options", () => {
     organizations: ["--name", "WireCat test"],
   }
   for (const [noun, type] of Object.entries(TYPES))
-    it(`${noun} create and update take their names, --body and --operation-id`, async () => {
+    it(`${noun} create and update take their names and --body, each with its own operation id`, async () => {
       const portal = fakePortal({
         ...customFields(type),
         [`crm.${type}.add`]: ok({ id: 1 }),
         [`crm.${type}.update`]: ok({ result: true }),
       })
-      const options = [
-        ...(NAMES[noun] ?? []),
-        "--body",
-        '{"comments":"x"}',
-        "--field",
-        "Source=Fair",
-        "--operation-id",
-        `op-${noun}`,
-      ]
+      const options = [...(NAMES[noun] ?? []), "--body", '{"comments":"x"}', "--field", "Source=Fair"]
       expect((await b24(["work", noun, "create", ...options], { portal })).code).toBe(0)
       expect((await b24(["work", noun, "update", "1", ...options], { portal })).code).toBe(0)
       const writes = portal.calls.filter((call) => !call.method.includes("field"))
-      expect(writes.map((call) => call.headers["Idempotency-Key"])).toEqual([`op-${noun}`, `op-${noun}`])
+      const keys = writes.map((call) => call.headers["Idempotency-Key"])
+      expect(keys).toHaveLength(2)
+      expect(keys[0]).not.toBe(keys[1])
       expect(writes[1]?.body).toMatchObject({ id: 1, fields: { comments: "x", UF_CRM_1_SOURCE: 45 } })
     })
 })
