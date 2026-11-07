@@ -1,19 +1,18 @@
 import { CliError, isCliError } from "@wirecat/cli-base"
 import type { CrmItem, DealKind } from "@wirecat/cli-core"
-import type { CrmFields, CrmWriteOptions, CrmWriter } from "@wirecat/cli-core/crm"
+import { type CrmFields, type CrmWriteOptions, type CrmWriter, fieldNamed, optionOf } from "@wirecat/cli-core/crm"
 import type { BitrixTransport } from "../bitrix/transport.js"
+import { foldCode } from "../body.js"
 import { BITRIX_WRITES } from "./capabilities.js"
-import { findField, optionOf } from "./fields.js"
 import { LEAD_PIPELINE } from "./lead.js"
 import { REST3_FIELDS } from "./rest3-fields.js"
 import type { BitrixCrmSource } from "./source.js"
 import { id, numericId, type Raw } from "./values.js"
 
-/** Bitrix24 takes `stageId` and `STAGE_ID` alike; a lead's REST 2 stage is `STATUS_ID`. */
-const folded = (name: string) => name.replaceAll("_", "").toLowerCase()
+/** A lead's REST 2 stage is `STATUS_ID`. */
 const STANDARD: Record<DealKind, ReadonlySet<string>> = {
-  deal: new Set(REST3_FIELDS.deal.map(folded)),
-  lead: new Set([...REST3_FIELDS.lead, "statusId"].map(folded)),
+  deal: new Set(REST3_FIELDS.deal.map(foldCode)),
+  lead: new Set([...REST3_FIELDS.lead, "statusId"].map(foldCode)),
 }
 
 const refused = (message: string, param?: string) =>
@@ -28,7 +27,7 @@ export const bitrixCrmWriter = (portal: () => BitrixTransport, source: BitrixCrm
   const fieldsOf = async (kind: DealKind, given: CrmFields): Promise<Raw> => {
     const custom = Object.entries(given.custom ?? {})
     for (const [code] of custom)
-      if (STANDARD[kind].has(folded(code)))
+      if (STANDARD[kind].has(foldCode(code)))
         throw refused(`${code} is one of Bitrix24's own fields; set it with its own option, not --field`, "--field")
     if (given.people !== undefined) throw refused("b24 does not set the contacts on a record yet")
     if (given.owner === null) throw refused("a Bitrix24 record is always assigned to an employee", "--owner")
@@ -51,7 +50,7 @@ export const bitrixCrmWriter = (portal: () => BitrixTransport, source: BitrixCrm
     // they are checked here against the portal's, or `Number("Website")` would clear a list field.
     const defined = await source.fields(kind)
     for (const [name, value] of custom) {
-      const field = findField(defined, name)
+      const field = fieldNamed(defined, name)
       const typed = (one: string) => (field.options ? Number(optionOf(field, one)) : one)
       if (value === null) fields[field.code] = field.multiple ? [] : null
       else fields[field.code] = Array.isArray(value) ? value.map(typed) : typed(value)

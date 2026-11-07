@@ -24,6 +24,10 @@ if your portal has such robots. Every write that sets a stage checks them; a won
 stage, a pipeline or an owner is refused. Deleting a deal or a lead asks first. `api.crm.deal.update: deny` also stops
 `deals update`, `move` and `close`, and at `ask` they ask too.
 
+`search all` reads what the list keys allow: under `deals.list: deny` it leaves deals out, under `leads.list: deny`
+leads, and names each kind it left out in `missing` and on stderr. With every kind it was asked for denied, it is
+refused.
+
 `api call` works from an allow list. It allows the CRM, catalog and user reads `b24` makes itself, and the deal, lead,
 contact and company writes. Reads and writes both check the key of the command that reads or writes the same records:
 `api call crm.deal.list` checks `deals.list`, and `crm.item.update` with `entityTypeId` 2 checks `deals.update`. A body

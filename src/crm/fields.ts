@@ -1,5 +1,6 @@
 import { CliError } from "@wirecat/cli-base"
 import type { CrmField } from "@wirecat/cli-core"
+import { fieldNamed, optionOf } from "@wirecat/cli-core/crm"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import type { ItemType } from "./items.js"
 import { isCustom, type Metadata, type Raw, text, yes } from "./values.js"
@@ -66,78 +67,6 @@ export const metadataOf = (custom: Record<string, unknown>, fields: readonly Fie
   )
 }
 
-/** Case, spaces and underscores aside: `lead_source` and `Lead source` are one name. */
-const folded = (name: string) =>
-  name
-    .trim()
-    .toLocaleLowerCase()
-    .replace(/[\s_]+/g, " ")
-
-const named = (field: Field) => ({ code: field.code, label: field.label })
-
-/** No field by that name: the fields whose code or label holds it, or is held in it, as candidates. */
-export const unknownField = (fields: readonly Field[], name: string) => {
-  const want = folded(name)
-  const close = fields.filter((field) =>
-    [field.code, field.label ?? ""].some((one) => {
-      const other = folded(one)
-      return other !== "" && (other.includes(want) || want.includes(other))
-    }),
-  )
-  return new CliError(
-    "validation_error",
-    `no custom field is named ${name}${close.length ? "; close ones are in candidates" : ""} — \`fields list\` lists them`,
-    { reason: "field.unknown", candidates: close.map(named) },
-  )
-}
-
-/**
- * A custom field by its code, or by its whole label; two fields with that label are refused with both, never
- * guessed (as `resolveItem` refuses two records).
- */
-export const findField = (fields: readonly Field[], name: string): Field => {
-  const want = folded(name)
-  const byCode = fields.find((field) => folded(field.code) === want)
-  if (byCode) return byCode
-  const labelled = fields.filter((field) => field.label !== null && folded(field.label) === want)
-  if (labelled.length === 1 && labelled[0]) return labelled[0]
-  if (labelled.length > 1)
-    throw new CliError(
-      "validation_error",
-      `${labelled.length} custom fields are labelled ${name}; name one by its code`,
-      {
-        reason: "field.ambiguous",
-        candidates: labelled.map(named),
-      },
-    )
-  throw unknownField(fields, name)
-}
-
-/** A list field's option by its id or its whole label. */
-export const optionOf = (field: Field, value: string): string => {
-  if (!field.options) return value
-  const want = folded(value)
-  const found =
-    field.options.find((option) => option.id === value.trim()) ??
-    field.options.find((option) => folded(option.label) === want)
-  if (!found)
-    throw new CliError("validation_error", `${field.label ?? field.code} has no option ${value}`, {
-      reason: "field.unknown-option",
-      field: field.code,
-      allowed: field.options,
-    })
-  return found.id
-}
-
-/** `--field` as typed, split at the first `=`. */
-export const fieldPairsOf = (typed: readonly string[]): [string, string][] =>
-  typed.map((one) => {
-    const at = one.indexOf("=")
-    if (at <= 0 || one.slice(0, at).trim() === "")
-      throw new CliError("validation_error", `--field takes <key>=<value>; got ${one}`, { param: "--field" })
-    return [one.slice(0, at), one.slice(at + 1)]
-  })
-
 /**
  * The custom values to write, by code, as typed: a list field's options as their ids, numbers as `field.list` types
  * them (`int`), and a multiple field's values as an array.
@@ -145,7 +74,7 @@ export const fieldPairsOf = (typed: readonly string[]): [string, string][] =>
 export const customValues = (fields: readonly Field[], pairs: readonly [string, string][]): Raw => {
   const values = new Map<Field, (string | number)[]>()
   for (const [name, value] of pairs) {
-    const field = findField(fields, name)
+    const field = fieldNamed(fields, name)
     values.set(field, [...(values.get(field) ?? []), field.options ? Number(optionOf(field, value)) : value])
   }
   return Object.fromEntries(

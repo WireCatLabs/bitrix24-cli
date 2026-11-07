@@ -143,6 +143,7 @@ const customFields = (type: string) => ({
       { name: "UF_CRM_3_NOTE", title: "Note", type: "string", multiple: false, filterable: false },
       { name: "UF_CRM_4_NOTE", title: "note", type: "string", multiple: false, filterable: false },
       { name: "UF_CRM_5_LEAD_SOURCE", title: "Lead source", type: "string", multiple: false, filterable: false },
+      { name: "UF_CRM_6_CITY", title: "Город", type: "int", multiple: false, filterable: true },
     ],
   }),
   [`crm.${type}.userfield.list`]: ok([
@@ -153,6 +154,15 @@ const customFields = (type: string) => ({
       LIST: [
         { ID: "44", VALUE: "Website" },
         { ID: "45", VALUE: "Fair" },
+      ],
+    },
+    {
+      FIELD_NAME: "UF_CRM_6_CITY",
+      USER_TYPE_ID: "enumeration",
+      MULTIPLE: "N",
+      LIST: [
+        { ID: "60", VALUE: "Орёл" },
+        { ID: "61", VALUE: "Йошкар-Ола" },
       ],
     },
     {
@@ -188,6 +198,17 @@ describe("--field", () => {
       fields: { UF_CRM_1_SOURCE: 44, UF_CRM_2_TAGS: [50, 51], UF_CRM_5_LEAD_SOURCE: "Ads" },
     })
     expect(fake.calls[2]?.headers["Idempotency-Key"]).toBe((ran.json().item as Record<string, unknown>).operation_id)
+  })
+
+  it("takes е for ё and a decomposed й for a composed one, in a label and in an option", async () => {
+    const fake = portal()
+    expect((await update(fake, "ГОРОД=Орел")).code).toBe(0)
+    expect((await update(fake, "город=Йошкар-Ола".normalize("NFD"))).code).toBe(0)
+    const sent = fake.calls.filter((call) => call.method === "crm.company.update").map((call) => call.body)
+    expect(sent).toEqual([
+      { id: 42, fields: { UF_CRM_6_CITY: 60 } },
+      { id: 42, fields: { UF_CRM_6_CITY: 61 } },
+    ])
   })
 
   it("wins over --body for the same field, and named options win over both", async () => {
