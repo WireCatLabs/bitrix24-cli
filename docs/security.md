@@ -25,8 +25,11 @@ stage, a pipeline or an owner is refused. Deleting a deal or a lead asks first. 
 `deals update`, `move` and `close`, and at `ask` they ask too.
 
 `api call` works from an allow list. It allows the CRM, catalog and user reads `b24` makes itself, and the deal, lead,
-contact and company writes, which also check the command's own key (`api call crm.item.update` with `entityTypeId` 2
-checks `deals.update`). A delete asks. Every other method asks too, and is refused without a terminal unless you pass
+contact and company writes. Reads and writes both check the key of the command that reads or writes the same records:
+`api call crm.deal.list` checks `deals.list`, and `crm.item.update` with `entityTypeId` 2 checks `deals.update`. A body
+that names one field twice in any spelling (`assignedById` and `ASSIGNED_BY_ID`, `fields` and `FIELDS`), an
+`entityTypeId` that is not a plain number, and a method with a suffix other than one `.json` are refused before
+anything is sent. A delete asks. Every other method asks too, and is refused without a terminal unless you pass
 `--yes`. Methods that message people, publish or send data out are refused until you allow them: `im`,
 `imopenlines`, `imbot`, `imconnector`, `log.blogpost`, SMS, mail, telephony, workflows, CRM activities, tasks,
 `user.add`, public file links, `event.bind` and `batch`. Their reads are refused too, since they hold messages,

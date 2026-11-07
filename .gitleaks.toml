@@ -23,12 +23,12 @@ entropy = 3.5
 keywords = ["1//"]
 
 # A Bitrix24 incoming webhook is a password: its secret is a segment of the address,
-# https://<portal>/rest/<user id>/<secret>/<method> (apidocs "Webhooks"). The tests' fake secret starts with
-# wirecatfake.
+# https://<portal>/rest/<user id>/<secret>/<method> (apidocs "Webhooks"), with or without the trailing slash, and with
+# the `-` and `_` that parseWebhook takes. The tests' fake secret starts with wirecatfake.
 [[rules]]
 id = "bitrix24-webhook"
 description = "Bitrix24 incoming webhook address"
-regex = '''/rest/(?:api/)?\d+/([A-Za-z0-9]{8,})/'''
+regex = '''/rest/(?:api/)?\d+/([A-Za-z0-9_-]{8,})'''
 secretGroup = 1
 keywords = ["/rest/"]
 

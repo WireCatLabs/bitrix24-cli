@@ -44,12 +44,20 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   `leads.close`) as well as `deals.move`.
 - `mcp` and `doctor` are cli-core's shared commands: `mcp` adds `config`, `add` and `check`, and `--profiles` and
   `--permission` on `serve`; `doctor` adds `--online`.
+- `--body` is refused when it names one field twice in any spelling, when `entityTypeId` is not a plain number, or
+  when its `fields` is not an object; `api call` refuses a method with any suffix but one `.json`, and a `crm.item`
+  method without `entityTypeId`.
+- `api call` reads check the key of the command that reads the same records, as its writes do: `deals: deny` now
+  stops `api call crm.deal.list` too.
 
 ### Fixed
 
 - A write answered with a server or gateway failure (500, 502, 504) is `outcome_unknown`, not `provider_unavailable`:
   the portal may have made it. A write a cancel cuts is `outcome_unknown` too, never `cancelled`.
 - Stages are read page by page: a directory past REST 2's first 50 rows lost its later stages.
+- Permission checks on `api call`, `people` and `organizations` writes now read a body exactly as it is sent.
+- An id or owner that is not a number is refused before anything is sent; it went out empty before.
+- `--body` keeps integers past 2^53 as typed; `api call --body -` reads the body from stdin.
 
 ## 0.4.0 — 06.11.2026
 

@@ -344,9 +344,10 @@ describe("api call works from an allow list", () => {
     "%s asks, and runs on --yes",
     async (method) => {
       const fake = fakePortal({ [method]: ok(true) })
-      expect((await b24(call(method, { fields: {} }), { portal: fake })).code).toBe(7)
+      const body = { entityTypeId: 31, fields: {} }
+      expect((await b24(call(method, body), { portal: fake })).code).toBe(7)
       expect(fake.calls).toHaveLength(0)
-      expect((await b24(call(method, { fields: {} }, "--yes"), { portal: fake })).code).toBe(0)
+      expect((await b24(call(method, body, "--yes"), { portal: fake })).code).toBe(0)
       expect(fake.calls).toHaveLength(1)
     },
   )
@@ -387,4 +388,172 @@ describe("a denied family stays denied for reads", () => {
       expect((shown.json().item as Record<string, unknown>).default_level).toBe("deny")
     },
   )
+})
+
+describe("a body is read one way, and that is the body sent", () => {
+  const twice = '{"assignedById":7,"ASSIGNED_BY_ID":9}'
+
+  it("M1: an MCP people update naming the assignee twice is refused, with no request", async () => {
+    const portal = fakePortal({ "crm.contact.update": ok(true) })
+    const mcp = await overMcp(portal)
+    try {
+      const answer = await mcp.call("b24_write", { command: "people update", arguments: { id: "4", body: twice } })
+      expect(answer.isError).toBe(true)
+      expect(JSON.stringify(answer)).toContain("validation_error")
+    } finally {
+      await mcp.close()
+    }
+    expect(portal.calls).toHaveLength(0)
+  })
+
+  it.each([
+    ["P9", ["work", "people", "update", "4", "--body", twice]],
+    ["P9 with --name", ["work", "organizations", "update", "4", "--name", "x", "--body", '{"TITLE":"y"}']],
+    ["P10", call("crm.deal.update", { id: 5, fields: { assignedById: 7, ASSIGNED_BY_ID: 9 } })],
+    ["P6b", call("crm.deal.update", { id: 5, fields: { title: "x" }, FIELDS: { STAGE_ID: "C1:WON" } })],
+    ["P4", call("crm.item.delete", { ENTITY_TYPE_ID: 7, entityTypeId: 2, id: 5 }, "--yes")],
+    ["a nested spelling", call("crm.deal.list", { filter: { stage_id: "NEW", STAGEID: "WON" } })],
+  ])("%s: two spellings of one key are refused before any request", async (_, argv) => {
+    const portal = fakePortal({ "crm.contact.update": ok(true), "crm.deal.update": ok(true) })
+    await withPermissions({ "deals.move": "deny", "deals.close": "deny", "deals.delete": "deny" }, async () => {
+      const ran = await b24([...argv, "--json"], { portal })
+      expect(ran.code).toBe(2)
+      expect(ran.json().error).toMatchObject({ code: "validation_error" })
+    })
+    expect(portal.calls).toHaveLength(0)
+  })
+
+  it.each([
+    ["P2", "02", ["--yes"], {}],
+    ["P2b", "02", ["--yes"], { CLAUDECODE: "1" }],
+    ["P3", " 2", ["--yes"], {}],
+    ["P5", "02", [], {}],
+    ["2.0 as text", "2.0", ["--yes"], {}],
+  ])("%s: entityTypeId %j is refused; only a plain integer names the type", async (_, entityTypeId, rest, env) => {
+    const portal = fakePortal({ "crm.item.delete": ok(true) })
+    await withPermissions({ "deals.delete": "deny" }, async () => {
+      const ran = await b24([...call("crm.item.delete", { entityTypeId, id: 5 }, ...rest), "--json"], { portal, env })
+      expect(ran.code).toBe(2)
+    })
+    expect(portal.calls).toHaveLength(0)
+  })
+
+  it("2.0 typed as a number in --body is refused rather than read as deal", async () => {
+    const portal = fakePortal({ "crm.item.update": ok(true) })
+    const argv = ["work", "api", "call", "crm.item.update", "--body", '{"entityTypeId":2.0,"id":5,"fields":{}}']
+    expect((await b24([...argv, "--yes"], { portal })).code).toBe(2)
+    expect(portal.calls).toHaveLength(0)
+  })
+
+  it('P8: a stage move with entityTypeId "2.0" is refused under deals.move: deny', async () => {
+    const portal = fakePortal({ "crm.item.update": ok(true) })
+    await withPermissions({ "deals.move": "deny" }, async () => {
+      const body = { entityTypeId: "2.0", id: 5, fields: { stageId: "WON" } }
+      expect((await b24(call("crm.item.update", body, "--yes"), { portal })).code).toBe(2)
+    })
+    expect(portal.calls).toHaveLength(0)
+  })
+
+  it('entityTypeId "2" names deals as 2 does', async () => {
+    const portal = fakePortal({ "crm.item.delete": ok(true) })
+    await withPermissions({ "deals.delete": "deny" }, async () => {
+      expect((await b24(call("crm.item.delete", { entityTypeId: "2", id: 5 }, "--yes"), { portal })).code).toBe(5)
+    })
+    expect(portal.calls).toHaveLength(0)
+  })
+
+  it("a crm.item call without entityTypeId, or with fields that are not an object, is refused", async () => {
+    const portal = fakePortal({ "crm.item.update": ok(true), "crm.deal.update": ok(true) })
+    expect((await b24(call("crm.item.update", { id: 5, fields: { title: "x" } }, "--yes"), { portal })).code).toBe(2)
+    expect(
+      (await b24(call("crm.deal.update", { id: 5, fields: [{ STAGE_ID: "WON" }] }, "--yes"), { portal })).code,
+    ).toBe(2)
+    expect(portal.calls).toHaveLength(0)
+  })
+
+  it.each(["crm.deal.delete.xml", "crm.deal.delete.json.json", "CRM.DEAL.DELETE.XML"])(
+    "P7: %s is refused; only one .json suffix is taken",
+    async (method) => {
+      const portal = fakePortal({ "crm.deal.delete.xml": ok(true), "crm.deal.delete": ok(true) })
+      await withPermissions({ "deals.delete": "deny" }, async () => {
+        expect((await b24(call(method, { id: 5 }, "--yes"), { portal })).code).toBe(2)
+      })
+      expect(portal.calls).toHaveLength(0)
+    },
+  )
+
+  it("people update does not read --body - from stdin, which carries MCP's messages", async () => {
+    const portal = fakePortal({ "crm.contact.update": ok(true) })
+    expect((await b24(["work", "people", "update", "4", "--body", "-"], { portal })).code).toBe(2)
+    expect(portal.calls).toHaveLength(0)
+  })
+
+  it("an integer past 2^53 in --body is sent with every digit", async () => {
+    const portal = fakePortal({ "crm.deal.list": ok([]) })
+    const argv = ["work", "api", "call", "crm.deal.list", "--body", '{"filter":{"id":12345678901234567891}}']
+    expect((await b24(argv, { portal })).code).toBe(0)
+    expect(portal.calls[0]?.text).toContain("12345678901234567891")
+  })
+})
+
+describe("api call reads check the command key of what they read", () => {
+  it.each([
+    ["deals", "crm.deal.list", {}],
+    ["deals.show", "crm.deal.get", { id: 5 }],
+    ["deals", "crm.deal.productrows.get", { id: 5 }],
+    ["deals.list", "crm.item.list", { entityTypeId: 2 }],
+    ["people", "crm.contact.list", {}],
+    ["people.show", "crm.contact.get", { id: 5 }],
+    ["organizations.list", "crm.company.list", {}],
+    ["leads.show", "crm.item.get", { entityTypeId: 1, id: 5 }],
+    ["products.list", "crm.product.list", {}],
+    ["products.list", "catalog.product.list", {}],
+    ["products.show", "crm.product.get", { id: 5 }],
+    ["users.show", "user.get", { ID: 5 }],
+    ["fields.list", "crm.deal.fields", {}],
+    ["fields.list", "crm.deal.userfield.list", {}],
+    ["pipelines.list", "crm.category.list", { entityTypeId: 2 }],
+    ["stages.list", "crm.status.list", {}],
+  ])("%s: deny refuses api call %s before any request", async (key, method, body) => {
+    const portal = fakePortal({ [method]: ok([]) })
+    await withPermissions({ [key]: "deny" }, async () => {
+      const ran = await b24([...call(method, body), "--json"], { portal })
+      expect(ran.code).toBe(5)
+      expect(ran.json().error).toMatchObject({ code: "permission_error" })
+      expect((await b24([...call(method, body), "--dry-run", "--json"], { portal })).code).toBe(5)
+    })
+    expect(portal.calls).toHaveLength(0)
+  })
+
+  it("--dry-run and api show name the read's command key", async () => {
+    const ran = await b24([...call("crm.deal.list", {}), "--dry-run", "--json"])
+    expect(ran.json().item).toMatchObject({
+      permissions: [
+        { key: "api.crm.deal.list", level: "allow" },
+        { key: "deals.list", level: "allow" },
+      ],
+    })
+    const shown = await b24(["api", "show", "crm.contact.get", "--json"])
+    expect((shown.json().item as Record<string, unknown>).also_checks).toEqual(["people.show"])
+  })
+})
+
+describe("an id that is not a number is refused before any request", () => {
+  it("deals update --owner anna", async () => {
+    const { ref, calls } = await synced()
+    const before = calls()
+    await withPermissions({ "crm.assign-others": "allow" }, async () => {
+      const ran = await b24(["work", "deals", "update", ref("deals", 102), "--owner", "anna", "--yes", "--json"])
+      expect(ran.code).toBe(2)
+      expect(ran.json().error).toMatchObject({ code: "validation_error" })
+    })
+    expect(calls()).toBe(before)
+  })
+
+  it.each(["users", "products"])("%s show abc", async (noun) => {
+    const portal = seededCrm()
+    const ran = await b24(["work", noun, "show", "abc", "--json"], { portal })
+    expect(ran.code).toBe(2)
+    expect(portal.calls).toHaveLength(0)
+  })
 })

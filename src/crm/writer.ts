@@ -7,7 +7,7 @@ import { findField, optionOf } from "./fields.js"
 import { LEAD_PIPELINE } from "./lead.js"
 import { REST3_FIELDS } from "./rest3-fields.js"
 import type { BitrixCrmSource } from "./source.js"
-import { id, type Raw } from "./values.js"
+import { id, numericId, type Raw } from "./values.js"
 
 /** Bitrix24 takes `stageId` and `STAGE_ID` alike; a lead's REST 2 stage is `STATUS_ID`. */
 const folded = (name: string) => name.replaceAll("_", "").toLowerCase()
@@ -38,14 +38,14 @@ export const bitrixCrmWriter = (portal: () => BitrixTransport, source: BitrixCrm
       throw refused("Bitrix24 leads have one pipeline", "--pipeline")
     const fields: Raw = {}
     if (given.title !== undefined) fields.title = given.title
-    if (kind === "deal" && given.pipeline !== undefined) fields.categoryId = Number(given.pipeline)
+    if (kind === "deal" && given.pipeline !== undefined) fields.categoryId = numericId(given.pipeline, "--pipeline")
     if (given.stage !== undefined) fields.stageId = given.stage
     if (given.amount !== undefined) fields.opportunity = given.amount === null ? 0 : Number(given.amount)
     if (given.currency != null) fields.currencyId = given.currency
     if (given.closeDate !== undefined) fields.closeTime = given.closeDate
     if (given.organization !== undefined)
-      fields.companyId = given.organization === null ? 0 : Number(given.organization)
-    if (given.owner != null) fields.assignedById = Number(given.owner)
+      fields.companyId = given.organization === null ? 0 : numericId(given.organization, "--organization")
+    if (given.owner != null) fields.assignedById = numericId(given.owner, "--owner")
     if (custom.length === 0) return fields
     // Core resolves by the stored definitions, but a store not synced since they were added passes names as typed:
     // they are checked here against the portal's, or `Number("Website")` would clear a list field.

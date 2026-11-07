@@ -897,7 +897,7 @@ b24 api show <method>
 
 ### `b24 api call`
 
-call one Bitrix24 method by name with its parameters as JSON; it checks api.<method>, and the command key a deal, lead, contact or company write does the same as
+call one Bitrix24 method by name with its parameters as JSON; it checks api.<method>, and the key of the command that reads or writes the same records
 
 **Changes something in the service.**
 

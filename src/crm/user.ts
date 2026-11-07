@@ -2,7 +2,7 @@ import { CliError } from "@wirecat/cli-base"
 import * as v from "valibot"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { type Condition, rest2Filter } from "./conditions.js"
-import { fullName, id, ids, type Raw, text, yes } from "./values.js"
+import { fullName, id, ids, numericId, type Raw, text, yes } from "./values.js"
 import { type Window, walk } from "./walk.js"
 
 /** An employee of the portal: who a record is assigned to. */
@@ -54,7 +54,7 @@ export const listUsers = async (portal: BitrixTransport, conditions: readonly Co
 }
 
 export const getUser = async (portal: BitrixTransport, reference: string): Promise<User> => {
-  const answer = await portal.call("user.get", { FILTER: { ID: Number(reference) } })
+  const answer = await portal.call("user.get", { FILTER: { ID: numericId(reference, "users show") } })
   const found = Array.isArray(answer.result) ? (answer.result as Raw[])[0] : undefined
   if (!found) throw new CliError("not_found", `there is no user ${reference}`)
   return fromBitrixUser(found)

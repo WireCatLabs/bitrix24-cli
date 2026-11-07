@@ -1,3 +1,4 @@
+import { CliError } from "@wirecat/cli-base"
 import { isoTime } from "@wirecat/cli-base/standards"
 import type { StageOutcome } from "@wirecat/cli-core"
 import * as v from "valibot"
@@ -17,6 +18,13 @@ export const text = (value: unknown): string | null => {
 export const id = (value: unknown): string | null => {
   const found = text(value)
   return found === null || found === "0" ? null : found
+}
+
+/** `Number("anna")` is NaN, which goes out as null: Bitrix24 may then read the call as having no id at all. */
+export const numericId = (value: string, what: string): number => {
+  if (!/^(0|[1-9][0-9]*)$/.test(value))
+    throw new CliError("validation_error", `${what} takes a number, such as 7`, { reason: "id.invalid", sent: false })
+  return Number(value)
 }
 
 export const ids = (value: unknown): string[] =>

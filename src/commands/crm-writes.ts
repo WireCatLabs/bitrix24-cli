@@ -1,9 +1,10 @@
 import { CliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
-import { REMOTE_WRITE } from "@wirecat/cli-core/cli"
+import { REMOTE_WRITE, readApiBody } from "@wirecat/cli-core/cli"
 import { Command } from "commander"
 import { apiKeysOf, assigneeOf } from "../api-keys.js"
 import type { BitrixTransport } from "../bitrix/transport.js"
+import { parseBody, unambiguous } from "../body.js"
 import { customValues, fieldPairsOf, loadFields } from "../crm/fields.js"
 import type { ItemType } from "../crm/items.js"
 import { ORGANIZATION } from "../crm/organization.js"
@@ -39,33 +40,29 @@ const BODY =
   '{"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; ' +
   "`api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others"
 
-const bodyOf = (raw: string | undefined): Raw => {
-  if (raw === undefined) return {}
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw)
-  } catch {
-    throw new CliError("validation_error", "--body is not JSON", { param: "--body" })
-  }
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed))
-    throw new CliError("validation_error", "--body takes a JSON object of fields", { param: "--body" })
-  return parsed as Raw
-}
-
 const FIELD =
   "a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its " +
   "option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the " +
   "same field; --dry-run does not look the names up"
 
-/** The fields to send: `--body`, then the custom fields `--field` names, then the named options over both. */
+/** These writes are offered over MCP, where stdin carries the protocol: `--body -` would read the agent's messages. */
+const noStdin = (): string => {
+  throw new CliError("validation_error", "--body takes the JSON itself here, not -", { param: "--body" })
+}
+
+/**
+ * The fields to send: `--body`, then the custom fields `--field` names, then the named options over both. The whole
+ * object is checked, since `--title` beside a `TITLE` in `--body` names one field twice too.
+ */
 const fieldsOf = (options: Options, custom: Raw = {}): Raw => {
-  const fields = { ...bodyOf(options.body), ...custom }
+  const fields: Raw = { ...parseBody(readApiBody(options, noStdin), "the fields to set"), ...custom }
   const set = (key: string, value: string | undefined) => {
     if (value !== undefined) fields[key] = value
   }
   set("title", options.title ?? options.name)
   set("name", options.firstName)
   set("lastName", options.lastName)
+  unambiguous(fields)
   return fields
 }
 
@@ -101,11 +98,20 @@ const KINDS: Kind[] = [
   },
 ]
 
-/** Reads the portal's custom fields once, and hands back every field to send with `--field`'s values in. */
+/**
+ * Reads the portal's custom fields once, and hands back every field to send with `--field`'s values in. The assignee
+ * was checked before this lookup, so a field list that changed it would send what was never checked.
+ */
 const withFieldPairs =
   (kind: Kind, options: Options, pairs: [string, string][], take: (fields: Raw) => void) =>
   async (portal: BitrixTransport) => {
-    take(fieldsOf(options, customValues(await loadFields(portal, kind.type.type), pairs)))
+    const all = fieldsOf(options, customValues(await loadFields(portal, kind.type.type), pairs))
+    if (assigneeOf(all) !== assigneeOf(fieldsOf(options)))
+      throw new CliError("validation_error", "--field cannot set the employee a record is assigned to", {
+        param: "--field",
+        sent: false,
+      })
+    take(all)
   }
 
 const flagOf = (option: Option) => `--${option.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`)}`

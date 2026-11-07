@@ -1,7 +1,7 @@
 import * as v from "valibot"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { type Condition, rest2Filter } from "./conditions.js"
-import { id, number, type Raw, text, yes } from "./values.js"
+import { id, number, numericId, type Raw, text, yes } from "./values.js"
 import { type Window, walk } from "./walk.js"
 
 export const productSchema = v.strictObject({
@@ -50,4 +50,4 @@ export const listProducts = async (portal: BitrixTransport, conditions: readonly
 }
 
 export const getProduct = async (portal: BitrixTransport, reference: string): Promise<Product> =>
-  fromBitrixProduct((await portal.call("crm.product.get", { id: Number(reference) })).result as Raw)
+  fromBitrixProduct((await portal.call("crm.product.get", { id: numericId(reference, "products show") })).result as Raw)
