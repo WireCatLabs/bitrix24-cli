@@ -560,7 +560,7 @@ b24 fields list <kind> [query] [options]
 | Option | What it does |
 |---|---|
 | `--limit <n>` | fields per page, 1–500. Default: `50`. |
-| `--page <n>` | which page, starting at 1. Default: `1`. |
+| `--page <n>` | which page, starting at 1. |
 | `--all` | every field, no paging. |
 
 **Returns:** crm field — code, label, type, multiple, filterable, untrusted, options; every field: b24 commands info fields list

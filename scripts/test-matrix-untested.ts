@@ -62,11 +62,4 @@ export const UNTESTED: { command: string; option?: string; reason: string }[] = 
     reason:
       "stops the detached server that `mcp server start` wrote a pid file for; cli-core tests mcpServerCommand, and no live scenario starts a server to stop",
   },
-  {
-    command: "fields list",
-    option: "--all",
-    reason:
-      'cli-core 0.597.0 refuses it beside its own --page default ("--all and --page ask for different things"), ' +
-      "so it cannot pass until cli-core fixes fields list; --limit 500 reads every field meanwhile",
-  },
 ]

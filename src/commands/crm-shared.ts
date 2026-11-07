@@ -1,5 +1,4 @@
 import { CliError } from "@wirecat/cli-base"
-import { metaOf } from "@wirecat/cli-base/commands"
 import { outputFor } from "@wirecat/cli-core/cli"
 import type { CrmRun } from "@wirecat/cli-core/crm/cli"
 import { addCrmCommands } from "@wirecat/cli-core/crm/cli"
@@ -94,30 +93,9 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
   }
 }
 
-/**
- * cli-core 0.594's CRM commands open no run of their own (`crm/cli/index.ts:189`), so a sync or a write would not be
- * recorded, have no `--timeout`, and cut no write in flight (BUG-551). Each command that reaches the portal is run
- * inside core's run here, through commander's `createCommand` hook, until core does it.
- */
-class InRun extends Command {
-  override createCommand(name?: string): Command {
-    return new InRun(name)
-  }
-
-  override action(fn: (this: Command, ...args: unknown[]) => void | Promise<void>): this {
-    return super.action(function (this: Command, ...args: unknown[]) {
-      const remote = metaOf(this).effects?.remote
-      if (remote === undefined || remote === "none") return fn.apply(this, args)
-      return contextOf(this).run(async () => {
-        await fn.apply(this, args)
-      })
-    })
-  }
-}
-
 /** cli-core's shared CRM commands over the portal: `sync`, `store status`, `deals`, `leads`, `pipelines`, `stages`. */
 export const crmSharedCommands = (): Command[] => {
-  const holder = new InRun(IDENTITY.command)
+  const holder = new Command(IDENTITY.command)
   addCrmCommands(holder, { app: IDENTITY, open: openProfile, writes: BITRIX_WRITES })
   return [...holder.commands]
 }

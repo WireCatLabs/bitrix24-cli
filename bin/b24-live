@@ -51,14 +51,14 @@ step people list --limit 3 --json=id,name
 step organizations list --limit 3 --json=id,name
 step products list --limit 3
 step users list --limit 3 --json=id,name
-step fields list deals --limit 500
-step fields list leads --limit 500
+step fields list deals --all
+step fields list leads --all
 
 # Picks a custom field from `fields list` at run time, so no portal's own codes are written here:
 # `list` prints `<code>:<option id>` of a list field a list can filter by, `string` the code of a one-value text field,
 # `labelled` such a field's `<code>|<label>` when no other field has that label.
 pick() {
-  b24 fields list "$1" --limit 500 --json 2>/dev/null | node -e '
+  b24 fields list "$1" --all --json 2>/dev/null | node -e '
     let s = ""
     process.stdin.on("data", (d) => (s += d)).on("end", () => {
       let items = []

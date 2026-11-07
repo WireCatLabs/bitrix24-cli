@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**187 ✅ · 24 ⛔ · 0 ❌** — 64 commands, 147 options.
+**188 ✅ · 23 ⛔ · 0 ❌** — 64 commands, 147 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -91,7 +91,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `fields list` |  | ✅ |  |
 | `fields list` | `--limit` | ✅ |  |
 | `fields list` | `--page` | ✅ |  |
-| `fields list` | `--all` | ⛔ | cli-core 0.597.0 refuses it beside its own --page default ("--all and --page ask for different things"), so it cannot pass until cli-core fixes fields list; --limit 500 reads every field meanwhile |
+| `fields list` | `--all` | ✅ |  |
 | `search all` |  | ✅ |  |
 | `search all` | `--only` | ✅ |  |
 | `search all` | `--source` | ✅ |  |

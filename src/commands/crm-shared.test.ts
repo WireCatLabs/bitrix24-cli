@@ -64,6 +64,7 @@ describe("fields list", () => {
     expect(deals.map(({ code }) => code)).toEqual(["UF_CRM_SOURCE", "UF_CRM_NOTE", "UF_CRM_TAGS"])
     const second = await b24(["work", "fields", "list", "deals", "--limit", "1", "--page", "2", "--json"], { portal })
     expect(items(second).map(({ code }) => code)).toEqual(["UF_CRM_NOTE"])
+    expect(items(await b24(["work", "fields", "list", "deals", "--all", "--json"], { portal }))).toHaveLength(3)
     expect(portal.calls.length).toBe(before)
   })
 })

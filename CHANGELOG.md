@@ -33,8 +33,7 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   empty value clears it. A code that names a standard field (`stageId`, `categoryId`, `assignedById`, a lead's
   `STATUS_ID`) is refused.
 - `fields list <deals|leads|people|organizations>` is cli-core's: it reads the definitions `sync` stored, so run
-  `sync` first, and each field names its `untrusted` parts. Its `--all` is refused by cli-core 0.597.0 for now; use
-  `--limit 500`.
+  `sync` first, and each field names its `untrusted` parts.
 - `api.crm.deal.update` (and the other deal and lead `api.*` keys) at `ask` now asks on `deals update`, `move` and
   `close` too, not only on `api call`. `--dry-run` of a deal or lead write names every key it may check: the
   `api.*` key, and the move, close and `crm.assign-others` keys with the option that would make each apply.
