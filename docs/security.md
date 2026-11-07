@@ -31,9 +31,10 @@ stage, a pipeline or an owner is refused. Deleting a deal or a lead asks first. 
 leads, and names each kind it left out in `missing` and on stderr. With every kind it was asked for denied, it is
 refused.
 
-`api call` works from an allow list. It allows the CRM, catalog and user reads `b24` makes itself, and the deal, lead,
+`api call` works from an allow list. It allows the CRM, catalog, user and department reads `b24` makes itself, and the deal, lead,
 contact and company writes. Reads and writes both check the key of the command that reads or writes the same records:
-`api call crm.deal.list` checks `deals.list`, and `crm.item.update` with `entityTypeId` 2 checks `deals.update`. A body
+`api call crm.deal.list` checks `deals.list`, and `crm.item.update` with `entityTypeId` 2 checks `deals.update`.
+`department.get` checks `users.list`, and `crm.mycompany.*` checks `organizations.list`. A body
 that names one field twice in any spelling (`assignedById` and `ASSIGNED_BY_ID`, `fields` and `FIELDS`), an
 `entityTypeId` that is not a plain number, and a method with a suffix other than one `.json` are refused before
 anything is sent. A delete asks. Every other method asks too, and is refused without a terminal unless you pass

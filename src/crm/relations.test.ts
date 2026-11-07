@@ -22,6 +22,7 @@ const northstar = () => {
   crm.putDepartment({ ID: "1", NAME: "Northstar", UF_HEAD: "8" })
   crm.putUser({ ID: "7", NAME: "Emma", LAST_NAME: "Stone", EMAIL: "emma@northstar.example", UF_DEPARTMENT: [1] })
   crm.putUser({ ID: "8", NAME: "Grace", LAST_NAME: "Hall", EMAIL: "grace@northstar.example", UF_DEPARTMENT: [1] })
+  crm.putUser({ ID: "9", NAME: "Sam", LAST_NAME: "Reed", EMAIL: "sam@northstar.example", UF_DEPARTMENT: [1] })
   const acme = crm.put("company", { title: "Acme Ltd", typeId: "CUSTOMER" })
   const alice = crm.put("contact", { ...ALICE, companiesId: [acme] })
   const bob = crm.put("contact", {
@@ -107,9 +108,18 @@ describe("relationships from the portal", () => {
         expect.objectContaining({ kind: "reports-to", from: emma, to: grace, standing: "reported" }),
       ]),
     )
-    expect((await store.knowledge.relations(null, grace)).filter(({ kind }) => kind === "reports-to")).toEqual([
-      expect.objectContaining({ from: emma, to: grace }),
-    ])
+    const sam = await person("sam@northstar.example")
+    expect(
+      (await store.knowledge.relations(null, grace))
+        .filter(({ kind }) => kind === "reports-to")
+        .map(({ from, to }) => [from, to])
+        .sort(),
+    ).toEqual(
+      [
+        [emma, grace],
+        [sam, grace],
+      ].sort(),
+    )
     expect((await store.knowledge.relations(null, alice)).some(({ kind }) => kind === "reports-to")).toBe(false)
     expect(
       await rows(
@@ -119,8 +129,16 @@ describe("relationships from the portal", () => {
       ),
     ).toEqual([{ position: "Procurement manager", main: 1 }])
     expect(
+      await rows(
+        "SELECT to_id, json_extract(metadata, '$.primary') AS main FROM links WHERE kind = 'related-to' AND role = 'contact' ORDER BY to_id",
+      ),
+    ).toEqual([
+      { to_id: Number(alice.slice("person:".length)), main: 1 },
+      { to_id: Number(bob.slice("person:".length)), main: null },
+    ])
+    expect(
       await rows("SELECT json_extract(metadata, '$.derived') AS derived FROM links WHERE kind = 'reports-to'"),
-    ).toEqual([{ derived: "department-head" }])
+    ).toEqual([{ derived: "department-head" }, { derived: "department-head" }])
   })
 
   it("syncs three times into one link per relationship, the own company and its employees kept", async () => {
@@ -134,8 +152,8 @@ describe("relationships from the portal", () => {
     await resync(crm)
     await resync(crm)
     expect(await links()).toEqual(first)
-    // Four memberships, three people on the deal, one reporting line; none withdrawn by the daily id pass.
-    expect(first[0]?.map(({ deleted_at }) => deleted_at)).toEqual(Array(8).fill(null))
+    // Five memberships, three people on the deal, two reporting lines; none withdrawn by the daily id pass.
+    expect(first[0]?.map(({ deleted_at }) => deleted_at)).toEqual(Array(10).fill(null))
     const { store, person, organization } = await opened()
     const own = await organization("Northstar Consulting")
     expect(await store.knowledge.relations(null, await person("emma@northstar.example"))).toEqual(
@@ -154,12 +172,31 @@ describe("relationships from the portal", () => {
     ])
   })
 
+  it("ends the place of an employee who left, and keeps the person", async () => {
+    const { crm } = northstar()
+    await synced(crm)
+    crm.putUser({
+      ID: "9",
+      NAME: "Sam",
+      LAST_NAME: "Reed",
+      EMAIL: "sam@northstar.example",
+      UF_DEPARTMENT: [1],
+      ACTIVE: false,
+    })
+    await resync(crm)
+    const { store, person, organization } = await opened()
+    const sam = await person("sam@northstar.example")
+    expect((await memberships(store, sam)).map(({ to, standing }) => [to, standing])).toEqual([
+      [await organization("Northstar Consulting"), "ended"],
+    ])
+  })
+
   it("names a webhook without the department scope as a gap, and keeps its users and their reporting lines", async () => {
     const { crm } = northstar()
     await synced(crm)
     crm.withhold("department")
     const report = await resync(crm)
-    expect(report.item.users).toBe(2)
+    expect(report.item.users).toBe(3)
     expect(report.item.issues).toEqual([expect.objectContaining({ kind: "user", reason: "crm.not-reported" })])
     const { store, person } = await opened()
     expect(await crmGapsOf(store, PORTAL)).toEqual([

@@ -15,9 +15,19 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   sync reads the rest.
 - `schedule` installs a timer that runs `sync`, or another `b24` command, on its own. MCP does not offer it.
 
+### Changed — may break callers
+
+- A deal's and a lead's `people` now include the employee responsible for it, with the role `owner`, beside its
+  contacts. Watch for: code that took every entry in `people` for a client's contact.
+- `store status` counts your own companies among the organizations and the portal's employees among the people.
+- `api call department.get` and `crm.mycompany.basic.list` run without asking, as the other reads `b24` makes do;
+  `department.get` is refused under `users.list: deny`, and `crm.mycompany.*` under `organizations.list: deny`.
+- A webhook made with only the `crm` and `user` scopes now gets an entry in the sync's `issues` on every sync:
+  Bitrix24 refuses it the departments. Add the `department` scope, or expect that entry.
+
 ### Fixed
 
-- `api list scope:department` lists `department.get`, which was shown under the scope `basic`.
+- `api show department.get` and `api call` named the method's scope `basic`; Bitrix24's is `department`.
 
 ## 0.8.0 — 08.11.2026
 

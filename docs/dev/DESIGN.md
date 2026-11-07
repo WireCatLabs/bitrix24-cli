@@ -74,26 +74,31 @@ owner (WC-DATA-6) and withdraws what the portal stops reporting (WC-DATA-7). `b2
 cli-core's contract (`CrmPerson.organizations`, `CrmItem.people`, `CrmUser`, `CrmDepartment`, `CrmOrganization.own`
 and `type`); field names are from the REST 3.0 field pages and the `user.get` and `department.get` pages, not live.
 
-- **Contact → company.** REST 3.0 `companiesId`, first is primary, from the contact list the sync already pages; no
+- **Contact → company** ([fields-contact](https://apidocs.bitrix24.com/api-reference/crm/rest-v3/items/fields-contact.html)). REST 3.0
+  `companiesId`, first is primary, from the contact list the sync already pages; no
   call per contact. A filter on `companiesId` answers HTTP 500, so `b24` never filters on it. `post` is the
   position. A contact read without `companiesId` leaves its companies as stored.
-- **Deal and lead people.** `contactsId` with `contactId` as the primary; `assignedById` is the assignee, which core
+- **Deal and lead people** ([fields-deal](https://apidocs.bitrix24.com/api-reference/crm/rest-v3/items/fields-deal.html),
+  [crm.deal.contact.items.get](https://apidocs.bitrix24.com/api-reference/crm/deals/contacts/crm-deal-contact-items-get.html)). `contactsId` with `contactId` as the primary; `assignedById` is the assignee, which core
   makes the `owner`. `ROLE_ID` of `crm.deal.contact.items.get` is reserved and always `0`, so no decision-maker or
   influencer comes from the portal, and `b24` makes no such call.
-- **Lead → deal.** A lead has no field for the deal it became; the deal has `leadId`. Each page of leads costs one
+- **Lead → deal** ([fields-lead](https://apidocs.bitrix24.com/api-reference/crm/rest-v3/items/fields-lead.html)). A lead has no field for the deal it became; the deal has `leadId`. Each page of leads costs one
   more `crm.deal.list` with `["leadId", "in", …]`.
-- **Users.** `user.get` with `USER_TYPE: employee` and no `ACTIVE` filter, so a user who left reaches core inactive
+- **Users** ([user.get](https://apidocs.bitrix24.com/api-reference/user/user-get.html), [user scope](https://apidocs.bitrix24.com/api-reference/user/user-scope.html)). `user.get` with `USER_TYPE: employee` and no `ACTIVE` filter, so a user who left reaches core inactive
   and loses the own company. A missing `EMAIL` key (no `user_basic`) and a missing `UF_DEPARTMENT` are unknown, not
   empty. Core has no field-level gap, so a webhook without `user_basic` is not named in the sync's `issues`.
-- **Departments.** `department.get` (scope `department`); `reports-to` is core's department-head derivation,
+- **Departments** ([department.get](https://apidocs.bitrix24.com/api-reference/departments/department-get.html)). `department.get` (scope `department`); `reports-to` is core's department-head derivation,
   `metadata.derived: department-head`. A refused scope fails only this list: core records the gap and changes no
-  reporting line.
-- **Own companies.** REST 3.0 `crm.mycompany.basic.list`, which needs no CRM admin right and takes only `id`,
+  reporting line. A refusal is REST 2 HTTP 401 `insufficient_scope`, REST 3.0 HTTP 403
+  `BITRIX_REST_V3_EXCEPTION_INSUFFICIENTSCOPEEXCEPTION` ([error codes](https://apidocs.bitrix24.com/error-codes.html),
+  [REST 3.0](https://apidocs.bitrix24.com/api-reference/rest-v3.html)); the strict fake answers both.
+- **Own companies**
+  ([crm.mycompany.basic.list](https://apidocs.bitrix24.com/api-reference/crm/rest-v3/items/crm-my-company-basic-list-rest-v3.html)). REST 3.0 `crm.mycompany.basic.list`, which needs no CRM admin right and takes only `id`,
   `title` and the like, `=` and `in`: read whole by offset at the end of every round of companies, and listed in the
   id pass so it never marks them deleted. `crm.company.*` never returns them.
-- **Company type.** `typeId` goes to core as `type`; it means a relationship only through the owner's
+- **Company type** ([dictionaries](https://apidocs.bitrix24.com/api-reference/crm/rest-v3/dictionaries/index.html)). `typeId` goes to core as `type`; it means a relationship only through the owner's
   `crm.bitrix24:<portal>.company-types` setting.
-- **No parent company, no dates.** Bitrix24 has neither, so neither is stored.
+- **No parent company, no dates** ([fields-company](https://apidocs.bitrix24.com/api-reference/crm/rest-v3/items/fields-company.html)). Bitrix24 has neither, so neither is stored.
 - **On a timer.** `schedule` is cli-core's shared command, mounted as gcal mounts it and off MCP, so `b24 <profile>
   schedule command <name> --every 1h -- sync` keeps the store fresh.
 
@@ -128,9 +133,10 @@ and `type`); field names are from the REST 3.0 field pages and the `user.get` an
      lead's `STATUS_ID`) also checks `deals.move` and `deals.close`, or the leads' keys, since the stage may be won or
      lost. The other way round, `api.crm.deal.update` is checked by `deals update`, `move` and `close` through
      cli-core's `CrmWrites.alsoChecks`: `deny` stops them before any request, `ask` asks, and `--dry-run` names it.
-     The method name is lowercased and loses a `.json` suffix before any key is read.
-   - `api call` defaults come from an allow list: the reads `b24` makes (`crm`, `catalog`, `user`, `profile` and
-     the method listings) and the four CRM types' create and update are `allow`; a method whose name ends in
+     The method name is lowercased and loses a `.json` suffix before any key is read. `department.*` also checks
+     `users.list` and `crm.mycompany.*` `organizations.list`.
+   - `api call` defaults come from an allow list: the reads `b24` makes (`crm`, `catalog`, `user`, `department`,
+     `profile` and the method listings) and the four CRM types' create and update are `allow`; a method whose name ends in
      `delete` and every other method are `ask`; the families that reach people, publish or send data out are
      `deny`, reads included, until the owner allows them: `im`, `imopenlines`, `imbot`, `imconnector`, `log.blogpost`,
      `messageservice`, `mailservice`, `telephony`, `voximplant`, `bizproc`, `crm.automation`, `crm.activity`,

@@ -3,6 +3,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { run } from "./program.js"
+import { FAKE_HOOK, FAKE_SECRET } from "./testing/fake-portal.js"
 import { signedIn } from "./testing/harness.js"
 
 /** A machine whose `systemctl` only records what it was asked, so no test installs a real timer. */
@@ -69,6 +70,16 @@ describe("b24 schedule", () => {
     expect((await b24("work", "schedule", "remove", "crm")).code).toBe(0)
     expect(ran.map((argv) => argv.join(" "))).toContain("systemctl --user disable --now b24-schedule-crm.timer")
     expect((await b24("work", "schedule", "list", "--json")).out).not.toContain('"crm"')
+  })
+
+  it("keeps the webhook's address out of the schedule file and the timer, even from B24_TOKEN", async () => {
+    const { b24, env, root } = harness()
+    env.B24_TOKEN = FAKE_HOOK
+    expect((await b24("work", "schedule", "command", "crm", "--every", "1h", "--", "sync")).code).toBe(0)
+    expect(readFileSync(join(root, "state", "schedules", "crm", "schedule.json"), "utf8")).not.toContain(FAKE_SECRET)
+    const units = join(env.XDG_CONFIG_HOME ?? "", "systemd", "user")
+    for (const unit of ["b24-schedule-crm.timer", "b24-schedule-crm.service"])
+      expect(readFileSync(join(units, unit), "utf8")).not.toContain(FAKE_SECRET)
   })
 
   it("refuses to install a timer under B24_READ_ONLY", async () => {
