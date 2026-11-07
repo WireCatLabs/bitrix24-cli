@@ -525,6 +525,24 @@ describe("api call reads check the command key of what they read", () => {
     expect(portal.calls).toHaveLength(0)
   })
 
+  it("crm.item.productrow.list, which takes no entityTypeId, checks every type's list key", async () => {
+    const portal = fakePortal({ "crm.item.productrow.list": ok({ productRows: [] }) })
+    const body = { filter: { "=ownerType": "D", "=ownerId": 5 } }
+    await withPermissions({ deals: "deny" }, async () => {
+      expect((await b24(call("crm.item.productrow.list", body), { portal })).code).toBe(5)
+    })
+    expect(portal.calls).toHaveLength(0)
+    expect((await b24(call("crm.item.productrow.list", body), { portal })).code).toBe(0)
+    expect(portal.calls).toHaveLength(1)
+  })
+
+  it("a body's own isLosslessNumber object is not taken as a number", async () => {
+    const portal = fakePortal({ "crm.item.delete": ok(true) })
+    const body = { entityTypeId: { isLosslessNumber: true, value: "2" }, id: 5 }
+    expect((await b24(call("crm.item.delete", body, "--yes"), { portal })).code).toBe(2)
+    expect(portal.calls).toHaveLength(0)
+  })
+
   it("--dry-run and api show name the read's command key", async () => {
     const ran = await b24([...call("crm.deal.list", {}), "--dry-run", "--json"])
     expect(ran.json().item).toMatchObject({

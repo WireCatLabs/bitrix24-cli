@@ -91,7 +91,7 @@ export const checkCall = (method: string, body: Body): void => {
   entityTypeOf(body)
   const fields = fieldOf(body, "fields")
   if (fields !== undefined && !isRecord(fields)) throw refused("fields takes a JSON object of field names and values")
-  if (method.startsWith("crm.item.") && fieldOf(body, "entityTypeId") === undefined)
+  if (/^crm\.item\.(add|update|delete|get|list|fields)$/.test(method) && fieldOf(body, "entityTypeId") === undefined)
     throw refused(`${method} needs entityTypeId, the record type's number`)
 }
 
@@ -117,6 +117,9 @@ const readKeysOf = (method: string, body: Body): string[] => {
     if (crm.action === "get") return [`${noun}.show`]
     return /^(fields$|field\.|userfield\.)/.test(crm.action) ? ["fields.list"] : [`${noun}.list`]
   }
+  // `crm.item.productrow.*` names its record by ownerType in the filter, not entityTypeId (apidocs).
+  if (method.startsWith("crm.item.") && fieldOf(body, "entityTypeId") === undefined)
+    return Object.values(NOUNS).map((noun) => `${noun}.list`)
   const product = /^(?:crm|catalog)\.product\.(.+)$/.exec(method)
   if (product) return [product[1] === "get" ? "products.show" : "products.list"]
   // `users list` and `users show` both read through user.get.

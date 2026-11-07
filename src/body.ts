@@ -8,7 +8,11 @@ const refused = (message: string) =>
 
 /** `parseApiJson` keeps every number as its JSON text, so an id past 2^53 is sent as typed. */
 export const jsonNumber = (value: unknown): string | undefined =>
-  typeof value === "object" && value !== null && (value as { isLosslessNumber?: unknown }).isLosslessNumber === true
+  typeof value === "object" &&
+  value !== null &&
+  // A body's own `{"isLosslessNumber":true}` is a plain object; the parser's numbers are class instances.
+  Object.getPrototypeOf(value) !== Object.prototype &&
+  (value as { isLosslessNumber?: unknown }).isLosslessNumber === true
     ? String((value as { value: unknown }).value)
     : undefined
 

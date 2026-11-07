@@ -47,8 +47,7 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 - `--body` is refused when it names one field twice in any spelling, when `entityTypeId` is not a plain number, or
   when its `fields` is not an object; `api call` refuses a method with any suffix but one `.json`, and a `crm.item`
   method without `entityTypeId`.
-- `api call` reads check the key of the command that reads the same records, as its writes do: `deals: deny` now
-  stops `api call crm.deal.list` too.
+- `api call` reads check the same keys as the commands that read those records, as its writes do.
 
 ### Fixed
 
