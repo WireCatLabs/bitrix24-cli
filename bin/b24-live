@@ -165,11 +165,13 @@ echo "deleted $deal"
 changed
 # Asked of the portal itself: a rescan that finds the deletions does not finish in one run on a large portal.
 for type in lead deal; do
-  left=$(b24 api call "crm.$type.list" --body "{\"select\":[\"id\"],\"filter\":[[\"title\",\"=\",\"$title\"]]}" --json \
-    | value item.result.items.length)
-  if [ "$left" = 0 ]; then echo "ok: the portal has no $type titled \"$title\""; else
-    fail "the portal answered '$left' ${type}s titled \"$title\""
-  fi
+  for named in "$title" "$title (renamed)"; do
+    left=$(b24 api call "crm.$type.list" --body "{\"select\":[\"id\"],\"filter\":[[\"title\",\"=\",\"$named\"]]}" \
+      --json | value item.result.items.length)
+    if [ "$left" = 0 ]; then echo "ok: the portal has no $type titled \"$named\""; else
+      fail "the portal answered '$left' ${type}s titled \"$named\""
+    fi
+  done
 done
 
 [ "$failed" = 0 ] || { echo "a step failed: no live record" >&2; exit 1; }
