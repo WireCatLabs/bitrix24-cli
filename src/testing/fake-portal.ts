@@ -9,6 +9,8 @@ export interface PortalCall {
   api: 2 | 3
   method: string
   body: Record<string, unknown>
+  /** The body as sent, for numbers `JSON.parse` would round. */
+  text: string
   headers: Record<string, string>
   url: string
 }
@@ -30,6 +32,7 @@ export const fakePortal = (script: Record<string, Reply | Reply[] | ((call: Port
       method,
       url,
       body: JSON.parse(String(init.body ?? "{}")) as Record<string, unknown>,
+      text: String(init.body ?? ""),
       headers: init.headers as Record<string, string>,
     }
     calls.push(call)
