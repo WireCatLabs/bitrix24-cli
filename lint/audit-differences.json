@@ -1,9 +1,0 @@
-[
-  {
-    "group": "all",
-    "rule": "same-path-contract",
-    "target": "b24+drive+max+memo+tg+wa+zm doctor --deep",
-    "expected": "b24: absent, drive: absent, max: absent, memo: switch, tg: absent, wa: absent, zm: absent",
-    "reason": "cli-memo 0.131.47 added a doctor --deep switch for its own store check; cli-core's shared doctor offers --deep only to a CLI that adds it, and no other tool has yet. Remove this when cli-base's parity groups declare it."
-  }
-]
