@@ -14,7 +14,7 @@ support request.
 | Bitrix24 refused this webhook | The webhook was deleted or edited in Bitrix24, which changes its address. Make a new one and run `session start` again. |
 | no scope for a method, or `ERROR_METHOD_NOT_FOUND` | Add the scope (`crm`, `user`, `catalog`) to the webhook in Bitrix24. |
 | `rate_limited` | The portal allows about 2 requests a second for all its apps together. `b24` waits a short wait out by itself; a long one, it tells you. |
-| `outcome_unknown` on a write | Repeat it with the `--operation-id` the error names; Bitrix24 will not run it twice. |
+| `outcome_unknown` on a write | The portal may have made the change. Look at the record first (`sync`, then `show`), and repeat it with the `--operation-id` the error names only if it is not there; see [write](usage.md#write). |
 | A write is refused | The profile's permissions or `B24_READ_ONLY` stop it; see [settings](configuration.md#permissions). |
 
 Never paste a token, a password or private content into a support request.

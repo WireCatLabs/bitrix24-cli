@@ -41,10 +41,10 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
 - A deal's or lead's stage changes with `move`. Won and lost come from the stage's own outcome (`open`, `won`,
   `lost`), which Bitrix24 keeps in the stage's semantics, never from its name.
 
-### Live first, the store later
+### The store and the portal
 
-- Every read asks the portal; nothing is kept locally yet. Slice 2 adds a sync into cli-core's store and `--offline`
-  reads from it. Until then a command that needs the portal refuses `--offline`.
+- Deals, leads, pipelines and stages are read from cli-core's store after `sync`, with `--offline` too. People,
+  organizations, products, users and fields ask the portal on every read, and refuse `--offline`.
 - A list follows WC-OUT-5. Bitrix24's newer API (REST 3.0) gives no total, so `page.total` is left out and
   `page.has_more` says whether another page exists. `--all` has no cap: a long walk is cut by the run's budget and
   answers `meta.complete: false` (WC-CMD-10).
@@ -69,11 +69,10 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
 
 ### Search
 
-1. **What a search finds.** Deal and lead titles, and the names of people and organizations. The portal itself can
-   search only whole values in REST 3.0, so a free word in a list query is sent to the older REST 2 method, which
-   matches part of a title.
-2. **`search all` and `memo context <person>`.** Yes, once cli-core has a `crm` kind for providers and search
-   (slice 2).
+1. **What a search finds.** Stored deal and lead titles, through cli-core's shared commands. For people and
+   organizations, a free word in a list query goes to the portal's REST 2 `crm.item.list`, which matches part of a
+   name; REST 3.0 matches only whole values.
+2. **`search all`.** It finds stored deals and leads beside the other WireCat tools' data.
 3. **Without a network.** `deals`, `leads`, `pipelines`, `stages` and `store status` read the store, with
    `--offline` too; `sync`, the writes and the portal's own reads (`people`, `organizations`, `products`, `users`,
    `fields`, `api`) refuse `--offline`.

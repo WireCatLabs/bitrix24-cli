@@ -28,7 +28,6 @@ export const operationIdOf = (given: string | undefined): string => {
 }
 
 export interface Write {
-  /** The command's own permission key, `deals.create`. */
   key: string
   /** The employee the record is assigned to, when the write sets one. */
   assignee?: string | undefined

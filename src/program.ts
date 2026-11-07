@@ -73,6 +73,21 @@ export const definition = (): ProgramDefinition => ({
   app: IDENTITY,
   // The whole object: cli-core refuses a command by its key only when it gets the permission table too.
   configuration,
+  firstScreen: {
+    pitch: "a Bitrix24 portal's CRM in a local store, for scripts and agents, with a permission on every write.",
+    can: [
+      {
+        command: "sync",
+        does: "copy the portal's deals, leads, contacts and companies; the next sync takes the changes",
+      },
+      { command: "deals list status:open", does: "open deals with stage, amount and owner, from the store, offline" },
+      { command: 'search all "kitchen"', does: "stored deals and leads beside your other WireCat tools' data" },
+      { command: "deals move <ref> <stage>", does: "move a deal; deals.move=ask stops robots that write to clients" },
+      { command: "api call <method> --dry-run", does: "any REST method, with every permission it checks" },
+      { command: "mcp serve --permission deals=deny", does: "the CRM in any agent, with the levels you set" },
+    ],
+    start: `${IDENTITY.command} work session start`,
+  },
   commands: () => [
     commandsCommand(IDENTITY),
     sessionCommand(),

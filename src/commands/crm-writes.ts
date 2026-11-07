@@ -15,7 +15,6 @@ import { write } from "./write.js"
 
 const B24 = IDENTITY.command
 
-/** Every option a write command may take; each command adds only its own. */
 interface Options {
   title?: string
   name?: string
@@ -36,9 +35,8 @@ const OPTIONS: Record<Option, (command: Command) => Command> = {
 }
 
 const BODY =
-  "the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: " +
-  '{"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; ' +
-  "`api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others"
+  'the other fields to set, as JSON with Bitrix24\'s own field names, such as {"post":"Buyer","assignedById":7}; ' +
+  "naming another employee as the one responsible checks crm.assign-others"
 
 const FIELD =
   "a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its " +
@@ -177,7 +175,6 @@ const updateCommand = (kind: Kind) =>
       })
     })
 
-/** The writes of each CRM noun, added to the noun's read commands. */
 export const addWrites = (noun: Command): Command => {
   const kind = KINDS.find((one) => one.noun === noun.name())
   if (!kind) return noun

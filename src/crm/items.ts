@@ -91,13 +91,13 @@ export const getItem = async <T>(portal: BitrixTransport, type: ItemType<T>, id:
   return type.map(item, metadataOf(custom, await fieldsOrNone(portal, type.type)))
 }
 
-/** Labels are extra, so a failed call leaves them out rather than failing `show`. */
+/** A webhook without the rights to read field definitions still shows the record, with codes for labels. */
 const fieldsOrNone = async (portal: BitrixTransport, type: ItemType<unknown>["type"]): Promise<Field[]> => {
   try {
     return await loadFields(portal, type)
   } catch (error) {
-    if (isCliError(error) && error.code === "cancelled") throw error
-    return []
+    if (isCliError(error) && error.code === "permission_error") return []
+    throw error
   }
 }
 
