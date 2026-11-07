@@ -108,9 +108,9 @@ adds each one: a stage's move and close keys, and `crm.assign-others` for anothe
 employee is refused until you allow it, because Bitrix24 tells that employee:
 `b24 work config set permissions.crm.assign-others allow`.
 
-`b24 work api call <method> --body <json>` calls any other Bitrix24 method. It checks the same permissions as the
+`b24 work api call crm.deal.get --body '{"id":12}'` calls any other Bitrix24 method, here a read of deal 12. It checks the same permissions as the
 command that does the same thing, and refuses writes that send messages, start the portal's automation or create
-tasks until you allow them. `b24 api list` and `b24 api show <method>` show what each method checks.
+tasks until you allow them. `b24 api list` and `b24 api show crm.deal.update` show what each method checks.
 
 ## Output for scripts
 

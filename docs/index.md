@@ -7,6 +7,6 @@ local WireCat store, which `deals`, `leads`, `pipelines` and `stages` read, offl
 products and employees are read from the portal.
 
 It signs in with an incoming webhook of the portal, and acts with the rights of the employee who made that webhook.
-`b24 <profile> session status --check` says who that is.
+`b24 work session status --check` says who that is, for the profile `work`.
 
 Start with [installation](installation.md), then [usage](usage.md).
