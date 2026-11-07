@@ -4,6 +4,7 @@ import { join } from "node:path"
 import { Readable } from "node:stream"
 import { neverAnswers, runScopeCases } from "@wirecat/cli-core/testing"
 import { beforeAll, describe, expect, it } from "vitest"
+import type { FetchLike } from "./bitrix/transport.js"
 import { definition } from "./program.js"
 import { seededCrm } from "./testing/fake-crm.js"
 import { FAKE_HOOK, ok } from "./testing/fake-portal.js"
@@ -33,7 +34,7 @@ beforeAll(async () => {
   expect([ref("deals", 102), ref("leads", 104)]).toEqual([REFS.deals, REFS.leads])
 })
 
-const options = (fetch: typeof globalThis.fetch) => {
+const options = (fetch: FetchLike) => {
   const store = join(mkdtempSync(join(tmpdir(), "run-scope-")), "store.db")
   copyFileSync(seeded, store)
   return {
