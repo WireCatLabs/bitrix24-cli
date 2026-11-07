@@ -1,7 +1,8 @@
 # Reference CLIs
 
-The template has no sample code. The agent that builds a new CLI learns from the WireCat CLI closest to it, picked by
-the first question of the [design interview](skills/design-interview/SKILL.md):
+How a command reaches a service, signs in, writes and is tested, the agent learns from the template's sample (see
+"The sample" in `AGENTS.md`). The domain, the store and its commands it learns from the WireCat CLI closest to it,
+picked by the first question of the [design interview](skills/design-interview/SKILL.md):
 
 | Category | Learn from |
 | --- | --- |

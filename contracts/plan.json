@@ -46,5 +46,6 @@
   "mcp": {
     "args": ["personal", "mcp", "serve"],
     "snapshot": "mcp-tools.json"
-  }
+  },
+  "deny": { "profile": "personal" }
 }

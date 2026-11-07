@@ -30,9 +30,15 @@ The rules are the handbook's [Releases page](../../../../node_modules/@wirecat/c
    From `1.0.0`, a breaking change raises the major. `pnpm version:check` refuses a dated section whose number is
    raised less than its headings need, and when `bin/release` moves to the next free number on npm it raises that
    number to the level the headings need. Set the next version in `package.json`, run `pnpm version:sync`, date the
-   section as `## <version> — DD.MM.YYYY`, run `pnpm release:check` again, and open the pull request
-   `chore(release): <version>`.
-8. **The publish.** Merge it when its checks pass, then run `bin/release` on a clean `main`: it starts
+   section as `## <version> — DD.MM.YYYY`, run `pnpm release:check` again, and commit.
+8. **The live check.** Run this CLI's live check of the real service on that commit, by the owner or with the
+   owner's yes (`WC-TEST-18`). When it passes, `pnpm exec cli-dev live record --script <the script you ran>` appends
+   the version, the commit and the date to `docs/dev/live-checks.txt`; commit that line. `bin/release` refuses a
+   version with no line, or whose `src/`, `package.json` or lockfile changed since (`WC-REL-17`).
+9. **The pull request.** Open `chore(release): <version>` with a `## Conformance` section: the `release:check`
+   result, the live check's line, the fresh audit's report and the slice reviews' results. `release-pr.yml` fails a
+   pull request that changes the version without one.
+10. **The publish.** Merge it when its checks pass, then run `bin/release` on a clean `main`: it starts
    `release.yml` and follows it (`WC-REL-11`). A messenger CLI also needs the owner's yes for that version in the
    conversation (`WC-REL-10`): ask before you run `bin/release`. Never `bin/release --local`: that is the owner's, for the first release before npm trusts
    `release.yml`, with `NPM_TOKEN`, the npm token in the keyring, or the owner's own npm login.

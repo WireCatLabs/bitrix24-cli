@@ -1,6 +1,6 @@
 # Fresh-agent audit
 
-Step 5 of the [release skill](SKILL.md) gives the prompt below to a new subagent that has none of the releasing
+Step 6 of the [release skill](SKILL.md) gives the prompt below to a new subagent that has none of the releasing
 agent's context. Give it as written.
 
 ## Prompt
