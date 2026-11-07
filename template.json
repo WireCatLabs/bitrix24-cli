@@ -1,6 +1,6 @@
 {
   "template": "@wirecat/cli-template",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "names": {
     "name": "bitrix24-cli",
     "command": "b24",
@@ -22,12 +22,12 @@
     ".gitleaks.toml": "a639f135a1330a0246fe26e85970c90205553408e127fc2bdadacd298cdfca4b",
     ".vale.ini": "976f4a919ee7539355c6e6a21a99905f58511bba6bba4faf4c3e2c47e6dddd37",
     "AGENTS.md": "346e87b445baaf5c21407391fdf04b16cc7dac1cbf088ee395551ece4a922b58",
-    "bin/release": "95fe4cd71f6a5745579038412bf64da8cb17d8ef8a9c8c801027573b33372630",
+    "bin/release": "8bb841ee9f591f104b6c67fb0da7da520c85aae1808dbb6f078ac2b326306f17",
     "docs/dev/TESTING.md": "456b405a346ea8d733f2f5a26a133a97a6abdf25e67b2c58bd6d4685cedadc37",
     "docs/dev/design-questions.md": "9d6202bf676d74c62a333d5552cc1e0dab46f89225c417d14ee6fe57c2a45636",
     "docs/dev/reference-clis.md": "dca77911a98c37215fc2aa100150ad1bccdad70c88707fb752adf48800712dc5",
     "docs/dev/skills/design-interview/SKILL.md": "cd4d93b5135bb9044bb383eeeba88cb8b5609334a2ad227b6eab3adb4bdf5f90",
-    "docs/dev/skills/release/SKILL.md": "f2161a964a09e845c6f7c14573f22864f4deae72d9952b77f0d726d6c4e95a4e",
+    "docs/dev/skills/release/SKILL.md": "96602ffcf8b03bb56719368835e4d0245d8643023b0897799622d7ce9063afd7",
     "docs/dev/skills/release/fresh-audit.md": "a6dacd97ce098552756593a2e7661c97af729b0ece54f17feeeb9223375ff52b",
     "lefthook.yml": "c41b0b3b90a5c1e3f5b8c78a524139bdbafb836a0e0e4ebd90ccb2c7939b57ed",
     "scripts/audit.sh": "9c4b6dca3029243f5c236dbc0f317ed0f025c50173d55828e91aeff536a88613",
