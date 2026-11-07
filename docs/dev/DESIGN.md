@@ -108,10 +108,11 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
      `batch`, which can hold any of them.
    - Never allowed, whatever the permissions: a bulk or filtered delete. A delete takes one id.
    - Messages to clients and employees (`im`, `imopenlines`) are not part of slice 1.
-3. **Writes are safe to repeat.** Each write gets an `operation_id`, goes through cli-core's write guard and is
-   journalled (WC-OUT-10, WC-PERM-13). On REST 3.0 the `operation_id` is sent as the `Idempotency-Key` header, which
-   Bitrix24's documentation says answers a repeat from its record; that is not checked on a live portal yet. A write
-   is sent once: one that got no answer is `outcome_unknown`, and the owner repeats it with `--operation-id`.
+3. **A write is sent once.** Each write gets an `operation_id`, goes through cli-core's write guard and is
+   journalled (WC-OUT-10, WC-PERM-13). On REST 3.0 the `operation_id` is sent as the `Idempotency-Key` header, but
+   the live check of 2026-11-07 saw a repeated create make a second lead, so the write port declares Bitrix24 not
+   idempotent and there is no `--operation-id`. A write that got no answer is `outcome_unknown`, and the owner looks
+   at the portal before writing again.
 
 ### Writes
 
@@ -151,7 +152,7 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
 - Bitrix24 allows 2 requests a second with a burst of 50 per portal (5 and 250 on Enterprise), shared by every app
   and webhook. `b24` paces itself with cli-core's `Pacer`, shared by every `b24` process of a profile.
 - A refused rate (HTTP 503 `QUERY_LIMIT_EXCEEDED`, or 429 `OPERATION_TIME_LIMIT` for one method) is `rate_limited`
-  with how long to wait. A read is tried again a few times; a write only when it carries an `Idempotency-Key`.
+  with how long to wait. A read is tried again a few times; a write never is.
 
 ## Open questions for the owner
 

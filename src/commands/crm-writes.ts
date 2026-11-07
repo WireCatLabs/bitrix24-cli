@@ -23,7 +23,6 @@ interface Options {
   lastName?: string
   body?: string
   field?: string[]
-  operationId?: string
 }
 
 type Option = "title" | "name" | "firstName" | "lastName"
@@ -120,7 +119,6 @@ const withOptions = (command: Command, options: Option[]) => {
   return command
     .option("--body <json>", BODY)
     .option("--field <key=value>", FIELD, (one: string, all: string[] = []) => [...all, one])
-    .option("--operation-id <id>", "the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice")
 }
 
 const createCommand = (kind: Kind) =>
@@ -138,7 +136,6 @@ const createCommand = (kind: Kind) =>
         key: `${kind.noun}.create`,
         extra: [...apiKeysOf([kind.noun, "create"])],
         assignee: assigneeOf(fields),
-        operationId: options.operationId,
         ...(pairs.length ? { prepare: withFieldPairs(kind, options, pairs, (all) => (fields = all)) } : {}),
         act: async (portal, operationId) => {
           const answer = await portal.call(`crm.${kind.type.type}.add`, { fields }, { idempotencyKey: operationId })
@@ -167,7 +164,6 @@ const updateCommand = (kind: Kind) =>
         key: `${kind.noun}.update`,
         extra: [...apiKeysOf([kind.noun, "update"])],
         assignee: assigneeOf(fields),
-        operationId: options.operationId,
         ...(pairs.length ? { prepare: withFieldPairs(kind, options, pairs, (all) => (fields = all)) } : {}),
         act: async (portal, operationId) => {
           await portal.call(`crm.${kind.type.type}.update`, { id: Number(id), fields }, { idempotencyKey: operationId })

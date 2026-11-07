@@ -36,8 +36,7 @@ Find your way with the tool itself, not this file:
   as the last `sync` stored them.
 - Writes: `deals create --title … --pipeline … --stage … --amount … --currency … --close-date … --owner …`, `update`,
   `move <ref> <stage>`, `close <ref> won|lost`, `delete <ref>`; custom fields with `--field <label or code>=<value>`.
-  Keep the `operation_id` of every write; after `outcome_unknown`, sync and `show` the record before repeating it
-  with `--operation-id`: that Bitrix24 answers a repeat from its record is documented, not yet seen live.
+  After `outcome_unknown`, sync and `show` the record before writing it again: Bitrix24 makes a repeat a second time.
 - `b24 work session status --check` says whose rights the webhook carries.
 
 ## Rules

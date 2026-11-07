@@ -53,21 +53,12 @@ describe("api call", () => {
   it("a write answers its operation_id and sends it as the Idempotency-Key", async () => {
     const portal = fakePortal({ "crm.contact.update": ok({ result: true }) })
     const ran = await b24(
-      [
-        "work",
-        "api",
-        "call",
-        "crm.contact.update",
-        "--body",
-        '{"id":4,"fields":{"post":"Buyer"}}',
-        "--operation-id",
-        "op-1",
-        "--json",
-      ],
+      ["work", "api", "call", "crm.contact.update", "--body", '{"id":4,"fields":{"post":"Buyer"}}', "--json"],
       { portal },
     )
-    expect(ran.json().item).toMatchObject({ operation_id: "op-1", result: { result: true } })
-    expect(portal.calls[0]?.headers["Idempotency-Key"]).toBe("op-1")
+    const item = ran.json().item as { operation_id: string }
+    expect(item).toMatchObject({ result: { result: true } })
+    expect(portal.calls[0]?.headers["Idempotency-Key"]).toBe(item.operation_id)
   })
 
   it("denies messages to people and batch until the owner allows them, sending nothing", async () => {

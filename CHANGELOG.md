@@ -2,7 +2,7 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
-## Unreleased
+## 0.5.0 — 07.11.2026
 
 ### Added
 
@@ -51,23 +51,34 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   `leads.close`) as well as `deals.move`.
 - `mcp` and `doctor` are cli-core's shared commands: `mcp` adds `config`, `add` and `check`, and `--profiles` and
   `--permission` on `serve`; `doctor` adds `--online`.
-- `--body` is refused when it names one field twice in any spelling, when `entityTypeId` is not a plain number, or
-  when its `fields` is not an object; `api call` refuses a method with any suffix but one `.json`, and a `crm.item`
-  method without `entityTypeId`.
-- `api call` reads check the same keys as the commands that read those records, as its writes do.
+- A `--body` or `api call` method that could be read in more than one way is refused before anything is sent: a
+  body that names one field twice in any spelling, an `entityTypeId` that is not a plain number, a `fields` that is
+  not an object, a method with any suffix but one `.json`, and a `crm.item` method without `entityTypeId`. Send each
+  field once, under one spelling.
+- `--operation-id` is gone from every write. On a live portal a create repeated with the same id made a second
+  record, so a repeat is never safe: after `outcome_unknown`, `sync` and `show` the record and write it again only if
+  it is not there. A deal or lead write given `--operation-id` is refused before anything is sent.
 
 ### Fixed
 
+- A `sync` after the first one works. It asked the portal for what changed with a time the portal refuses, so
+  every kind failed and nothing new was copied. Times in a filter now go in whole seconds with an offset, which also
+  fixes `updated_at:` and `created_at:` in `people list` and `organizations list`.
 - A write answered with a server or gateway failure (500, 502, 504) is `outcome_unknown`, not `provider_unavailable`:
   the portal may have made it. A write a cancel cuts is `outcome_unknown` too, never `cancelled`.
 - Stages are read page by page: a directory past REST 2's first 50 rows lost its later stages.
-- Permission checks on `api call`, `people` and `organizations` writes now read a body exactly as it is sent.
 - An id or owner that is not a number is refused before anything is sent; it went out empty before.
 - `--body` keeps integers past 2^53 as typed; `api call --body -` reads the body from stdin.
 - A request that gets no answer is cut after 10 seconds, not 30, so a read can be tried again before a one-shot
   command's own 30 s run out.
 - `show` for people and organizations fails when the portal's field labels fail for a reason other than missing
   rights, instead of showing the record without its labels.
+
+### Security
+
+- Permission checks on `api call` and on `people` and `organizations` writes read a body exactly as it is sent, so
+  the key they check is the key the write needs.
+- `api call` reads check the same keys as the commands that read those records, as its writes already did.
 
 ## 0.4.0 — 06.11.2026
 

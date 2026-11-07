@@ -41,7 +41,7 @@ e-mails and tasks. `api show <method>` names a method's level. `api call` is
 not offered over MCP.
 
 A write that got no answer is not sent again: it is `outcome_unknown` with its `operation_id`. Check the portal, and
-repeat it with `--operation-id` only if it is not there.
+write it again only if it is not there: Bitrix24 would make a repeat a second time.
 
 `b24 personal mcp serve --http` listens on `127.0.0.1` only, for browser apps that reach it through your own
 tunnel. Each app logs in with a one-time code, and the server keeps a hash of each login it gives, in the state

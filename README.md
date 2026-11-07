@@ -64,8 +64,8 @@ More: [settings](docs/configuration.md#permissions), [security](docs/security.md
 - The portal allows about 2 requests a second for all its apps together; `b24` keeps to that pace.
 - `people`, `organizations`, `products`, `users` and `fields` still ask the portal on every read and refuse
   `--offline`.
-- That Bitrix24 answers a repeated write with the same `--operation-id` from its record is in its documentation, but
-  not yet checked on a live portal. After an `outcome_unknown`, look at the record before you repeat a write.
+- Bitrix24 does a repeated write again: on a live portal, a create repeated with the same `Idempotency-Key` made a
+  second record. After an `outcome_unknown`, look at the record before you write it again.
 
 ## Security
 

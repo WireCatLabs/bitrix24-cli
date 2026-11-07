@@ -133,7 +133,10 @@ describe("the Bitrix24 adapter", () => {
     await source.changes("organization", cursor ?? null)
     const filter = crm.calls[before]?.body.filter as unknown[][]
     expect(filter[0]?.slice(0, 2)).toEqual(["updatedTime", ">="])
-    expect(Date.parse(String(cursor)) - Date.parse(String(filter[0]?.[2]))).toBe(10 * 60_000)
+    const overlap = Date.parse(String(cursor)) - Date.parse(String(filter[0]?.[2]))
+    expect(overlap).toBeGreaterThanOrEqual(10 * 60_000)
+    expect(overlap).toBeLessThan(10 * 60_000 + 1000)
+    expect(filter[0]?.[2]).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+00:00$/)
   })
 
   it("refuses a custom code that is a standard field before any request, and sends a list option as a number", async () => {

@@ -92,7 +92,7 @@ export const bitrixError = (
   if (code === "BITRIX_REST_V3_EXCEPTION_IDEMPOTENCYKEYREUSEDEXCEPTION")
     return as(
       "conflict",
-      `${method}: this --operation-id was already used for a different request; leave it out for a new write`,
+      `${method}: Bitrix24 refused this write's operation id as already used for a different request`,
       { reason: "operation.reused" },
     )
   const fields = fieldsOf(body)

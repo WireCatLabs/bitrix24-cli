@@ -163,18 +163,16 @@ describe("writes", () => {
     expect(calls()).toBe(before)
   })
 
-  it("a write whose answer is lost is sent once, is outcome_unknown, and its --operation-id repeat is replayed", async () => {
+  it("a write whose answer is lost is sent once, is outcome_unknown, and says to look before writing again", async () => {
     const { portal, ref } = await synced()
     portal.loseNextAnswer()
     const typed = ["work", "deals", "update", ref("deals", 102), "--title", "Example renamed", "--json"]
     const lost = await b24(typed, { portal })
     expect(lost.code).toBe(14)
     const error = lost.json().error as { message: string; details: { operation_id: string } }
-    expect(error.message).toContain("--operation-id")
+    expect(error.message).not.toContain("--operation-id")
+    expect(error.details.operation_id).toBeTruthy()
     expect(portal.writes()).toBe(1)
-    const again = await b24([...typed, "--operation-id", error.details.operation_id], { portal })
-    expect(again.code).toBe(0)
-    expect(portal.row("deal", 102)?.title).toBe("Example renamed")
   })
 
   it("move and close go to a stage of the deal's own pipeline; delete asks first", async () => {

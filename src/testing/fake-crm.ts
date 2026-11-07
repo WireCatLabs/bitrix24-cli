@@ -89,6 +89,12 @@ const invalid = (message: string): Reply => ({
   body: { error: { code: "BITRIX_REST_V3_EXCEPTION_VALIDATIONEXCEPTION", message } },
 })
 
+/** What a live portal answered a time with milliseconds or `Z` in a filter (2026-11-07). */
+const refusedValue = (): Reply => ({
+  status: 400,
+  body: { error: { code: "BITRIX_REST_V3_EXCEPTION_VALIDATION_REQUESTVALIDATIONEXCEPTION", message: "Invalid value" } },
+})
+
 const OPERATORS = new Set(["=", "!=", ">", ">=", "<", "<="])
 
 const compare = (left: unknown, op: string, right: unknown) => {
@@ -186,6 +192,12 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
       const bad = firstUnknown(type, [...select, ...(filter as unknown[][]).map((one) => String(one[0]))])
       if (bad) return unknown(bad)
       if ((filter as unknown[][]).some((one) => !OPERATORS.has(String(one[1])))) return invalid("unknown operator")
+      if (
+        (filter as unknown[][]).some(
+          (one) => typeof one[2] === "string" && /^\d{4}-\d{2}-\d{2}T.*(\.\d|Z$)/.test(one[2]),
+        )
+      )
+        return refusedValue()
       const order = (body.order ?? {}) as Record<string, string>
       const badOrder = firstUnknown(type, Object.keys(order))
       if (badOrder) return unknown(badOrder)

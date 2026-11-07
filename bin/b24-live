@@ -4,8 +4,9 @@
 # Config, state and the store are a throwaway folder: a branch build must not migrate the owner's real store.
 #
 #   bin/b24-live <account>            # builds this checkout, syncs into the throwaway store and reads; changes nothing
-#   bin/b24-live <account> --write    # also creates one lead (twice with one operation id) and one deal "WireCat test …",
-#                           # changes, moves and deletes each, then syncs again; when every step passed, appends
+#   bin/b24-live <account> --write    # also creates one lead and one deal "WireCat test …",
+#                           # changes, moves and deletes each, then syncs again and asks the portal that none is left;
+#                           # when every step passed, appends
 #                           # the version and commit to docs/dev/live-checks.txt, which bin/release checks
 #   B24_KEYRING_ACCOUNT=<account> bin/b24-live [--write]
 # <account> is the keyring entry `secret-tool store --label=… service bitrix24 account <account>` holds the webhook in.
@@ -57,6 +58,20 @@ value() {
 
 step session status --check
 step sync --json=state,synced,issues
+# The second sync asks only for what changed, through the updatedTime filter; every kind must answer it.
+changed() {
+  printf '\n== b24 live sync (changes)\n'
+  b24 sync --json 2>/dev/null | node -e '
+    let s = ""
+    process.stdin.on("data", (d) => (s += d)).on("end", () => {
+      let kinds = []
+      try { kinds = JSON.parse(s).item?.synced ?? [] } catch {}
+      const failed = kinds.filter((one) => one.error)
+      for (const one of kinds) console.log(`${one.kind}: ${one.round} ${one.state}, saved ${one.saved}`)
+      if (!kinds.length || failed.length) process.exit(1)
+    })' || fail "a changes sync failed for some kind"
+}
+changed
 step store status
 step pipelines list --json=ref,name,kind
 step stages list --json=pipeline_name,name,outcome,external_id,open
@@ -102,22 +117,19 @@ fi
 
 title="WireCat test $(date +%Y-%m-%dT%H:%M)"
 
-# A lead: created with one custom string field, named by its label, when the portal has one, renamed twice with one operation id (the
-# second must be answered from the portal's record, not done again), moved, closed lost, deleted. Never closed won:
-# a won lead is a converted one.
+# A lead: created with one custom string field, named by its label, when the portal has one, renamed, moved, closed
+# lost, deleted. Never closed won: a won lead is a converted one.
 custom=$(pick leads labelled)
 field=()
 if [ -n "$custom" ]; then field=(--field "${custom#*|}=$title"); else echo "no labelled one-value string field on leads — no --field"; fi
-# The create is sent twice with one operation id: Bitrix24 must answer the second from its record, with the same lead.
-made="wirecat-live-create-$(date +%s)"
-lead=$(b24 leads create --title "$title" "${field[@]}" --operation-id "$made" --json | value item.lead.ref)
+# Bitrix24 made a second record for a create repeated with one Idempotency-Key, so --operation-id must be refused
+# before anything is sent.
+if b24 leads create --title "$title" --operation-id "wirecat-live-$(date +%s)" --json >/dev/null 2>&1; then
+  fail "leads create took --operation-id"
+else echo "ok: leads create refuses --operation-id"; fi
+lead=$(b24 leads create --title "$title" "${field[@]}" --json | value item.lead.ref)
 [ -n "$lead" ] || { echo "!! leads create gave no ref"; exit 1; }
 echo "created $lead: $title"
-again=$(b24 leads create --title "$title" "${field[@]}" --operation-id "$made" --json | value item.lead.ref) || true
-if [ "$again" = "$lead" ]; then echo "ok: the repeated create answered $lead from the record"; else
-  fail "the repeated create answered '$again', not $lead — Idempotency-Key is not honoured"
-  [ -z "$again" ] || step leads delete "$again" --yes --json=ref,removed
-fi
 step leads show "$lead" --json=ref,title,stage,status,assignee
 if [ -n "$custom" ]; then
   kept=$(b24 leads show "$lead" --json | value "item.provider_metadata.${custom%%|*}.value") || true
@@ -125,9 +137,7 @@ if [ -n "$custom" ]; then
     fail "--field by label left ${custom%%|*} as '$kept'"
   fi
 fi
-op="wirecat-live-$(date +%s)"
-step leads update "$lead" --title "$title (renamed)" --operation-id "$op" --json=operation_id,lead.title
-step leads update "$lead" --title "$title (renamed)" --operation-id "$op" --json=operation_id,lead.title
+step leads update "$lead" --title "$title (renamed)" --json=operation_id,lead.title
 step leads move "$lead" IN_PROCESS --json=lead.stage,lead.status
 step leads close "$lead" lost --json=lead.stage,lead.status
 step leads delete "$lead" --yes --json=ref,removed
@@ -152,12 +162,16 @@ step deals delete "$deal" --yes --json=ref,removed
 echo "deleted $deal"
 
 # A sync from the cursor (the updatedTime filter), then a rescan with the id pass: neither brings the deleted ones back.
-step sync --json=state,synced,issues
-step sync --rescan --json=state,synced,issues
-for ref in "$lead" "$deal"; do
-  if b24 --offline "${ref%%:*}s" show "$ref" --json >/dev/null 2>&1; then fail "$ref is still in the store"; else
-    echo "ok: $ref is gone from the store"
-  fi
+changed
+# Asked of the portal itself: a rescan that finds the deletions does not finish in one run on a large portal.
+for type in lead deal; do
+  for named in "$title" "$title (renamed)"; do
+    left=$(b24 api call "crm.$type.list" --body "{\"select\":[\"id\"],\"filter\":[[\"title\",\"=\",\"$named\"]]}" \
+      --json | value item.result.items.length)
+    if [ "$left" = 0 ]; then echo "ok: the portal has no $type titled \"$named\""; else
+      fail "the portal answered '$left' ${type}s titled \"$named\""
+    fi
+  done
 done
 
 [ "$failed" = 0 ] || { echo "a step failed: no live record" >&2; exit 1; }

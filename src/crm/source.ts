@@ -9,7 +9,7 @@ import { LEAD } from "./lead.js"
 import { ORGANIZATION } from "./organization.js"
 import { PERSON } from "./person.js"
 import { bitrixPipelines } from "./pipelines.js"
-import { contacts, customFields, fullName, id, type Metadata, type Raw, text } from "./values.js"
+import { contacts, customFields, fullName, id, type Metadata, portalTime, type Raw, text } from "./values.js"
 
 /**
  * Re-read before the last cursor: rows the portal saved while the round ran, and this computer's clock running ahead
@@ -104,7 +104,7 @@ export const bitrixCrmSource = (portal: () => BitrixTransport, now: () => number
       const defined = await custom(kind)
       const filter = [
         ...(after ? [["id", ">", after]] : []),
-        ...(since === null ? [] : [["updatedTime", ">=", new Date(since - OVERLAP_MS).toISOString()]]),
+        ...(since === null ? [] : [["updatedTime", ">=", portalTime(since - OVERLAP_MS)]]),
       ]
       const rows = rowsOf(
         (await list(kind, [...TYPES[kind].select, ...defined.map(({ code }) => code)], filter)).result,

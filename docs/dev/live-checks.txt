@@ -1,0 +1,2 @@
+# version commit date script tree — one line per passed live check
+0.5.0 bbd5c35f3889631eac1b8ddc59b925de7448a659 2026-11-07 bin/b24-live 6ff700800e79597c92300bc3bcb589888b8bfbb4e7d508489b87b5faffe49baa

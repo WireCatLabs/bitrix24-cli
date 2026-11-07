@@ -195,13 +195,8 @@ const callCommand = () =>
     )
     .argument("<method>", "the Bitrix24 method, such as crm.deal.list")
     .option("--body <json>", "the method's parameters, as a JSON object")
-    .option("--operation-id <id>", "the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice")
     .option("--dry-run", "show every permission this call checks, with its level, and call nothing")
-    .action(async function (
-      this: Command,
-      raw: string,
-      options: { body?: string; operationId?: string; dryRun?: boolean },
-    ) {
+    .action(async function (this: Command, raw: string, options: { body?: string; dryRun?: boolean }) {
       const method = methodOf(methodName(raw))
       const body = parseBody(readApiBody(options), "the method's parameters")
       checkCall(method.name, body)
@@ -222,8 +217,6 @@ const callCommand = () =>
           extra: commandKeysOf(method.name, body),
           defaults,
           assignee: assigneeOf(fields),
-          keyed: method.api === 3,
-          operationId: options.operationId,
           act: async (portal, operationId) =>
             shown(await portal.call(method.name, body, { idempotencyKey: operationId })),
         })
