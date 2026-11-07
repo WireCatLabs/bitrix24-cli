@@ -4,7 +4,7 @@ import { join } from "node:path"
 import { CliError } from "@wirecat/cli-base"
 import type { RequestEvent } from "@wirecat/cli-core/cli"
 import { Pacer } from "@wirecat/cli-core/sends"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { FAKE_HOOK, FAKE_SECRET, FAKE_WEBHOOK, fakePortal, ok } from "../testing/fake-portal.js"
 import { bitrixError } from "./errors.js"
 import { KNOWN_METHODS, methodOf } from "./methods.js"
@@ -223,6 +223,26 @@ describe("BitrixTransport", () => {
     const error = await failureOf(transportOf(portal).transport.call("user.current"))
     expect(error.code).toBe("timeout")
     expect(portal.calls).toHaveLength(4)
+  })
+
+  it("a read that hangs is cut in time for a retry inside a one-shot command's 30 s", async () => {
+    vi.useFakeTimers()
+    try {
+      let calls = 0
+      const fetch = (_url: string, init: RequestInit) => {
+        calls++
+        if (calls > 1) return Promise.resolve(Response.json({ result: { ID: "7" } }))
+        return new Promise<Response>((_, reject) =>
+          init.signal?.addEventListener("abort", () => reject(init.signal?.reason)),
+        )
+      }
+      const answer = new BitrixTransport({ webhook: FAKE_WEBHOOK, fetch, sleep: async () => {} }).call("user.current")
+      await vi.advanceTimersByTimeAsync(15_000)
+      expect((await answer).result).toEqual({ ID: "7" })
+      expect(calls).toBe(2)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it("keeps the profile's pace across calls through the shared pacer", async () => {

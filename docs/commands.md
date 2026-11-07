@@ -653,7 +653,7 @@ b24 people create [options]
 |---|---|
 | `--first-name <name>` | the person's first name. |
 | `--last-name <name>` | the person's last name. |
-| `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--body <json>` | the other fields to set, as JSON with Bitrix24's own field names, such as {"post":"Buyer","assignedById":7}; naming another employee as the one responsible checks crm.assign-others. |
 | `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
 | `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
 
@@ -679,7 +679,7 @@ b24 people update <id> [options]
 |---|---|
 | `--first-name <name>` | the person's first name. |
 | `--last-name <name>` | the person's last name. |
-| `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--body <json>` | the other fields to set, as JSON with Bitrix24's own field names, such as {"post":"Buyer","assignedById":7}; naming another employee as the one responsible checks crm.assign-others. |
 | `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
 | `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
 
@@ -742,7 +742,7 @@ b24 organizations create [options]
 | Option | What it does |
 |---|---|
 | `--name <name>` | the name. |
-| `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--body <json>` | the other fields to set, as JSON with Bitrix24's own field names, such as {"post":"Buyer","assignedById":7}; naming another employee as the one responsible checks crm.assign-others. |
 | `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
 | `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
 
@@ -767,7 +767,7 @@ b24 organizations update <id> [options]
 | Option | What it does |
 |---|---|
 | `--name <name>` | the name. |
-| `--body <json>` | the other fields to set, as a JSON object in Bitrix24's REST 3.0 names: {"opportunity":15000,"currencyId":"EUR","assignedById":7,"stageId":"C1:NEW","phone":[{"valueTypeId":"WORK","value":"+1…"}]}; `api show crm.<type>.add` names them; assignedById other than the webhook's own user checks crm.assign-others. |
+| `--body <json>` | the other fields to set, as JSON with Bitrix24's own field names, such as {"post":"Buyer","assignedById":7}; naming another employee as the one responsible checks crm.assign-others. |
 | `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
 | `--operation-id <id>` | the operation_id an outcome_unknown named: a retry Bitrix24 will not run twice. |
 

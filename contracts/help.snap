@@ -1,18 +1,28 @@
-b24 — read and change a Bitrix24 portal's CRM
+b24 — a Bitrix24 portal's CRM in a local store, for scripts and agents, with a permission on every
+write.
 
 Usage: b24 <profile> <command> [options]
 Account commands start with your profile, a name you choose; none is ever assumed.
 
-Works with:
-  tg                      Telegram in the same local store: search, review and tasks offline
-  max                     MAX in the same local store: search, review and tasks offline
-  wa                      WhatsApp in the same local store: search, review and tasks offline
-  zm                      Zoom meetings: transcripts and summaries, searchable with your other WireCat data
-  drive                   Google Drive and Docs as local text, searchable with your other WireCat data
-  gcal                    Google Calendar events, searchable with your other WireCat data
-  memo context <person>   one person across messengers, mail, notes and meetings
-  mail                    IMAP mail in the same local store: search your mailbox offline, next to your other WireCat data
+What you can do:
+  sync                               copy the portal's deals, leads, contacts and companies; the next sync takes the changes
+  deals list status:open             open deals with stage, amount and owner, from the store, offline
+  search all "kitchen"               stored deals and leads beside your other WireCat tools' data
+  deals move <ref> <stage>           move a deal; deals.move=ask stops robots that write to clients
+  api call <method> --dry-run        any REST method, with every permission it checks
+  mcp serve --permission deals=deny  the CRM in any agent, with the levels you set
 
-Next:         b24 commands      every command, by section
-              b24 help options  output, offline, timeouts, dry run
-For agents:   b24 skill show    rules and the discovery loop
+Works with:
+  tg                                 Telegram in the same local store: search, review and tasks offline
+  max                                MAX in the same local store: search, review and tasks offline
+  wa                                 WhatsApp in the same local store: search, review and tasks offline
+  zm                                 Zoom meetings: transcripts and summaries, searchable with your other WireCat data
+  drive                              Google Drive and Docs as local text, searchable with your other WireCat data
+  gcal                               Google Calendar events, searchable with your other WireCat data
+  memo context <person>              one person across messengers, mail, notes and meetings
+  mail                               IMAP mail in the same local store: search your mailbox offline, next to your other WireCat data
+
+Start here:   b24 work session start  (any profile name works)
+Next:         b24 commands            every command, by section
+              b24 help options        output, offline, timeouts, dry run
+For agents:   b24 skill show          rules and the discovery loop

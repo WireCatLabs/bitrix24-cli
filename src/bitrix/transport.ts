@@ -14,7 +14,11 @@ import { type BitrixFailure, bitrixError } from "./errors.js"
 import { methodOf, type RestVersion } from "./methods.js"
 import { methodUrl, type Webhook } from "./webhook.js"
 
-const DEFAULT_TIMEOUT_MS = 30_000
+/**
+ * A third of a one-shot command's 30 s deadline (cli-core `DEFAULT_COMMAND_MS`), so a read that timed out can still be
+ * tried again before the command ends. cli-core does not hand the run's remaining time to a transport.
+ */
+const DEFAULT_TIMEOUT_MS = 10_000
 const LARGEST_ANSWER = 16 * 1024 * 1024
 const RETRY: RetryConfig = { retries: 3, baseDelayMs: 1_000, maxDelayMs: 10_000, maxRetryAfterMs: 30_000 }
 /** A pace wait longer than this ends the run instead of sitting in it, as cli-core's messenger pacing does. */

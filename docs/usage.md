@@ -103,9 +103,10 @@ several values takes `--field` once per value; `--body` takes the other fields i
 Each write answers an `operation_id`, which Bitrix24 receives as its `Idempotency-Key`. If a write ends with
 `outcome_unknown`, look at the record first (`sync`, then `show`). Bitrix24's documentation says a repeat with
 `--operation-id <that id>` is answered from its record of the first try instead of done again; that is not yet checked
-on a live portal. `--dry-run` sends nothing and names the command's own permission keys; the keys its options add (a
-stage's move and close keys, `crm.assign-others` for another owner) are checked only when it runs. Assigning a record to another employee is refused until
-you allow it, because Bitrix24 tells that employee: `b24 work config set permissions.crm.assign-others allow`.
+on a live portal. `--dry-run` sends nothing and names every permission key the command checks, with the option that
+adds each one: a stage's move and close keys, and `crm.assign-others` for another owner. Assigning a record to another
+employee is refused until you allow it, because Bitrix24 tells that employee:
+`b24 work config set permissions.crm.assign-others allow`.
 
 `b24 work api call <method> --body <json>` calls any other Bitrix24 method. It checks the same permissions as the
 command that does the same thing, and refuses writes that send messages, start the portal's automation or create

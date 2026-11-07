@@ -3,17 +3,32 @@
 # The webhook address comes from the keyring and reaches b24 only as B24_TOKEN; it is never printed.
 # Config, state and the store are a throwaway folder: a branch build must not migrate the owner's real store.
 #
-#   bin/b24-live            # builds this checkout, syncs into the throwaway store and reads; changes nothing on the portal
-#   bin/b24-live --write    # also creates one lead (twice with one operation id) and one deal "WireCat test …",
+#   bin/b24-live <account>            # builds this checkout, syncs into the throwaway store and reads; changes nothing
+#   bin/b24-live <account> --write    # also creates one lead (twice with one operation id) and one deal "WireCat test …",
 #                           # changes, moves and deletes each, then syncs again; when every step passed, appends
 #                           # the version and commit to docs/dev/live-checks.txt, which bin/release checks
-#   B24_KEYRING_ACCOUNT=other bin/b24-live
+#   B24_KEYRING_ACCOUNT=<account> bin/b24-live [--write]
+# <account> is the keyring entry `secret-tool store --label=… service bitrix24 account <account>` holds the webhook in.
 set -euo pipefail
+
+write=""
+given=""
+for arg in "$@"; do
+  case "$arg" in
+    --write) write=1 ;;
+    *) given=$arg ;;
+  esac
+done
+account=${given:-${B24_KEYRING_ACCOUNT:-}}
+[ -n "$account" ] || {
+  echo "name the keyring account that holds the portal's webhook (service bitrix24):" >&2
+  echo "  bin/b24-live <account> [--write]   or   B24_KEYRING_ACCOUNT=<account> bin/b24-live [--write]" >&2
+  exit 2
+}
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 # Built here, so the live record names the commit that actually ran.
 (cd "$root" && pnpm -s build >/dev/null)
-account=${B24_KEYRING_ACCOUNT:-burobiz_hook}
 
 B24_TOKEN=$(secret-tool lookup service bitrix24 account "$account" 2>/dev/null) || true
 [ -n "$B24_TOKEN" ] || { echo "no keyring entry: service bitrix24 account $account" >&2; exit 1; }
@@ -79,7 +94,7 @@ else
   echo "no list field on companies that a list can filter by — skipped the filtered organizations list"
 fi
 
-if [ "${1:-}" != "--write" ]; then
+if [ -z "$write" ]; then
   [ "$failed" = 0 ] || exit 1
   echo "read-only run passed; the release record needs bin/b24-live --write"
   exit 0

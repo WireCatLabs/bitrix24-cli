@@ -218,6 +218,12 @@ describe("organizations: the list and show every portal noun shares", () => {
     expect(ran.out + ran.err).not.toContain(FAKE_SECRET)
   })
 
+  it("show fails when the labels fail for any reason but a refusal", async () => {
+    const portal = withCustomFields({ status: 500, body: { error: "INTERNAL_SERVER_ERROR" } })
+    const ran = await b24(["work", "organizations", "show", "42", "--json"], { portal })
+    expect(ran.code).not.toBe(0)
+  })
+
   it("show asks for labels only when a custom field holds a value, and list never does", async () => {
     const portal = fakePortal({
       "crm.company.get": ok({ item: company(42) }),

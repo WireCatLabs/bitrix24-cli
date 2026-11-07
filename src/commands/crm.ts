@@ -47,7 +47,6 @@ interface Noun<T> {
   noun: string
   entity: string
   schema: v.GenericSchema
-  /** What `list` shows, in the help. */
   what: string
   query: QueryRegistry
   /** The field a bare word in the query means. */

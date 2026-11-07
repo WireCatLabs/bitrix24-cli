@@ -14,6 +14,7 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 - `deals create` and `update` take `--pipeline`, `--stage`, `--amount` with `--currency`, `--close-date` and
   `--owner`; leads take the same but `--close-date`. A stage checks the move key, a won or lost one the close key too.
 - `search all` finds stored deals and leads beside the other WireCat tools' messages, notes and events.
+- `b24 --help` and a bare `b24` open with what `b24` is for, what to try first, and where to start.
 
 ### Changed — may break callers
 
@@ -57,6 +58,10 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 - Permission checks on `api call`, `people` and `organizations` writes now read a body exactly as it is sent.
 - An id or owner that is not a number is refused before anything is sent; it went out empty before.
 - `--body` keeps integers past 2^53 as typed; `api call --body -` reads the body from stdin.
+- A request that gets no answer is cut after 10 seconds, not 30, so a read can be tried again before a one-shot
+  command's own 30 s run out.
+- `show` for people and organizations fails when the portal's field labels fail for a reason other than missing
+  rights, instead of showing the record without its labels.
 
 ## 0.4.0 — 06.11.2026
 
