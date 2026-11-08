@@ -29,6 +29,60 @@
           }
         }
       }
+    },
+    {
+      "includes": ["src/commands/**", "!**/*.test.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@modelcontextprotocol/**"],
+                    "message": "cli-core's appMcpCommand serves MCP; commands and services do not know the protocol"
+                  },
+                  {
+                    "group": ["../bitrix/transport.js", "**/bitrix/transport.js"],
+                    "importNamePattern": "BitrixTransport",
+                    "invertImportNamePattern": true,
+                    "message": "commands reach Bitrix24 through src/crm/; only the transport's type passes through them (WC-ARCH-1)"
+                  },
+                  {
+                    "group": ["../bitrix/errors.js", "**/bitrix/errors.js"],
+                    "message": "the transport turns Bitrix24's errors into CliErrors; commands see only those (WC-ARCH-1)"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/crm/**", "src/bitrix/**", "!**/*.test.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["@modelcontextprotocol/**"],
+                    "message": "cli-core's appMcpCommand serves MCP; commands and services do not know the protocol"
+                  },
+                  {
+                    "group": ["commander", "**/commands/**", "../commands/*", "**/program.js", "../program.js"],
+                    "message": "the adapter and the CRM services sit below the commands; they never import a command, the program or commander (WC-ARCH-1)"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
     }
   ]
 }

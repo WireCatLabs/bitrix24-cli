@@ -609,12 +609,12 @@ b24 people list [query] [options]
 show one of the contacts on the portal
 
 ```sh
-b24 people show <id-or-name>
+b24 people show <person>
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `id-or-name` | required | the id-or-name as list prints it. |
+| `person` | required | the person's id or name, as list prints it. |
 
 **Returns:** crm person — id, name, first_name, last_name, position, organization_ids, assigned_to, created_at, and 5 more; every field: b24 commands info people show
 
@@ -648,12 +648,12 @@ change one person on the portal; options left out keep their values
 **Changes something in the service.**
 
 ```sh
-b24 people update <id> [options]
+b24 people update <person> [options]
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `id` | required | the person's id. |
+| `person` | required | the person's id. |
 
 | Option | What it does |
 |---|---|
@@ -698,12 +698,12 @@ b24 organizations list [query] [options]
 show one of the companies on the portal
 
 ```sh
-b24 organizations show <id-or-name>
+b24 organizations show <organization>
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `id-or-name` | required | the id-or-name as list prints it. |
+| `organization` | required | the organization's id or name, as list prints it. |
 
 **Returns:** crm organization — id, name, type_id, industry_id, revenue, currency, person_ids, assigned_to, and 6 more; every field: b24 commands info organizations show
 
@@ -736,12 +736,12 @@ change one organization on the portal; options left out keep their values
 **Changes something in the service.**
 
 ```sh
-b24 organizations update <id> [options]
+b24 organizations update <organization> [options]
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `id` | required | the organization's id. |
+| `organization` | required | the organization's id. |
 
 | Option | What it does |
 |---|---|
@@ -784,12 +784,12 @@ b24 products list [query] [options]
 show one of the catalog products on the portal
 
 ```sh
-b24 products show <id>
+b24 products show <product>
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `id` | required | the id as list prints it. |
+| `product` | required | the product's id, as list prints it. |
 
 **Returns:** product — id, name, price, currency, active, section_id; every field: b24 commands info products show
 
@@ -826,12 +826,12 @@ b24 users list [query] [options]
 show one of the employees on the portal
 
 ```sh
-b24 users show <id>
+b24 users show <user>
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `id` | required | the id as list prints it. |
+| `user` | required | the user's id, as list prints it. |
 
 **Returns:** user — id, name, email, position, active, department_ids; every field: b24 commands info users show
 

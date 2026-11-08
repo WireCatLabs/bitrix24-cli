@@ -10,6 +10,7 @@ import { customValues, loadFields } from "../crm/fields.js"
 import type { ItemType } from "../crm/items.js"
 import { ORGANIZATION } from "../crm/organization.js"
 import { PERSON } from "../crm/person.js"
+import { createRecord, updateRecord } from "../crm/record-writes.js"
 import type { Raw } from "../crm/values.js"
 import { IDENTITY } from "../identity.js"
 import { write } from "./write.js"
@@ -137,12 +138,10 @@ const createCommand = (kind: Kind) =>
         extra: [...apiKeysOf([kind.noun, "create"])],
         assignee: assigneeOf(fields),
         ...(pairs.length ? { prepare: withFieldPairs(kind, options, pairs, (all) => (fields = all)) } : {}),
-        act: async (portal, operationId) => {
-          const answer = await portal.call(`crm.${kind.type.type}.add`, { fields }, { idempotencyKey: operationId })
-          const id = String((answer.result as { id?: unknown })?.id ?? "")
-          if (!id) throw new CliError("invalid_response", `Bitrix24 answered the new ${kind.type.word} without its id`)
-          return { id, created: true }
-        },
+        act: async (portal, operationId) => ({
+          id: await createRecord(portal, kind.type, fields, operationId),
+          created: true,
+        }),
       })
     })
 
@@ -152,7 +151,7 @@ const updateCommand = (kind: Kind) =>
     kind.create,
   )
     .description(`change one ${kind.type.word} on the portal; options left out keep their values`)
-    .argument("<id>", `the ${kind.type.word}'s id`)
+    .argument(`<${kind.type.word}>`, `the ${kind.type.word}'s id`)
     .action(async function (this: Command, id: string, options: Options) {
       if (!/^[1-9]\d*$/.test(id))
         throw new CliError("validation_error", `${kind.noun} update takes the ${kind.type.word}'s id`)
@@ -166,7 +165,7 @@ const updateCommand = (kind: Kind) =>
         assignee: assigneeOf(fields),
         ...(pairs.length ? { prepare: withFieldPairs(kind, options, pairs, (all) => (fields = all)) } : {}),
         act: async (portal, operationId) => {
-          await portal.call(`crm.${kind.type.type}.update`, { id: Number(id), fields }, { idempotencyKey: operationId })
+          await updateRecord(portal, kind.type, id, fields, operationId)
           return { id, updated: Object.keys(fields) }
         },
       })
