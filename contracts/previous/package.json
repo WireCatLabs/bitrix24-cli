@@ -4,6 +4,6 @@
   "type": "module",
   "packageManager": "pnpm@11.28.8",
   "dependencies": {
-    "@wirecat/previous-cli": "npm:@wirecat/bitrix24-cli@0.6.0"
+    "@wirecat/previous-cli": "npm:@wirecat/bitrix24-cli@0.8.0"
   }
 }

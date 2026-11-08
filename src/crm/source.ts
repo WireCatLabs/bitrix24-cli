@@ -11,7 +11,19 @@ import { NO_MEMORY, type OwnMemory } from "./own-memory.js"
 import { PERSON } from "./person.js"
 import { bitrixPipelines } from "./pipelines.js"
 import { portalDepartments, portalUsers } from "./user.js"
-import { contacts, customFields, fullName, id, ids, type Metadata, portalTime, type Raw, text } from "./values.js"
+import {
+  contacts,
+  customFields,
+  fieldOf,
+  fullName,
+  id,
+  ids,
+  isRaw,
+  type Metadata,
+  portalTime,
+  type Raw,
+  text,
+} from "./values.js"
 import { rest3Rows, rowsOf } from "./walk.js"
 
 /**
@@ -23,11 +35,11 @@ const PAGE = 500
 /** `crm.mycompany.basic.list`'s default page; the docs name no larger one. */
 const MY_PAGE = 50
 
-const TYPES: Record<CrmKind, ItemType<unknown>> = {
-  deal: DEAL as ItemType<unknown>,
-  lead: LEAD as ItemType<unknown>,
-  person: PERSON as ItemType<unknown>,
-  organization: ORGANIZATION as ItemType<unknown>,
+const TYPES: Record<CrmKind, Pick<ItemType<unknown>, "type" | "select">> = {
+  deal: DEAL,
+  lead: LEAD,
+  person: PERSON,
+  organization: ORGANIZATION,
 }
 
 /** `companiesId` lists the contact's companies, the primary one first (apidocs fields-contact). */
@@ -49,6 +61,13 @@ const toOrganization = (raw: Raw, metadata?: Metadata): CrmOrganization => ({
   type: text(raw.typeId),
   ...(metadata ? { metadata } : {}),
 })
+
+const MAPPERS: { [K in CrmKind]: (raw: Raw, metadata?: Metadata) => CrmRecords[K] } = {
+  deal: DEAL.map,
+  lead: LEAD.map,
+  person: (raw) => toPerson(raw),
+  organization: toOrganization,
+}
 
 /** `<last id>@<when the round started>`: keyset paging by id, so a row changed mid-round never shifts the rest. */
 const pageOf = (page: string | undefined, now: number) => {
@@ -99,12 +118,9 @@ export const bitrixCrmSource = (
   }
   // core's CrmPerson has no metadata, so a contact's values are not read; its definitions still are, for `fields list`.
   const custom = async (kind: CrmKind, caller: BitrixCaller) => (kind === "person" ? [] : await fields(kind, caller))
-  const mapped = (kind: CrmKind, raw: Raw, defined: readonly CrmField[]): unknown => {
+  const mapped = <K extends CrmKind>(kind: K, raw: Raw, defined: readonly CrmField[]): CrmRecords[K] => {
     const values = customFields(raw)
-    const metadata = Object.keys(values).length ? metadataOf(values, defined) : undefined
-    if (kind === "person") return toPerson(raw)
-    if (kind === "organization") return toOrganization(raw, metadata)
-    return TYPES[kind].map(raw, metadata)
+    return MAPPERS[kind](raw, Object.keys(values).length ? metadataOf(values, defined) : undefined)
   }
   const list = (caller: BitrixCaller, kind: CrmKind, select: readonly string[], filter: unknown[]) =>
     caller.call(`crm.${TYPES[kind].type}.list`, {
@@ -160,14 +176,43 @@ export const bitrixCrmSource = (
     }
     return found
   }
+  /** What a page gets beyond its rows: each lead its deal, and the last page of companies the own ones. */
+  const completed: {
+    [K in CrmKind]: (
+      items: CrmRecords[K][],
+      caller: BitrixCaller,
+      ended: boolean,
+      context?: CrmCallContext,
+    ) => Promise<CrmRecords[K][]>
+  } = {
+    deal: async (items) => items,
+    person: async (items) => items,
+    lead: async (leads, caller) => {
+      const deals = await dealsOf(
+        caller,
+        leads.map(({ externalId }) => externalId),
+      )
+      return leads.map((lead) => {
+        const deal = deals.get(lead.externalId)
+        return deal ? { ...lead, deal } : lead
+      })
+    },
+    organization: async (items, caller, ended, context) =>
+      ended ? [...items, ...((await ownCompanies(caller, context)) ?? [])] : items,
+  }
 
   return {
     provider: "bitrix24",
     traits: { kinds: ["organization", "person", "deal", "lead"], removedInChanges: false },
     pipelines: (kind, context) => bitrixPipelines(metered(context), kind),
-    async changes<K extends CrmKind>(kind: K, cursor: string | null, page?: string, context?: CrmCallContext) {
+    async changes<K extends CrmKind>(
+      kind: K,
+      cursor: string | null,
+      page?: string,
+      context?: CrmCallContext,
+    ): Promise<CrmChanges<CrmRecords[K]>> {
       const since = cursor === null ? null : Date.parse(cursor)
-      if (since !== null && Number.isNaN(since)) return { reset: true } as CrmChanges<CrmRecords[K]>
+      if (since !== null && Number.isNaN(since)) return { reset: true }
       const caller = metered(context)
       const { after, started } = pageOf(page, now())
       const defined = await custom(kind, caller)
@@ -178,23 +223,17 @@ export const bitrixCrmSource = (
       const rows = rowsOf(
         (await list(caller, kind, [...TYPES[kind].select, ...defined.map(({ code }) => code)], filter)).result,
       )
-      let items = rows.map((raw) => mapped(kind, raw, defined)) as CrmRecords[K][]
-      if (kind === "lead") {
-        const deals = await dealsOf(
-          caller,
-          (items as CrmItem[]).map(({ externalId }) => externalId),
-        )
-        items = (items as CrmItem[]).map((lead) => {
-          const deal = deals.get(lead.externalId)
-          return deal ? { ...lead, deal } : lead
-        }) as CrmRecords[K][]
-      }
       const last = id(rows.at(-1)?.id)
       // An empty page ends the round, not a short one: a portal that caps pages below PAGE still lists every row.
-      if (last !== null) return { items, nextPage: `${last}@${started}` }
-      if (kind === "organization")
-        items = [...items, ...(((await ownCompanies(caller, context)) ?? []) as CrmRecords[K][])]
-      return { items, cursor: new Date(started).toISOString() }
+      const items = await completed[kind](
+        rows.map((raw) => mapped(kind, raw, defined)),
+        caller,
+        last === null,
+        context,
+      )
+      return last !== null
+        ? { items, nextPage: `${last}@${started}` }
+        : { items, cursor: new Date(started).toISOString() }
     },
     async ids(kind, page, context): Promise<CrmIdPage> {
       const caller = metered(context)
@@ -214,9 +253,9 @@ export const bitrixCrmSource = (
         id: Number(externalId),
         select: [...TYPES[kind].select, ...defined.map(({ code }) => code)],
       })
-      const raw = (answer.result as { item?: Raw })?.item
-      if (!raw) throw new CliError("not_found", `the portal has no ${kind} ${externalId}`)
-      return mapped(kind, raw, defined) as CrmItem
+      const raw = fieldOf(answer.result, "item")
+      if (!isRaw(raw)) throw new CliError("not_found", `the portal has no ${kind} ${externalId}`)
+      return mapped(kind, raw, defined)
     },
     fields: (kind, context) => fields(kind, metered(context)),
     async users(context) {

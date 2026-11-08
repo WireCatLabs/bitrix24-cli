@@ -3,7 +3,7 @@ import type { CrmDepartment, CrmUser } from "@wirecat/cli-core"
 import * as v from "valibot"
 import type { BitrixCaller } from "../bitrix/transport.js"
 import { type Condition, rest2Filter } from "./conditions.js"
-import { fullName, id, ids, numericId, type Raw, text, yes } from "./values.js"
+import { fullName, id, ids, numericId, type Raw, rawsOf, text, yes } from "./values.js"
 import { rest2Rows, type Window } from "./walk.js"
 
 /** An employee of the portal: who a record is assigned to. */
@@ -50,8 +50,8 @@ export const listUsers = async (portal: BitrixCaller, conditions: readonly Condi
 }
 
 export const getUser = async (portal: BitrixCaller, reference: string): Promise<User> => {
-  const answer = await portal.call("user.get", { FILTER: { ID: numericId(reference, "users show") } })
-  const found = Array.isArray(answer.result) ? (answer.result as Raw[])[0] : undefined
+  const answer = await portal.call("user.get", { FILTER: { ID: numericId(reference, "a user's id") } })
+  const found = rawsOf(answer.result)[0]
   if (!found) throw new CliError("not_found", `there is no user ${reference}`)
   return fromBitrixUser(found)
 }

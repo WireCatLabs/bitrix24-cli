@@ -211,5 +211,5 @@ export const API_DEFAULTS: Record<string, Level> = {
       apiDefault(one.name, one.effect),
     ]),
   ),
-  ...Object.fromEntries(DENIED_FAMILIES.map((family) => [apiKey(family), "deny" as Level])),
+  ...Object.fromEntries(DENIED_FAMILIES.map((family) => [apiKey(family), "deny" satisfies Level])),
 }

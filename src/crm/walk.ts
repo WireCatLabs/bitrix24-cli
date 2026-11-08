@@ -1,4 +1,5 @@
 import type { BitrixCaller } from "../bitrix/transport.js"
+import { fieldOf, type Raw, rawsOf } from "./values.js"
 
 /** One page as the portal gave it, and whether it said more come after. */
 export interface Rows<T> {
@@ -35,13 +36,9 @@ export const walk = async <T>(
   return { items: rows.slice(0, window.limit), has_more: rows.length > window.limit }
 }
 
-type Raw = Record<string, unknown>
-
 /** A list's rows: REST 2 gives them as the result, REST 3.0 and `crm.item.list` under `items`. */
 export const rowsOf = (result: unknown): Raw[] => {
-  if (Array.isArray(result)) return result as Raw[]
-  const items = (result as { items?: unknown } | null)?.items
-  return Array.isArray(items) ? (items as Raw[]) : []
+  return Array.isArray(result) ? rawsOf(result) : rawsOf(fieldOf(result, "items"))
 }
 
 /** A REST 2 list: pages of 50, `start` the rows before, `next` while more come (apidocs list methods). */

@@ -1,7 +1,8 @@
+import { CliError } from "@wirecat/cli-base"
 import * as v from "valibot"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { type Condition, rest2Filter } from "./conditions.js"
-import { id, number, numericId, type Raw, text, yes } from "./values.js"
+import { id, isRaw, number, numericId, type Raw, text, yes } from "./values.js"
 import { rest2Rows, type Window } from "./walk.js"
 
 export const productSchema = v.strictObject({
@@ -46,5 +47,8 @@ export const listProducts = async (portal: BitrixTransport, conditions: readonly
   return { items: items.map(fromBitrixProduct), has_more }
 }
 
-export const getProduct = async (portal: BitrixTransport, reference: string): Promise<Product> =>
-  fromBitrixProduct((await portal.call("crm.product.get", { id: numericId(reference, "products show") })).result as Raw)
+export const getProduct = async (portal: BitrixTransport, reference: string): Promise<Product> => {
+  const { result } = await portal.call("crm.product.get", { id: numericId(reference, "a product's id") })
+  if (!isRaw(result)) throw new CliError("not_found", `there is no product ${reference}`)
+  return fromBitrixProduct(result)
+}

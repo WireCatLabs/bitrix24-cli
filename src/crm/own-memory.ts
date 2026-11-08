@@ -20,7 +20,7 @@ export const ownMemoryFile = (env: NodeJS.ProcessEnv, profile: string): string =
 export const ownMemoryAt = (file: string): OwnMemory => ({
   read: () => {
     try {
-      const ids = JSON.parse(readFileSync(file, "utf8")) as unknown
+      const ids: unknown = JSON.parse(readFileSync(file, "utf8"))
       return Array.isArray(ids) ? ids.filter((one): one is string => typeof one === "string") : []
     } catch {
       return []

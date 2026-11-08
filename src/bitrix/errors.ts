@@ -1,5 +1,6 @@
 import { CliError, type CliErrorDetails, type ErrorCode } from "@wirecat/cli-base"
 import { retryableStatus, statusToCode } from "@wirecat/cli-base/http"
+import { isRecord } from "../body.js"
 import { scopeOf } from "./methods.js"
 
 /** The 503 refusal of a portal over its 2 requests a second (apidocs "REST API limits"). */
@@ -12,35 +13,34 @@ const SCOPE = new Set(["INSUFFICIENT_SCOPE", "BITRIX_REST_V3_EXCEPTION_INSUFFICI
 const DENIED = new Set(["ACCESS_DENIED", "USER_ACCESS_ERROR", "BITRIX_REST_V3_EXCEPTION_ACCESSDENIEDEXCEPTION"])
 const NOT_FOUND = new Set(["NOT_FOUND", "BITRIX_REST_V3_EXCEPTION_ENTITYNOTFOUNDEXCEPTION"])
 
-/** REST 2: `{ error, error_description }`, where `error` may be empty; REST 3.0: `{ error: { code, message, validation } }`. */
-export interface BitrixFailure {
-  error?: string | { code?: unknown; message?: unknown; validation?: unknown }
-  error_description?: unknown
-  time?: { operating_reset_at?: unknown }
-}
-
 const CODE = /^[A-Za-z0-9_]{1,128}$/
 
-/** Only a code-shaped name: a description can quote a field's value, which is somebody's data (WC-SECR-6). */
-const codeOf = (body: BitrixFailure | undefined): string | undefined => {
-  const raw = typeof body?.error === "object" && body.error !== null ? body.error.code : body?.error
+const fieldOf = (value: unknown, key: string): unknown => (isRecord(value) ? value[key] : undefined)
+
+/**
+ * Only a code-shaped name: a description can quote a field's value, which is somebody's data (WC-SECR-6). REST 2
+ * answers `{ error, error_description }`, where `error` may be empty; REST 3.0 `{ error: { code, message, validation } }`.
+ */
+const codeOf = (body: unknown): string | undefined => {
+  const error = fieldOf(body, "error")
+  const raw = isRecord(error) ? error.code : error
   if (typeof raw === "string" && CODE.test(raw)) return raw.toUpperCase()
   // REST 2 answers a missing record with an empty code and "Not found".
-  if (raw === "" && typeof body?.error_description === "string" && /^not found$/i.test(body.error_description.trim()))
-    return "NOT_FOUND"
+  const description = fieldOf(body, "error_description")
+  if (raw === "" && typeof description === "string" && /^not found$/i.test(description.trim())) return "NOT_FOUND"
   return undefined
 }
 
-const fieldsOf = (body: BitrixFailure | undefined): string[] => {
-  const validation = typeof body?.error === "object" && body.error !== null ? body.error.validation : undefined
+const fieldsOf = (body: unknown): string[] => {
+  const validation = fieldOf(fieldOf(body, "error"), "validation")
   if (!Array.isArray(validation)) return []
   return validation
-    .map((one) => (one as { field?: unknown })?.field)
+    .map((one) => fieldOf(one, "field"))
     .filter((field): field is string => typeof field === "string" && CODE.test(field.replace(/\./g, "_")))
 }
 
-const operatingWaitMs = (body: BitrixFailure | undefined, now: number) => {
-  const reset = Number(body?.time?.operating_reset_at)
+const operatingWaitMs = (body: unknown, now: number) => {
+  const reset = Number(fieldOf(fieldOf(body, "time"), "operating_reset_at"))
   return Number.isFinite(reset) && reset * 1000 > now ? reset * 1000 - now : OPERATING_WAIT_MS
 }
 
@@ -51,7 +51,7 @@ const operatingWaitMs = (body: BitrixFailure | undefined, now: number) => {
 export const bitrixError = (
   method: string,
   status: number,
-  body: BitrixFailure | undefined,
+  body: unknown,
   { now = Date.now(), waitMs }: { now?: number; waitMs?: number | undefined } = {},
 ): CliError => {
   const code = codeOf(body)

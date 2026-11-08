@@ -3,15 +3,11 @@ import type { CrmField } from "@wirecat/cli-core"
 import { fieldNamed, optionOf } from "@wirecat/cli-core/crm"
 import type { BitrixCaller } from "../bitrix/transport.js"
 import type { ItemType } from "./items.js"
-import { isCustom, type Metadata, type Raw, text, yes } from "./values.js"
+import { isCustom, type Metadata, type Raw, rawsOf, text, yes } from "./values.js"
+import { rowsOf } from "./walk.js"
 
 /** One of the portal's own fields on deals, leads, contacts or companies. */
 export type Field = CrmField
-
-const rows = (result: unknown): Raw[] => {
-  const items = Array.isArray(result) ? result : (result as { items?: unknown })?.items
-  return Array.isArray(items) ? (items as Raw[]) : []
-}
 
 /**
  * The portal's custom fields of one type, in two calls that need only read rights: REST 3.0's `field.list` has the
@@ -23,14 +19,14 @@ export const loadFields = async (portal: BitrixCaller, type: ItemType<unknown>["
     select: ["name", "title", "type", "multiple", "filterable"],
   })
   const custom = await portal.call(`crm.${type}.userfield.list`, { order: { SORT: "ASC" } })
-  const own = new Map(rows(custom.result).map((field) => [String(field.FIELD_NAME), field]))
-  return rows(described.result)
+  const own = new Map(rowsOf(custom.result).map((field) => [String(field.FIELD_NAME), field]))
+  return rowsOf(described.result)
     .filter((field) => isCustom(String(field.name)))
     .map((field) => {
       const code = String(field.name)
       const user = own.get(code)
       const options = Array.isArray(user?.LIST)
-        ? (user.LIST as Raw[]).flatMap((option) => {
+        ? rawsOf(user.LIST).flatMap((option) => {
             const id = text(option.ID)
             return id === null ? [] : [{ id, label: text(option.VALUE) ?? id }]
           })
