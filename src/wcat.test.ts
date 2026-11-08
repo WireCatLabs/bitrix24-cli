@@ -2,14 +2,14 @@ import { createHash } from "node:crypto"
 import { readFileSync } from "node:fs"
 import { fileURLToPath } from "node:url"
 import { describeProgram } from "@wirecat/cli-base/commands"
-import { buildManifest, manifestText } from "@wirecat/cli-base/wcat/manifest"
+import { buildManifest, MANIFEST_FILE, manifestText } from "@wirecat/cli-base/wcat/manifest"
 import { wcatStart } from "@wirecat/cli-base/wcat/start"
 import { describe, expect, it } from "vitest"
 import { DESKTOP } from "./identity.js"
 import { createProgram } from "./program.js"
 import { WCAT } from "./wcat.js"
 
-const MANIFEST = new URL("../contracts/wirecat.json", import.meta.url)
+const MANIFEST = new URL(`../${MANIFEST_FILE}`, import.meta.url)
 
 describe("contracts/wirecat.json", () => {
   it("is what pnpm generate builds from the command tree now", () => {

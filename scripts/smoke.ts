@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync }
 import { tmpdir } from "node:os"
 import { join, resolve } from "node:path"
 import { packContents } from "@wirecat/cli-base/release"
+import { MANIFEST_FILE } from "@wirecat/cli-base/wcat/manifest"
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value)
@@ -39,9 +40,8 @@ const FORBIDDEN = [
 const overlaps = (entry: string, path: string) =>
   entry === path || entry.startsWith(`${path}/`) || path.startsWith(`${entry}/`)
 // WireCat Desktop reads the manifest out of the tarball before it installs anything (WC-CMD-29).
-const MANIFEST = "contracts/wirecat.json"
 const forbidden = shipped
-  .filter((entry) => entry !== MANIFEST)
+  .filter((entry) => entry !== MANIFEST_FILE)
   .flatMap((entry) => FORBIDDEN.filter((path) => overlaps(entry.replace(/\/$/, ""), path)))
 if (name !== "@wirecat/cli-template")
   assert.deepEqual(forbidden, [], "package.json's files ships paths WC-REL-16 forbids")
@@ -91,7 +91,7 @@ try {
     assert.ok(names.includes(root), `${root} is missing from the installed package`)
   assert.equal(JSON.parse(run(["doctor", "--json"])).item.version, version)
   assert.match(run(["skill", "show"]), /name: bitrix24-cli/)
-  assert.equal(JSON.parse(run(["--wcat-describe"])).wcat_describe, 2, `${MANIFEST} is missing from the package`)
+  assert.equal(JSON.parse(run(["--wcat-describe"])).wcat_describe, 2, `${MANIFEST_FILE} is missing from the package`)
   console.log(`installed ${name}@${version}: help, version, commands, doctor, skill and wcat-describe answer offline`)
 } finally {
   rmSync(temp, { recursive: true, force: true })
