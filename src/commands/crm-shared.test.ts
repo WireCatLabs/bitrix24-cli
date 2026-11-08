@@ -1,3 +1,6 @@
+import { existsSync, mkdtempSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import { memoryKeyring } from "@wirecat/cli-base"
 import { describe, expect, it } from "vitest"
 import { seededCrm } from "../testing/fake-crm.js"
@@ -86,6 +89,18 @@ describe("sync and field definitions", () => {
 })
 
 describe("lists read the store, --offline too", () => {
+  it("under B24_READ_ONLY a read on a new machine answers empty with no sign-in and creates no store", async () => {
+    const store = join(mkdtempSync(join(tmpdir(), "new-machine-")), "wirecat.db")
+    const env = { B24_READ_ONLY: "1", MESSAGING_STORE: store }
+    const listed = await b24(["work", "deals", "list", "--json"], { env, keyring: memoryKeyring() })
+    expect(listed.code, listed.err).toBe(0)
+    expect(items(listed)).toEqual([])
+    expect(existsSync(store)).toBe(false)
+
+    expect((await b24(["work", "sync", "--json"], { env, portal: seededCrm() })).code).toBe(0)
+    expect(items(await b24(["work", "deals", "list", "--json"], { env })).length).toBeGreaterThan(0)
+  })
+
   it("deals and leads in core's shape: status, pipeline, stage, close date, a decimal amount, assignee, custom values", async () => {
     const { portal } = await synced()
     const before = portal.calls.length
