@@ -2,13 +2,10 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
-## 0.8.0 — 08.11.2026
+## Unreleased
 
 ### Added
 
-- The package ships `contracts/wirecat.json`, so WireCat Desktop can read what `b24` does, how to sign in and what
-  `sync` copies before it installs it. `b24 --wcat-describe` now answers format 2 with that file's Desktop section
-  and its SHA-256.
 - A sync copies only the deals and leads of the webhook's own user by default, and those of the users in
   `crm.bitrix24:<portal>.unassigned` (Bitrix24 always names a responsible person, so this is how a website form's or
   an integration's deals count as nobody's). `config set crm.bitrix24:<portal>.scope all` copies every one. The sync
@@ -24,6 +21,14 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 - The first sync after the upgrade marks other users' deals and leads deleted in the local copy: they leave lists and
   search, and their earlier copy stays in the store file. Set `crm.bitrix24:<portal>.scope all` before it to keep them.
 - A list answer without its items now fails that kind's sync (`invalid_response`) instead of ending the list there.
+
+## 0.8.0 — 08.11.2026
+
+### Added
+
+- The package ships `contracts/wirecat.json`, so WireCat Desktop can read what `b24` does, how to sign in and what
+  `sync` copies before it installs it. `b24 --wcat-describe` now answers format 2 with that file's Desktop section
+  and its SHA-256.
 
 ### Fixed
 
