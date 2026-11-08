@@ -47,17 +47,13 @@ const rowsOf = (result: unknown): Raw[] => {
 }
 
 /**
- * The responsible users a `mine` scope keeps, as numbers for the portal's filter; core has normalised them. A Bitrix24
- * deal or lead always has one, the creator by default, so the portal has no unassigned items of its own.
+ * The responsible users a `mine` scope keeps, as numbers for the portal's filter; core has checked and normalised
+ * them. A Bitrix24 deal or lead always has one, the creator by default, so the portal has no unassigned items.
  */
 const assigneesOf = (kind: CrmKind, context?: CrmCallContext): number[] | null => {
   const scope = context?.scope
   if (scope?.mode !== "mine" || (kind !== "deal" && kind !== "lead")) return null
-  const ids = [scope.self, ...scope.also]
-  const bad = ids.find((one) => !/^\d+$/.test(one))
-  if (bad !== undefined)
-    throw new CliError("validation_error", `unassigned takes Bitrix24 user ids, numbers: not "${bad}"`)
-  return [...new Set(ids.map(Number))]
+  return [...new Set([scope.self, ...scope.also].map(Number))]
 }
 
 /** `<last id>@<when the round started>`: keyset paging by id, so a row changed mid-round never shifts the rest. */
@@ -75,7 +71,7 @@ export interface BitrixCrmSource extends CrmSource {
 
 /**
  * The portal's CRM for core's sync: REST 3.0 lists by id with `updatedTime` for changes, since a webhook gets no
- * event feed, and a list of every id to find deletions. A `mine` scope limits deals and leads by `assignedById`.
+ * event feed, and a list of every id to find deletions. A `mine` scope limits a full round by `assignedById`.
  */
 export const bitrixCrmSource = (portal: () => BitrixTransport, now: () => number = Date.now): BitrixCrmSource => {
   const loaded = new Map<CrmKind, Promise<CrmField[]>>()
@@ -138,11 +134,10 @@ export const bitrixCrmSource = (portal: () => BitrixTransport, now: () => number
       if (last !== null) return { items, nextPage: `${last}@${started}` }
       return { items, cursor: new Date(started).toISOString() }
     },
-    async ids(kind, page, context): Promise<CrmIdPage> {
+    // Every id, whatever the scope: core narrows from the stored assignees, so the pass finds only real deletions.
+    async ids(kind, page): Promise<CrmIdPage> {
       const after = Number(page) || 0
-      const assignees = assigneesOf(kind, context)
-      const filter = [...(after ? [["id", ">", after]] : []), ...(assignees ? [["assignedById", "in", assignees]] : [])]
-      const rows = rowsOf((await list(kind, ["id"], filter)).result)
+      const rows = rowsOf((await list(kind, ["id"], after ? [["id", ">", after]] : [])).result)
       const ids = rows.map((raw) => id(raw.id)).filter((one): one is string => one !== null)
       const last = ids.at(-1)
       return last === undefined ? { ids } : { ids, nextPage: last }
