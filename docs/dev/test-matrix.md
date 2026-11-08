@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**177 ✅ · 23 ⛔ · 0 ❌** — 64 commands, 136 options.
+**183 ✅ · 36 ⛔ · 0 ❌** — 70 commands, 149 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -137,6 +137,25 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `api call` |  | ✅ |  |
 | `api call` | `--body` | ✅ |  |
 | `api call` | `--dry-run` | ✅ |  |
+| `schedule command` |  | ✅ |  |
+| `schedule command` | `--every` | ✅ |  |
+| `schedule command` | `--at` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists and removes b24's sync timer |
+| `schedule command` | `--at-time` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists and removes b24's sync timer |
+| `schedule command` | `--notify-on` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists and removes b24's sync timer |
+| `schedule command` | `--deliver-to` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists and removes b24's sync timer |
+| `schedule agent` |  | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists and removes b24's sync timer |
+| `schedule agent` | `--model` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists and removes b24's sync timer |
+| `schedule agent` | `--max-cost` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists and removes b24's sync timer |
+| `schedule agent` | `--max-cost-per-day` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists and removes b24's sync timer |
+| `schedule agent` | `--every` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists and removes b24's sync timer |
+| `schedule agent` | `--at` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists and removes b24's sync timer |
+| `schedule agent` | `--at-time` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists and removes b24's sync timer |
+| `schedule agent` | `--notify-on` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists and removes b24's sync timer |
+| `schedule agent` | `--deliver-to` | ⛔ | cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, lists and removes b24's sync timer |
+| `schedule list` |  | ✅ |  |
+| `schedule run` |  | ✅ |  |
+| `schedule remove` |  | ✅ |  |
+| `schedule exec` |  | ✅ |  |
 | `doctor` |  | ✅ |  |
 | `doctor` | `--online` | ✅ |  |
 | `skill show` |  | ✅ |  |
