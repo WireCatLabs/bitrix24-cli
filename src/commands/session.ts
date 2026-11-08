@@ -77,10 +77,12 @@ const statusCommand = () =>
   })
     .summary("show where the webhook comes from, and with --check as whom it acts")
     .description(
-      `show where this profile's webhook address comes from: ${IDENTITY.envPrefix}_TOKEN, the keyring or a file; never the ` +
-        "address. --check asks the portal whose rights it carries: the user's id, name and whether they are an admin",
+      `show where this profile's webhook address comes from, ${IDENTITY.envPrefix}_TOKEN, the keyring or a file, but never the address`,
     )
-    .option("--check", "ask the portal whether the webhook still works, and as whom")
+    .option(
+      "--check",
+      "ask the portal whether the webhook still works and whose it is: the user's id, name and admin rights",
+    )
     .action(async function (this: Command, args: { check?: boolean }) {
       const { profile, tokens } = contextOf(this)
       const stored = tokens.read(profile)

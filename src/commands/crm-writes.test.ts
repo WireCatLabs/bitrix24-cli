@@ -32,7 +32,7 @@ describe("create", () => {
     )
     expect(ran.code).toBe(0)
     const item = ran.json().item as Record<string, unknown>
-    expect(item).toMatchObject({ id: "80", created: true })
+    expect(item).toEqual({ operation_id: expect.any(String), id: "80", created: true })
     const call = portal.calls[0] as PortalCall
     expect(call).toMatchObject({ api: 3, method: "crm.company.add" })
     expect(call.body).toEqual({ fields: { revenue: 15000, title: "WireCat test org" } })
@@ -102,7 +102,7 @@ describe("update", () => {
   it("update sends only the named fields", async () => {
     const portal = fakePortal({ "crm.company.update": ok({ result: true }) })
     const ran = await b24(["work", "organizations", "update", "42", "--name", "New", "--json"], { portal })
-    expect(ran.json().item).toMatchObject({ id: "42", updated: ["title"] })
+    expect(ran.json().item).toEqual({ operation_id: expect.any(String), id: "42", updated: ["title"] })
     expect(portal.calls[0]?.body).toEqual({ id: 42, fields: { title: "New" } })
     expect((await b24(["work", "organizations", "update", "42"], { portal })).code).toBe(2)
     expect((await b24(["work", "organizations", "update", "abc", "--name", "x"], { portal })).code).toBe(2)

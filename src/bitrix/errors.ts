@@ -3,12 +3,18 @@ import { retryableStatus, statusToCode } from "@wirecat/cli-base/http"
 import { isRecord } from "../body.js"
 import { scopeOf } from "./methods.js"
 
+/*
+ * The codes below are documented at https://apidocs.bitrix24.com/error-codes.html (REST 2 and the system errors),
+ * https://apidocs.bitrix24.com/settings/oauth/error-codes.html (sign-in), https://apidocs.bitrix24.com/limits.html (the
+ * request limits) and https://apidocs.bitrix24.com/api-reference/rest-v3.html (REST 3.0's exceptions).
+ */
+
 /** The 503 refusal of a portal over its 2 requests a second (apidocs "REST API limits"). */
 const QUERY_LIMIT_WAIT_MS = 1_000
 /** A 429 without `operating_reset_at`: the operating limit is counted over ten one-minute baskets. */
 const OPERATING_WAIT_MS = 60_000
 
-const SIGN_IN = new Set(["NO_AUTH_FOUND", "INVALID_CREDENTIALS", "EXPIRED_TOKEN", "INVALID_TOKEN", "WRONG_AUTH_TYPE"])
+const SIGN_IN = new Set(["NO_AUTH_FOUND", "INVALID_CREDENTIALS", "EXPIRED_TOKEN", "INVALID_TOKEN"])
 const SCOPE = new Set(["INSUFFICIENT_SCOPE", "BITRIX_REST_V3_EXCEPTION_INSUFFICIENTSCOPEEXCEPTION"])
 const DENIED = new Set(["ACCESS_DENIED", "USER_ACCESS_ERROR", "BITRIX_REST_V3_EXCEPTION_ACCESSDENIEDEXCEPTION"])
 const NOT_FOUND = new Set(["NOT_FOUND", "BITRIX_REST_V3_EXCEPTION_ENTITYNOTFOUNDEXCEPTION"])
@@ -79,6 +85,11 @@ export const bitrixError = (
         scope: scopeOf(method),
       },
     )
+  // A method only an installed app may call (https://apidocs.bitrix24.com/api-reference/events/events.html).
+  if (code === "WRONG_AUTH_TYPE")
+    return as("permission_error", `Bitrix24 lets only an installed app call ${method}, not a webhook${named}`, {
+      reason: "webhook.app-only",
+    })
   if (code === "PORTAL_DELETED") return as("authentication_error", "this Bitrix24 portal was deleted")
   if ((code && DENIED.has(code)) || status === 403)
     return as("permission_error", `the webhook's user may not do ${method}${named}`, { reason: "bitrix.access-denied" })

@@ -23,6 +23,7 @@ export const USER_FIELDS = {
   active: { field: "ACTIVE", kind: "text" },
 } as const
 
+/** REST 2's upper-case user fields (https://apidocs.bitrix24.com/api-reference/user/user-fields.html). */
 export const fromBitrixUser = (raw: Raw): User => ({
   id: id(raw.ID) ?? "",
   name: fullName(raw.NAME, raw.LAST_NAME),
@@ -32,7 +33,10 @@ export const fromBitrixUser = (raw: Raw): User => ({
   department_ids: ids(raw.UF_DEPARTMENT),
 })
 
-/** `user.get` filters by whole values: `=NAME_SEARCH` is its own search over the name fields (apidocs user.get). */
+/**
+ * `user.get` filters by whole values: `=NAME_SEARCH` is its own search over the name fields
+ * (https://apidocs.bitrix24.com/api-reference/user/user-get.html).
+ */
 const userFilter = (conditions: readonly Condition[]) => {
   const filter = rest2Filter(conditions)
   const renamed: Record<string, unknown> = {}

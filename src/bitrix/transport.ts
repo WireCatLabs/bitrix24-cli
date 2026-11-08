@@ -93,9 +93,9 @@ export class BitrixTransport {
   }
 
   /**
-   * Reads are tried again on a refused rate or a lost answer. A write is sent once: whether Bitrix24 honours
-   * `Idempotency-Key` is not checked on a live portal, so a write that got no answer is `outcome_unknown` and the
-   * owner repeats it by hand.
+   * Reads are tried again on a refused rate or a lost answer. A write is sent once: on a live portal, a create repeated
+   * with the same `Idempotency-Key` made a second record, so a write that got no answer is `outcome_unknown` and the
+   * owner looks at the portal before repeating it.
    */
   async call(method: string, params: Record<string, unknown> = {}, options: CallOptions = {}): Promise<BitrixAnswer> {
     const known = methodOf(method)

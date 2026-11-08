@@ -24,7 +24,10 @@ export const PRODUCT_FIELDS = {
 
 const SELECT = ["ID", "NAME", "PRICE", "CURRENCY_ID", "ACTIVE", "SECTION_ID"]
 
-/** The CRM catalog through REST 2's crm.product.*; upper-case fields, as that older API names them. */
+/**
+ * The CRM catalog through REST 2's crm.product.*; upper-case fields, as that older API names them
+ * (https://apidocs.bitrix24.com/api-reference/crm/outdated/products/crm-product-fields.html).
+ */
 export const fromBitrixProduct = (raw: Raw): Product => ({
   id: id(raw.ID) ?? "",
   name: text(raw.NAME),

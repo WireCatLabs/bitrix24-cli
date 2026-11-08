@@ -28,6 +28,13 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 ### Fixed
 
 - `api show department.get` and `api call` named the method's scope `basic`; Bitrix24's is `department`.
+- A method that Bitrix24 lets only an installed app call (`WRONG_AUTH_TYPE`) is refused as `permission_error` with
+  the reason `webhook.app-only`. Before, `b24` said the webhook was refused and asked you to sign in again, which
+  cannot help. Watch for: a script that branched on `authentication_error` for this refusal.
+- `people` and `organizations` `create` and `update` declare their answers (`crm_record_created`,
+  `crm_record_updated`), so `--json` takes their field names and `commands info` lists them.
+- `session start` and troubleshooting name the same webhook scopes as the README: `crm`, `user_basic` and
+  `department`. Troubleshooting also asked for `catalog`, which `b24` does not use.
 
 ## 0.8.0 — 08.11.2026
 

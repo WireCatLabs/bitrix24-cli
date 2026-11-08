@@ -77,7 +77,7 @@ b24 session start [options]
 
 ### `b24 session status`
 
-show where this profile's webhook address comes from: B24_TOKEN, the keyring or a file; never the address. --check asks the portal whose rights it carries: the user's id, name and whether they are an admin
+show where this profile's webhook address comes from, B24_TOKEN, the keyring or a file, but never the address
 
 ```sh
 b24 session status [options]
@@ -85,7 +85,7 @@ b24 session status [options]
 
 | Option | What it does |
 |---|---|
-| `--check` | ask the portal whether the webhook still works, and as whom. |
+| `--check` | ask the portal whether the webhook still works and whose it is: the user's id, name and admin rights. |
 
 **Returns:** show where the webhook comes from, and with --check as whom it acts
 
@@ -637,7 +637,7 @@ b24 people create [options]
 | `--body <json>` | the other fields to set, as JSON with Bitrix24's own field names, such as {"post":"Buyer","assignedById":7}; naming another employee as the one responsible checks crm.assign-others. |
 | `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
 
-**Returns:** create one person on the portal
+**Returns:** crm record created — operation_id, id, created; every field: b24 commands info people create
 
 **Example:** `b24 work people create --first-name Anna --last-name Ivanova`
 
@@ -662,7 +662,7 @@ b24 people update <person> [options]
 | `--body <json>` | the other fields to set, as JSON with Bitrix24's own field names, such as {"post":"Buyer","assignedById":7}; naming another employee as the one responsible checks crm.assign-others. |
 | `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
 
-**Returns:** change one person on the portal; options left out keep their values
+**Returns:** crm record updated — operation_id, id, updated; every field: b24 commands info people update
 
 **Example:** `b24 work people update 4 --body '{"post":"Buyer"}'`
 
@@ -725,7 +725,7 @@ b24 organizations create [options]
 | `--body <json>` | the other fields to set, as JSON with Bitrix24's own field names, such as {"post":"Buyer","assignedById":7}; naming another employee as the one responsible checks crm.assign-others. |
 | `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
 
-**Returns:** create one organization on the portal
+**Returns:** crm record created — operation_id, id, created; every field: b24 commands info organizations create
 
 **Example:** `b24 work organizations create --name "Acme"`
 
@@ -749,7 +749,7 @@ b24 organizations update <organization> [options]
 | `--body <json>` | the other fields to set, as JSON with Bitrix24's own field names, such as {"post":"Buyer","assignedById":7}; naming another employee as the one responsible checks crm.assign-others. |
 | `--field <key=value>` | a custom field, by its label or code as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field. Over --body for the same field; --dry-run does not look the names up. |
 
-**Returns:** change one organization on the portal; options left out keep their values
+**Returns:** crm record updated — operation_id, id, updated; every field: b24 commands info organizations update
 
 **Example:** `b24 work organizations update 9 --name "Acme Ltd"`
 

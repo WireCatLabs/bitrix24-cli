@@ -20,6 +20,7 @@ const OWN: [reason: string, code: string, message: string][] = [
   ["webhook.refused", "authentication_error", "Bitrix24 refused this webhook"],
   ["webhook.scope-missing", "permission_error", "the webhook has no scope for this method"],
   ["bitrix.access-denied", "permission_error", "the webhook's user may not do this"],
+  ["webhook.app-only", "permission_error", "Bitrix24 lets only an installed app call this method, not a webhook"],
   ["method.unknown", "not_found", "Bitrix24 does not know this method, or the webhook has no scope for it"],
   ["operation.reused", "conflict", "this operation id was already used for a different request"],
   ["query.bad-value", "validation_error", "a query term takes an id or a number"],
