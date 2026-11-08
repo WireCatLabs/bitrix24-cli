@@ -79,6 +79,56 @@ step deals list status:open --limit 3 --json=ref,title,pipeline_name,stage,statu
 step leads list --limit 3 --json=ref,title,stage,status,amount,currency
 step people list --limit 3 --json=id,name
 step organizations list --limit 3 --json=id,name
+
+# The funnel board of one deal pipeline: only the shape is printed, never a stage's name or sum.
+board=$(b24 pipelines list --json 2>/dev/null | node -e '
+  let s = ""
+  process.stdin.on("data", (d) => (s += d)).on("end", () => {
+    let items = []
+    try { items = JSON.parse(s).items ?? [] } catch {}
+    console.log(items.find((one) => one.kind === "deal")?.ref ?? "")
+  })')
+printf '\n== b24 live pipelines show\n'
+if [ -z "$board" ]; then fail "pipelines list has no deal pipeline"; else
+  b24 pipelines show "$board" --json 2>/dev/null | node -e '
+    let s = ""
+    process.stdin.on("data", (d) => (s += d)).on("end", () => {
+      let p
+      try { p = JSON.parse(s).item } catch {}
+      const stages = p?.stages ?? []
+      const counted = stages.every((one) => "reached" in one && "items" in one)
+      if (p?.kind !== "deal" || !stages.length || !counted || typeof p.totals?.win_rate === "undefined") process.exit(1)
+      console.log(`ok: ${stages.length} stages, each with how many reached it, and the win rate`)
+    })' || fail "pipelines show gave no funnel board"
+fi
+
+# A CSV page: a header, then one record per row. Counted, never printed.
+csv() {
+  printf '\n== b24 live %s list --format csv --limit 3\n' "$1"
+  b24 "$1" list --format csv --limit 3 2>/dev/null | node -e '
+    let s = ""
+    process.stdin.on("data", (d) => (s += d)).on("end", () => {
+      const records = [[]]
+      let cell = "", quoted = false
+      for (let i = 0; i < s.length; i++) {
+        const c = s[i]
+        if (quoted) {
+          if (c === "\"" && s[i + 1] === "\"") { cell += c; i++ } else if (c === "\"") quoted = false; else cell += c
+        } else if (c === "\"") quoted = true
+        else if (c === ",") { records.at(-1).push(cell); cell = "" }
+        else if (c === "\n") { records.at(-1).push(cell.replace(/\r$/, "")); cell = ""; records.push([]) }
+        else cell += c
+      }
+      if (cell || records.at(-1).length) records.at(-1).push(cell); else records.pop()
+      const [header = [], ...rows] = records
+      const even = rows.every((row) => row.length === header.length)
+      const keyed = ["id", "ref"].some((name) => header.includes(name))
+      if (quoted || !keyed || !rows.length || rows.length > 3 || !even) process.exit(1)
+      console.log(`ok: a header of ${header.length} columns, then ${rows.length} rows of as many cells`)
+    })' || fail "$1 list --format csv is not a CSV table with a header"
+}
+csv deals
+csv people
 step products list --limit 3
 step users list --limit 3 --json=id,name
 step fields list deals --all
