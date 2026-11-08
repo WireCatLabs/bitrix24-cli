@@ -22,7 +22,7 @@ How the tests run, and what they never touch. The rules are the handbook's
   list. `pnpm exec cli-contract contracts/plan.json --update` rewrites the snapshots; review the diff.
 - `pnpm contracts:upgrade` checks that this build reads what the previous release wrote
   ([WC-TEST-14](../../node_modules/@wirecat/cli-base/docs/standards/testing.md)). `contracts/previous/` installs that
-  release from npm (`@wirecat/previous-cli`, now `@wirecat/bitrix24-cli@0.6.0`). `contracts/seed.mjs` loads its own
+  release from npm (`@wirecat/previous-cli`, now `@wirecat/bitrix24-cli@0.8.0`). `contracts/seed.mjs` loads its own
   modules and its own cli-core and syncs one deal and its pipeline from a fake portal into the synthetic store, as
   `b24 sync` would. `contracts/upgrade.json` then reads the deal with that release and with this build, and this
   build's sync cursors and pipelines. The webhook is not seeded: cli-core's token store reaches for the keyring even

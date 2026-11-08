@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@wirecat/previous-cli':
-        specifier: npm:@wirecat/bitrix24-cli@0.6.0
-        version: '@wirecat/bitrix24-cli@0.6.0(zod@4.6.7)'
+        specifier: npm:@wirecat/bitrix24-cli@0.8.0
+        version: '@wirecat/bitrix24-cli@0.8.0(zod@4.6.7)'
 
 packages:
 
@@ -263,13 +263,13 @@ packages:
   '@wasm-audio-decoders/opus-ml@0.0.3':
     resolution: {integrity: sha512-SEeTmk0eb3q5etJA/NHCRWW6BivTx9tqvNTmG0kg2ynuATEQRUZnwQE6Ibvl1BBvqIGHqI57+qyJMWmJBwb5XQ==}
 
-  '@wirecat/bitrix24-cli@0.6.0':
-    resolution: {integrity: sha512-rXXeQwOVsHpXkyDF9MFCHcQH0bp1r4ldks3GrJ2BzKZM4qbDeD3mTMpiNO1oXHfEVLY6wH7bc/mCDa84eYa0sw==}
+  '@wirecat/bitrix24-cli@0.8.0':
+    resolution: {integrity: sha512-Zr1O4y5HPw2v82uRdpYqffCcBD1YVYZXNKF0ewhEwh8FsVhK0dl+tdoq6ef8qq8BBziibTt/AA8xvmFkaSF3wA==}
     engines: {node: ^22.16.0 || >=24}
     hasBin: true
 
-  '@wirecat/cli-base@0.80.9':
-    resolution: {integrity: sha512-HCu3EVMpmDEJ4PqGoZg/ccUnSCJT6NZmwON4MTb2yO7JHvAk2NDn1Rv+l/rqKou+3v2LQ62LK4360sf6vmmsWA==}
+  '@wirecat/cli-base@0.82.0':
+    resolution: {integrity: sha512-xAO/H3dvHguW1drv6jk2fk1yUdY+cS0ep78VCeBxPi7y5NVQHGyuOeQY9Uf44Xbiqm5oUY6Nv6fqI35uzL2PDg==}
     engines: {node: '>=22'}
     hasBin: true
     peerDependencies:
@@ -290,13 +290,13 @@ packages:
   '@wirecat/cli-core-sqlite@1.1.0':
     resolution: {integrity: sha512-GpGlh/dAIX/nblBYCdT6DfWSLFxav9mxxeELQAfEuw+QZdT9unKxbi5xa02s/s4JS1P7n0PQx2sCABj4FlMRNw==}
 
-  '@wirecat/cli-core@0.608.0':
-    resolution: {integrity: sha512-KfKiSIns9MakVaHROTgwZlT379f8jINDjOcCPS1Dxd4in68Xndq2Dc6yq+GkgXf4yNwDhQcL8OmqJJTrBUUeWg==}
+  '@wirecat/cli-core@0.612.0':
+    resolution: {integrity: sha512-QU14Xi6gi+0s9f35SE7NlqrsPJRhy1ZgRQZczzYUFzKtSDn2Gw3zdNQBdQ2dh0fSz0n6jDgcJk2k29YqQ3wt3w==}
     engines: {node: ^22.16.0 || >=24}
     hasBin: true
     peerDependencies:
       '@napi-rs/canvas': '>=0.1.69 <2'
-      '@wirecat/cli-base': '>=0.80.7 <0.83.0'
+      '@wirecat/cli-base': '>=0.80.7 <0.86.0'
       commander: '>=15'
     peerDependenciesMeta:
       '@napi-rs/canvas':
@@ -1056,10 +1056,10 @@ snapshots:
     dependencies:
       '@wasm-audio-decoders/common': 9.0.7
 
-  '@wirecat/bitrix24-cli@0.6.0(zod@4.6.7)':
+  '@wirecat/bitrix24-cli@0.8.0(zod@4.6.7)':
     dependencies:
-      '@wirecat/cli-base': 0.80.9(commander@15.0.0)
-      '@wirecat/cli-core': 0.608.0(@wirecat/cli-base@0.80.9(commander@15.0.0))(commander@15.0.0)(zod@4.6.7)
+      '@wirecat/cli-base': 0.82.0(commander@15.0.0)
+      '@wirecat/cli-core': 0.612.0(@wirecat/cli-base@0.82.0(commander@15.0.0))(commander@15.0.0)(zod@4.6.7)
       commander: 15.0.0
       valibot: 1.5.0
     transitivePeerDependencies:
@@ -1073,7 +1073,7 @@ snapshots:
       - vitest
       - zod
 
-  '@wirecat/cli-base@0.80.9(commander@15.0.0)':
+  '@wirecat/cli-base@0.82.0(commander@15.0.0)':
     dependencies:
       '@valibot/to-json-schema': 1.8.0(valibot@1.5.0)
       cli-table3: 0.6.5
@@ -1091,7 +1091,7 @@ snapshots:
 
   '@wirecat/cli-core-sqlite@1.1.0': {}
 
-  '@wirecat/cli-core@0.608.0(@wirecat/cli-base@0.80.9(commander@15.0.0))(commander@15.0.0)(zod@4.6.7)':
+  '@wirecat/cli-core@0.612.0(@wirecat/cli-base@0.82.0(commander@15.0.0))(commander@15.0.0)(zod@4.6.7)':
     dependencies:
       '@anthropic-ai/sdk': 1.3.0(zod@4.6.7)
       '@bomb.sh/tab': 0.0.22(commander@15.0.0)
@@ -1101,7 +1101,7 @@ snapshots:
       '@valibot/to-json-schema': 1.8.0(valibot@1.5.0)
       '@wasm-audio-decoders/flac': 0.2.11
       '@wasm-audio-decoders/ogg-vorbis': 0.1.20
-      '@wirecat/cli-base': 0.80.9(commander@15.0.0)
+      '@wirecat/cli-base': 0.82.0(commander@15.0.0)
       '@wirecat/cli-core-onnx': 1.2.0
       '@wirecat/cli-core-sqlite': 1.1.0
       '@xmldom/xmldom': 0.9.12

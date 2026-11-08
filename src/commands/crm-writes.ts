@@ -1,8 +1,9 @@
 import { CliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
-import { REMOTE_WRITE, readApiBody } from "@wirecat/cli-core/cli"
+import { answerEntity, REMOTE_WRITE, readApiBody } from "@wirecat/cli-core/cli"
 import { fieldPairsOf } from "@wirecat/cli-core/crm"
 import { Command } from "commander"
+import * as v from "valibot"
 import { apiKeysOf, assigneeOf } from "../api-keys.js"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { parseBody, unambiguous } from "../body.js"
@@ -16,6 +17,9 @@ import { IDENTITY } from "../identity.js"
 import { write } from "./write.js"
 
 const B24 = IDENTITY.command
+
+const created = v.strictObject({ operation_id: v.string(), id: v.string(), created: v.literal(true) })
+const updated = v.strictObject({ operation_id: v.string(), id: v.string(), updated: v.array(v.string()) })
 
 interface Options {
   title?: string
@@ -124,7 +128,11 @@ const withOptions = (command: Command, options: Option[]) => {
 
 const createCommand = (kind: Kind) =>
   withOptions(
-    annotate(new Command("create"), { effects: REMOTE_WRITE, offline: false, examples: [kind.examples.create] }),
+    answerEntity(
+      annotate(new Command("create"), { effects: REMOTE_WRITE, offline: false, examples: [kind.examples.create] }),
+      "crm_record_created",
+      created,
+    ),
     kind.create,
   )
     .description(`create one ${kind.type.word} on the portal`)
@@ -147,7 +155,11 @@ const createCommand = (kind: Kind) =>
 
 const updateCommand = (kind: Kind) =>
   withOptions(
-    annotate(new Command("update"), { effects: REMOTE_WRITE, offline: false, examples: [kind.examples.update] }),
+    answerEntity(
+      annotate(new Command("update"), { effects: REMOTE_WRITE, offline: false, examples: [kind.examples.update] }),
+      "crm_record_updated",
+      updated,
+    ),
     kind.create,
   )
     .description(`change one ${kind.type.word} on the portal; options left out keep their values`)

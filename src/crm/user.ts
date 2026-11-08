@@ -3,7 +3,7 @@ import type { CrmDepartment, CrmUser } from "@wirecat/cli-core"
 import * as v from "valibot"
 import type { BitrixCaller } from "../bitrix/transport.js"
 import { type Condition, rest2Filter } from "./conditions.js"
-import { fullName, id, ids, numericId, type Raw, text, yes } from "./values.js"
+import { fullName, id, ids, numericId, type Raw, rawsOf, text, yes } from "./values.js"
 import { rest2Rows, type Window } from "./walk.js"
 
 /** An employee of the portal: who a record is assigned to. */
@@ -23,6 +23,7 @@ export const USER_FIELDS = {
   active: { field: "ACTIVE", kind: "text" },
 } as const
 
+/** REST 2's upper-case user fields (https://apidocs.bitrix24.com/api-reference/user/user-fields.html). */
 export const fromBitrixUser = (raw: Raw): User => ({
   id: id(raw.ID) ?? "",
   name: fullName(raw.NAME, raw.LAST_NAME),
@@ -32,7 +33,10 @@ export const fromBitrixUser = (raw: Raw): User => ({
   department_ids: ids(raw.UF_DEPARTMENT),
 })
 
-/** `user.get` filters by whole values: `=NAME_SEARCH` is its own search over the name fields (apidocs user.get). */
+/**
+ * `user.get` filters by whole values: `=NAME_SEARCH` is its own search over the name fields
+ * (https://apidocs.bitrix24.com/api-reference/user/user-get.html).
+ */
 const userFilter = (conditions: readonly Condition[]) => {
   const filter = rest2Filter(conditions)
   const renamed: Record<string, unknown> = {}
@@ -50,8 +54,8 @@ export const listUsers = async (portal: BitrixCaller, conditions: readonly Condi
 }
 
 export const getUser = async (portal: BitrixCaller, reference: string): Promise<User> => {
-  const answer = await portal.call("user.get", { FILTER: { ID: numericId(reference, "users show") } })
-  const found = Array.isArray(answer.result) ? (answer.result as Raw[])[0] : undefined
+  const answer = await portal.call("user.get", { FILTER: { ID: numericId(reference, "a user's id") } })
+  const found = rawsOf(answer.result)[0]
   if (!found) throw new CliError("not_found", `there is no user ${reference}`)
   return fromBitrixUser(found)
 }

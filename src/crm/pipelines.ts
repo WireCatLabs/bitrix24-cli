@@ -1,7 +1,7 @@
 import type { CrmPipeline, CrmStage } from "@wirecat/cli-core"
 import type { BitrixCaller } from "../bitrix/transport.js"
 import { LEAD_PIPELINE } from "./lead.js"
-import { number, outcomeOf, type Raw, text } from "./values.js"
+import { fieldOf, number, outcomeOf, type Raw, rawsOf, text } from "./values.js"
 
 /** Lead stages are the `STATUS` directory; deal stages `DEAL_STAGE` for pipeline 0 and `DEAL_STAGE_<id>` for the rest. */
 const directoryOf = (pipeline: string) => (pipeline === "0" ? "DEAL_STAGE" : `DEAL_STAGE_${pipeline}`)
@@ -15,21 +15,20 @@ const stagesOf = async (portal: BitrixCaller, directory: string): Promise<CrmSta
       order: { SORT: "ASC" },
       start,
     })
-    if (Array.isArray(answer.result)) for (const row of answer.result as Raw[]) rows.push(row)
+    for (const row of rawsOf(answer.result)) rows.push(row)
     if (answer.next === undefined || answer.next <= start) break
     start = answer.next
   }
   return rows.flatMap((raw) => {
     const externalId = text(raw.STATUS_ID)
     if (externalId === null) return []
-    const extra = (raw.EXTRA ?? {}) as Raw
     // The outcome comes from the stage's semantics, never its name (apidocs crm.status.fields).
     return [
       {
         externalId,
         name: text(raw.NAME) ?? externalId,
         position: number(raw.SORT) ?? 0,
-        outcome: outcomeOf(raw.SEMANTICS ?? extra.SEMANTICS),
+        outcome: outcomeOf(raw.SEMANTICS ?? fieldOf(raw.EXTRA, "SEMANTICS")),
       },
     ]
   })
@@ -39,9 +38,8 @@ const stagesOf = async (portal: BitrixCaller, directory: string): Promise<CrmSta
 export const bitrixPipelines = async (portal: BitrixCaller, kind: "deal" | "lead"): Promise<CrmPipeline[]> => {
   if (kind === "lead") return [{ ...LEAD_PIPELINE, stages: await stagesOf(portal, "STATUS") }]
   const answer = await portal.call("crm.category.list", { entityTypeId: 2 })
-  const categories = (answer.result as { categories?: unknown })?.categories
   const pipelines: CrmPipeline[] = []
-  for (const raw of Array.isArray(categories) ? (categories as Raw[]) : []) {
+  for (const raw of rawsOf(fieldOf(answer.result, "categories"))) {
     const externalId = text(raw.id) ?? "0"
     pipelines.push({
       externalId,

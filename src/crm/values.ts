@@ -10,6 +10,8 @@ export const isRaw = (value: unknown): value is Raw =>
 
 export const fieldOf = (value: unknown, key: string): unknown => (isRaw(value) ? value[key] : undefined)
 
+export const rawsOf = (value: unknown): Raw[] => (Array.isArray(value) ? value.filter(isRaw) : [])
+
 /** Bitrix24's stage semantics: `S` success, `F` failure, anything else still in progress (apidocs crm.status.fields). */
 export const outcomeOf = (semantics: unknown): StageOutcome =>
   semantics === "S" ? "won" : semantics === "F" ? "lost" : "open"
@@ -99,8 +101,8 @@ const empty = (value: unknown) => value === null || value === "" || (Array.isArr
  * The portal's own fields that hold a value, as it names them: their meaning is the portal owner's, so they stay
  * unmapped. `false` and `0` stay, since a yes/no field saying no is an answer.
  */
-export const customFields = (raw: Raw | undefined): Record<string, unknown> =>
-  Object.fromEntries(Object.entries(raw ?? {}).filter(([key, value]) => isCustom(key) && !empty(value)))
+export const customFields = (raw: unknown): Record<string, unknown> =>
+  isRaw(raw) ? Object.fromEntries(Object.entries(raw).filter(([key, value]) => isCustom(key) && !empty(value))) : {}
 
 export const contactSchema = v.strictObject({ type: v.nullable(v.string()), value: v.string() })
 export const nullableTime = v.nullable(isoTime)
