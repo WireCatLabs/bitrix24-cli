@@ -17,7 +17,6 @@ const NAMED = ["deal", "lead", "person", "organization", "pipeline", "stage"].fl
 /** b24's own reasons; the shared ones (`offline.refused`, `query.*`) are cli-core's and cli-base's. */
 const OWN: [reason: string, code: string, message: string][] = [
   ["webhook.malformed", "validation_error", "that is not a Bitrix24 incoming webhook address"],
-  ["webhook.missing", "authentication_error", "this profile has no webhook; sign in first"],
   ["webhook.refused", "authentication_error", "Bitrix24 refused this webhook"],
   ["webhook.scope-missing", "permission_error", "the webhook has no scope for this method"],
   ["bitrix.access-denied", "permission_error", "the webhook's user may not do this"],

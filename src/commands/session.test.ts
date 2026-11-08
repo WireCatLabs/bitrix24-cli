@@ -92,4 +92,14 @@ describe("session", () => {
     })
     expect(ran.json().item).toMatchObject({ state: "saved", token_from: "environment" })
   })
+
+  it("a portal command on a profile that is not signed in names session start", async () => {
+    const ran = await b24(["work", "deals", "list", "--json"], { keyring: memoryKeyring(), portal: portal() })
+    expect(ran.code).toBe(4)
+    expect(JSON.parse(ran.err).error).toMatchObject({
+      code: "authentication_error",
+      reason: "session.missing",
+      message: expect.stringContaining("b24 work session start"),
+    })
+  })
 })

@@ -11,6 +11,7 @@ import {
   listOf,
   logsInOrOut,
   outputFor,
+  ProfileTokenStore,
   profileFree,
   profilesHere,
   REMOTE_READ,
@@ -27,7 +28,6 @@ import { parseWebhook } from "../bitrix/webhook.js"
 import { configuration } from "../config.js"
 import { IDENTITY } from "../identity.js"
 import { type B24Environment, contextOf, transportFor, withPortal } from "../portal.js"
-import { TOKEN_VARIABLE, tokens } from "../token.js"
 import { webhookUser } from "../whoami.js"
 
 const answer = (command: Command, item: unknown) => renderAnswer(command, outputFor(command), itemOf(item))
@@ -77,7 +77,7 @@ const statusCommand = () =>
   })
     .summary("show where the webhook comes from, and with --check as whom it acts")
     .description(
-      `show where this profile's webhook address comes from: ${TOKEN_VARIABLE}, the keyring or a file; never the ` +
+      `show where this profile's webhook address comes from: ${IDENTITY.envPrefix}_TOKEN, the keyring or a file; never the ` +
         "address. --check asks the portal whose rights it carries: the user's id, name and whether they are an admin",
     )
     .option("--check", "ask the portal whether the webhook still works, and as whom")
@@ -120,7 +120,11 @@ const listCommand = () =>
       const env = environment.env ?? process.env
       // biome-ignore lint/plugin/no-own-settings: baseContext needs a profile, and this local read names none
       const { configuredProfiles } = configuration.resolveSettings({}, { env, needsProfile: false })
-      const store = tokens(env, environment.keyring)
+      const store = new ProfileTokenStore({
+        app: IDENTITY,
+        env,
+        ...(environment.keyring ? { keyring: environment.keyring } : {}),
+      })
       const items = profilesHere(IDENTITY, configuredProfiles, env).map((profile) => {
         try {
           const stored = store.read(profile)

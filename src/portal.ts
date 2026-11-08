@@ -1,10 +1,11 @@
-import { CliError, type SleepLike } from "@wirecat/cli-base"
+import type { SleepLike } from "@wirecat/cli-base"
 import {
   type BaseEnvironment,
   baseContext,
   type EventSink,
   environmentOf,
   type GlobalFlags,
+  ProfileTokenStore,
   refuseOffline,
 } from "@wirecat/cli-core/cli"
 import { Pacer, pacePathFor } from "@wirecat/cli-core/sends"
@@ -13,7 +14,6 @@ import { BitrixTransport, type FetchLike } from "./bitrix/transport.js"
 import { parseWebhook, type Webhook } from "./bitrix/webhook.js"
 import { configuration } from "./config.js"
 import { IDENTITY } from "./identity.js"
-import { tokens } from "./token.js"
 
 /** What a test hands `run()` in place of the portal and real waiting. */
 export interface B24Environment extends BaseEnvironment {
@@ -31,11 +31,9 @@ export const contextOf = (command: Command) => {
     environment: environmentOf<B24Environment>(command),
     flags: command.optsWithGlobals<GlobalFlags>(),
     profile: base.settings.profile,
-    tokens: tokens(base.env, base.keyring),
+    tokens: new ProfileTokenStore({ app: IDENTITY, env: base.env, ...(base.keyring ? { keyring: base.keyring } : {}) }),
   }
 }
-
-export const signInWords = (profile: string) => `\`${IDENTITY.command} ${profile} session start\``
 
 export const transportFor = (command: Command, webhook: Webhook, events?: EventSink): BitrixTransport => {
   const { environment, env, profile } = contextOf(command)
@@ -53,12 +51,7 @@ export const transportFor = (command: Command, webhook: Webhook, events?: EventS
 export const webhookOf = (command: Command): Webhook => {
   const { profile, tokens } = contextOf(command)
   refuseOffline(command, "the Bitrix24 portal")
-  const stored = tokens.read(profile)
-  if (!stored)
-    throw new CliError("authentication_error", `profile ${profile} is not signed in — run ${signInWords(profile)}`, {
-      reason: "webhook.missing",
-    })
-  return parseWebhook(stored.secret)
+  return parseWebhook(tokens.need(profile))
 }
 
 /** The body inside core's run: recorded, under `--timeout`, its requests in the run's events. */
