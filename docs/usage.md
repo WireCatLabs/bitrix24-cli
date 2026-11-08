@@ -47,6 +47,22 @@ Once a day it also lists every id, and marks deleted the ones the portal no long
 than half of them is held back, as a webhook that lost its rights lists none. A sync stops before its deadline or
 `--max-pages` and the next one goes on from there.
 
+### Whose deals and leads
+
+By default a sync copies only the deals and leads whose responsible person is the webhook's own user. Bitrix24 always
+names a responsible person (the creator, unless someone else is set), so it has no unassigned deals: name the users
+whose deals count as nobody's, such as the one a website form or an integration creates them as. A manager copies
+every one:
+
+```sh
+b24 work config set crm.bitrix24:<portal>.unassigned 15,31   # these users' deals and leads count as unassigned
+b24 work config set crm.bitrix24:<portal>.scope all          # every deal and lead; `mine` goes back
+```
+
+`<portal>` is the portal's host, such as `example.bitrix24.ru`. The sync answer says which `scope` it applied. A deal
+given to another user leaves the local copy at the next sync. After a change of scope the next sync lists deals and
+leads in full again, and `mine` marks the others deleted here. Contacts and companies are always copied whole.
+
 ## Read
 
 ```sh

@@ -95,9 +95,10 @@ const refusedValue = (): Reply => ({
   body: { error: { code: "BITRIX_REST_V3_EXCEPTION_VALIDATION_REQUESTVALIDATIONEXCEPTION", message: "Invalid value" } },
 })
 
-const OPERATORS = new Set(["=", "!=", ">", ">=", "<", "<="])
+const OPERATORS = new Set(["=", "!=", ">", ">=", "<", "<=", "in"])
 
 const compare = (left: unknown, op: string, right: unknown) => {
+  if (op === "in") return Array.isArray(right) && right.map(String).includes(String(left))
   const time = typeof right === "string" && /^\d{4}-\d{2}-\d{2}T/.test(right)
   const a = time ? Date.parse(String(left)) : typeof right === "number" ? Number(left) : String(left)
   const b = time ? Date.parse(right) : right
@@ -274,6 +275,10 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
       return Number(row.id)
     },
     row: (type: Type, id: number) => rows[type].get(id),
+    /** Sets the portal's clock, so a row put after a sync is newer than its cursor. */
+    setClock: (ms: number) => {
+      clock = ms
+    },
     remove: (type: Type, id: number) => rows[type].delete(id),
     loseNextAnswer: () => {
       lose = true
