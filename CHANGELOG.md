@@ -2,7 +2,7 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
-## Unreleased
+## 0.8.0 — 08.11.2026
 
 ### Added
 
@@ -14,9 +14,11 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 
 - The first sync of a large portal uses far less memory and takes a third less time: on synthetic data with 20,000
   deals, its peak falls from 3.7 GB to 0.55 GB.
-- `session add` asks for the webhook again when nothing arrived. An empty Enter at the hidden prompt, as after a
-  Ctrl+V that pasted nothing in a Linux terminal, failed at once with "no token was given". It now says to paste with
-  Ctrl+Shift+V (Cmd+V on macOS) and asks again, up to three times.
+- `session start` asks for the webhook again when nothing arrived. An empty Enter at the hidden prompt, as after a
+  Ctrl+V that pasted nothing in a Linux terminal, failed at once with "no webhook address was given". It now says to
+  paste with Ctrl+Shift+V (Cmd+V on macOS) and asks again, up to three times.
+- A crash while `b24` starts, or one an awaited step throws, exits 1 with b24's crash error (`command.crashed` as
+  JSON when stdout is not a terminal). It printed a raw Node stack.
 
 ## 0.7.0 — 08.11.2026
 
