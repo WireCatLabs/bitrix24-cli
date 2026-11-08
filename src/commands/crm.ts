@@ -26,7 +26,7 @@ import {
   wantedCodes,
   withCustomFields,
 } from "../crm/custom-query.js"
-import { loadFields } from "../crm/fields.js"
+import { type Field, loadFields } from "../crm/fields.js"
 import { getItem, type ItemType, listItems, resolveItem } from "../crm/items.js"
 import { ORGANIZATION, ORGANIZATION_FIELDS, organizationSchema } from "../crm/organization.js"
 import { PERSON, PERSON_FIELDS, personSchema } from "../crm/person.js"
@@ -35,6 +35,7 @@ import { getUser, listUsers, USER_FIELDS, userSchema } from "../crm/user.js"
 import type { Window } from "../crm/walk.js"
 import { IDENTITY } from "../identity.js"
 import { contextOf, withPortal } from "../portal.js"
+import { csvFormatOption, csvPaths, printCsv, refuseOtherOutput } from "./crm-csv.js"
 
 const B24 = IDENTITY.command
 
@@ -54,7 +55,7 @@ interface Noun<T> {
   examples: string[]
   list: (portal: BitrixTransport, terms: Map<string, Predicate>, window: Window) => Promise<Listed<T>>
   /** Deals, leads, people and organizations: a list that names the portal's own fields in its query or `--json`. */
-  custom?: (portal: BitrixTransport, ask: CustomAsk, window: Window) => Promise<Listed<T>>
+  custom?: (portal: BitrixTransport, ask: CustomAsk, window: Window) => Promise<Listed<T> & { fields: Field[] }>
   show: (portal: BitrixTransport, reference: string) => Promise<T>
   reference: string
 }
@@ -97,8 +98,8 @@ const windowOf = (command: Command): Window => {
   return settings.all ? { offset: 0 } : { offset: (settings.page - 1) * settings.limit, limit: settings.limit }
 }
 
-const listCommand = <T>(noun: Noun<T>) =>
-  withPaging(
+const listCommand = <T>(noun: Noun<T>) => {
+  const command = withPaging(
     withQuery(
       answerEntity(
         annotate(new Command("list"), { effects: REMOTE_READ, offline: false, examples: noun.examples }),
@@ -110,23 +111,30 @@ const listCommand = <T>(noun: Noun<T>) =>
   )
     .description(`list ${noun.what} on the portal, newest first`)
     .addHelpText("after", noun.custom ? CUSTOM_HELP : "")
-    .action(async function (this: Command, words: string[]) {
-      const path = commandPath(this)
-      const text = typedQuery(words)
-      const options = noun.word ? { defaultField: noun.word } : {}
-      const termsOf = (registry: QueryRegistry) => nativeTerms(listQuery(text, registry, path, options), path)
-      const names = noun.custom ? customNames(text, noun.query, path, noun.word) : []
-      const wanted = noun.custom ? wantedCodes(this.optsWithGlobals<{ fields?: string }>().fields) : undefined
-      const terms = names.length ? undefined : termsOf(noun.query)
-      const { settings } = contextOf(this)
-      const window = windowOf(this)
-      const found = await withPortal(this, (portal) =>
-        noun.custom && (terms === undefined || wanted !== undefined)
-          ? noun.custom(portal, { names, wanted, terms: termsOf }, window)
-          : noun.list(portal, terms ?? new Map(), window),
-      )
-      renderAnswer(this, outputFor(this), pagedList(path, settings, found))
-    })
+  if (noun.custom) command.addOption(csvFormatOption())
+  return command.action(async function (this: Command, words: string[]) {
+    const csv = this.opts<{ format?: "csv" }>().format === "csv"
+    if (csv) refuseOtherOutput(this)
+    const path = commandPath(this)
+    const text = typedQuery(words)
+    const options = noun.word ? { defaultField: noun.word } : {}
+    const termsOf = (registry: QueryRegistry) => nativeTerms(listQuery(text, registry, path, options), path)
+    const names = noun.custom ? customNames(text, noun.query, path, noun.word) : []
+    const paths = csv ? csvPaths(this, Object.keys((noun.schema as { entries?: object }).entries ?? {})) : []
+    const columns = this.optsWithGlobals<{ fields?: string }>().fields
+    const wanted = csv && columns === undefined ? "all" : noun.custom ? wantedCodes(columns) : undefined
+    const terms = names.length ? undefined : termsOf(noun.query)
+    const { settings } = contextOf(this)
+    const window = windowOf(this)
+    const found: Listed<T> & { fields?: Field[] } = await withPortal(this, (portal) =>
+      noun.custom && (terms === undefined || wanted !== undefined)
+        ? noun.custom(portal, { names, wanted, terms: termsOf }, window)
+        : noun.list(portal, terms ?? new Map(), window),
+    )
+    if (csv) return printCsv(this, { ...found, fields: found.fields ?? [] }, paths)
+    renderAnswer(this, outputFor(this), pagedList(path, settings, found))
+  })
+}
 
 const showCommand = <T>(noun: Noun<T>) =>
   answerEntity(
@@ -171,10 +179,11 @@ const itemNoun = <T extends { id: string }>(
       const chosen = filterableFields(fields, names)
       const terms = termsOf(withCustomFields(query, chosen))
       const custom = customConditions(terms, chosen)
-      return listItems(portal, type, [...conditionsOf(terms, shape.fields), ...custom], window, {
+      const found = await listItems(portal, type, [...conditionsOf(terms, shape.fields), ...custom], window, {
         codes: selectedCodes(fields, wanted),
         fields,
       })
+      return { ...found, fields }
     },
     show: async (portal, reference) => getItem(portal, type, await resolveItem(portal, type, reference)),
   }
@@ -186,7 +195,11 @@ export const crmCommands = (): Command[] => [
       PERSON,
       { noun: "people", entity: "crm_person", schema: personSchema, what: "contacts", fields: PERSON_FIELDS },
       { name: "name:ivan*" },
-      [`${B24} work people list`, `${B24} work people list name:ivan*`],
+      [
+        `${B24} work people list`,
+        `${B24} work people list name:ivan*`,
+        `${B24} work people list --format csv > people.csv`,
+      ],
     ),
     "read the portal's contacts",
   ),
@@ -201,7 +214,11 @@ export const crmCommands = (): Command[] => [
         fields: ORGANIZATION_FIELDS,
       },
       { name: "name:acme*" },
-      [`${B24} work organizations list`, `${B24} work organizations list name:acme*`],
+      [
+        `${B24} work organizations list`,
+        `${B24} work organizations list name:acme*`,
+        `${B24} work organizations list --format csv > organizations.csv`,
+      ],
     ),
     "read the portal's companies",
   ),

@@ -10,13 +10,13 @@ feature: it may already be on the way. The order is approximate and can change. 
 and companies (`organizations`), moves and closes deals and leads, and reads pipelines, stages, products and
 employees (`users`). `fields list` shows the portal's own fields with their options. `sync` copies pipelines,
 companies, contacts, deals and leads into the local WireCat store, so `deals`, `leads`, `pipelines` and `stages` work
-offline too, and `search all` searches them. `b24 api` reaches any portal method by name. Every command is in the
-[command reference](commands.md).
+offline too, and `search all` searches them. `pipelines show` is the sales funnel board: each stage's deals or leads,
+with their number and their total in each currency. `deals list`, `leads list`, `people list` and `organizations list`
+print a page as a CSV table for a spreadsheet with `--format csv`. `b24 api` reaches any portal method by name. Every
+command is in the [command reference](commands.md).
 
 ## Next
 
-- **A sales funnel board.** Deals grouped by stage, with the number of deals and their total in each currency per
-  stage.
 - **Contacts and companies from the local store.** `people` and `organizations` move to the same shared model as
   deals and leads, so they read from the local store and work offline.
 - **Custom fields of contacts kept locally.** The values of your portal's own fields on contacts are stored with the
@@ -29,7 +29,7 @@ offline too, and `search all` searches them. `b24 api` reaches any portal method
 - **Activities, to-dos and timeline comments** on deals, leads, contacts and companies.
 - **Quotes, smart invoices and smart processes.**
 - **A duplicate check before create.** `b24` warns when a contact, company or lead like the new one already exists.
-- **CSV import and export.**
+- **CSV import.** Export is there: `--format csv` on the lists.
 - **A Deals page in the WireCat desktop app.**
 
 What each released version changed is in the [changelog](../CHANGELOG.md).

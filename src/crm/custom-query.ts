@@ -23,7 +23,7 @@ export const customNames = (
 /** The custom fields a query names, each as typed, refused unless the portal can filter a list by it. */
 export const filterableFields = (fields: readonly Field[], names: readonly string[]): [string, Field][] =>
   names.map((name) => {
-    const field = fieldNamed(fields, name)
+    const field = fieldNamed(fields, name, "--query")
     if (!field.filterable)
       throw new CliError("validation_error", `the portal cannot filter a list by ${field.label ?? field.code}`, {
         reason: "field.not-filterable",
@@ -50,7 +50,7 @@ const NUMBERS = new Set(["integer", "double"])
  * as a number, and so does a number field's value.
  */
 const filterValue = (field: Field, typed: string): string | number => {
-  if (field.options) return Number(optionOf(field, typed))
+  if (field.options) return Number(optionOf(field, typed, "--query"))
   const number = Number(typed)
   return NUMBERS.has(field.type) && typed.trim() !== "" && Number.isFinite(number) ? number : typed
 }
@@ -86,7 +86,7 @@ export const selectedCodes = (fields: readonly Field[], wanted: string[] | "all"
   if (wanted === undefined) return []
   if (wanted === "all") return fields.map((field) => field.code)
   return wanted.map((code) => {
-    if (!fields.some((field) => field.code === code)) throw unknownField(fields, code)
+    if (!fields.some((field) => field.code === code)) throw unknownField(fields, code, "--json")
     return code
   })
 }

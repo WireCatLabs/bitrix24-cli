@@ -77,10 +77,11 @@ describe("custom fields in a list query", () => {
     const unknown = await b24(["work", "organizations", "list", "sourc:x", "--json"], { portal })
     expect(unknown.json().error).toMatchObject({
       reason: "field.unknown",
+      param: "--query",
       details: { candidates: [{ code: "UF_CRM_1_SOURCE", label: "Lead source" }] },
     })
     const option = await b24(["work", "organizations", "list", "lead_source:radio", "--json"], { portal })
-    expect(option.json().error).toMatchObject({ reason: "field.unknown-option" })
+    expect(option.json().error).toMatchObject({ reason: "field.unknown-option", param: "--query" })
     expect(portal.calls.map((call) => call.method)).not.toContain("crm.company.list")
   })
 
@@ -119,7 +120,7 @@ describe("custom fields in --json", () => {
     const portal = portalWith()
     const ran = await b24(["work", "organizations", "list", "--json=id,provider_metadata.UF_CRM_9_GONE"], { portal })
     expect(ran.code).toBe(2)
-    expect(ran.json().error).toMatchObject({ reason: "field.unknown" })
+    expect(ran.json().error).toMatchObject({ reason: "field.unknown", param: "--json" })
     expect(portal.calls.map((call) => call.method)).not.toContain("crm.company.list")
   })
 

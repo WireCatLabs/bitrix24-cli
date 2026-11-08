@@ -2,6 +2,26 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Added
+
+- `people list --format csv` and `organizations list --format csv` print a page as a CSV table for a spreadsheet, as
+  `deals list` and `leads list` now do too. stdout carries the table and nothing else; the way to the next page goes
+  to stderr. The columns are the record's own fields, then every custom field of the portal by its label, a money
+  field as `<label> amount` and `<label> currency`, a label two fields share told apart by its code. `--json=a,b`
+  beside it picks the columns, a custom field as `provider_metadata.<code>`. A cell that would start a spreadsheet
+  formula gets a leading `'`. `--jsonl`, a bare `--json` and `--compact` are refused with `output.conflict`, and
+  agents do not get the option.
+- `pipelines show` is the sales funnel board: each stage gives its deals or leads and their total in each currency,
+  and at a terminal prints a table of the stages with the open total, the won, the lost and the win rate. The
+  pipeline may be left out when the portal has only one.
+
+### Changed — may break callers
+
+- A custom field the portal does not have, named in a list's query or in `--json`, is refused with `param` set to
+  `--query` or `--json`, where it said `--field`.
+
 ## 0.5.0 — 07.11.2026
 
 ### Added

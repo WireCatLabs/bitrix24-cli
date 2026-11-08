@@ -15,6 +15,7 @@ import {
   profilesHere,
   REMOTE_READ,
   refuseCommandName,
+  refuseOffline,
   refuseUnderReadOnly,
   rememberAccount,
   renderAnswer,
@@ -25,7 +26,7 @@ import { Command } from "commander"
 import { parseWebhook } from "../bitrix/webhook.js"
 import { configuration } from "../config.js"
 import { IDENTITY } from "../identity.js"
-import { type B24Environment, contextOf, refuseOffline, transportFor, withPortal } from "../portal.js"
+import { type B24Environment, contextOf, transportFor, withPortal } from "../portal.js"
 import { TOKEN_VARIABLE, tokens } from "../token.js"
 import { webhookUser } from "../whoami.js"
 
@@ -56,9 +57,9 @@ const startCommand = () =>
       const storage = args.credentialStorage
       if (storage !== "keyring" && storage !== "file")
         throw new CliError("validation_error", "--credential-storage takes keyring or file")
-      const { env, flags, profile, tokens, run } = contextOf(this)
+      const { env, profile, tokens, run } = contextOf(this)
       refuseCommandName(profile, commandWords(rootOf(this)), IDENTITY.command)
-      refuseOffline(flags)
+      refuseOffline(this, "the Bitrix24 portal")
       const address = (await readSecret("Bitrix24 webhook address: ", secretInputOf(this))).trim()
       if (!address) throw new CliError("validation_error", "no webhook address was given")
       const webhook = parseWebhook(address)
