@@ -11,8 +11,8 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 
 ### Fixed
 
-- The first sync of a large portal is faster and needs much less memory. On 20,000 synthetic deals it peaks at about
-  0.6 GB instead of 3.7 GB and takes a third less time.
+- The first sync of a large portal is about twice as fast. It no longer slows down with every deal it saves: on
+  synthetic data, 20,000 deals, 10,000 leads and 20,000 contacts sync in 30 s instead of 61 s.
 
 ## 0.6.0 — 08.11.2026
 
