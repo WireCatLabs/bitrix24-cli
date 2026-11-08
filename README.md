@@ -17,8 +17,8 @@ b24 work deals list status:open
 
 `work` is a profile: a name you choose for one portal. It is the first word of every command that uses an account,
 and none is ever assumed. Make the webhook in Bitrix24 under Developer resources → Other → Incoming webhook, with the
-scopes `crm` and `user`. You need Node.js 22.16 or a later 22.x, or Node.js 24 or later. `b24 doctor` needs no
-network and shows what is set up.
+scopes `crm`, `user_basic` and `department` (for reporting lines). You need Node.js 22.16 or a later 22.x, or Node.js
+24 or later. `b24 doctor` needs no network and shows what is set up.
 
 More: [installation](docs/installation.md), [usage](docs/usage.md).
 

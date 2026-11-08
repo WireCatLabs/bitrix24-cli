@@ -1,5 +1,5 @@
 import type { CrmPipeline, CrmStage } from "@wirecat/cli-core"
-import type { BitrixTransport } from "../bitrix/transport.js"
+import type { BitrixCaller } from "../bitrix/transport.js"
 import { LEAD_PIPELINE } from "./lead.js"
 import { number, outcomeOf, type Raw, text } from "./values.js"
 
@@ -7,7 +7,7 @@ import { number, outcomeOf, type Raw, text } from "./values.js"
 const directoryOf = (pipeline: string) => (pipeline === "0" ? "DEAL_STAGE" : `DEAL_STAGE_${pipeline}`)
 
 /** One directory's stages, every page: REST 2 answers 50 rows at a time with `next`. */
-const stagesOf = async (portal: BitrixTransport, directory: string): Promise<CrmStage[]> => {
+const stagesOf = async (portal: BitrixCaller, directory: string): Promise<CrmStage[]> => {
   const rows: Raw[] = []
   for (let start = 0; ; ) {
     const answer = await portal.call("crm.status.list", {
@@ -36,7 +36,7 @@ const stagesOf = async (portal: BitrixTransport, directory: string): Promise<Crm
 }
 
 /** Deal pipelines are Bitrix24's deal categories, the default one id 0; leads get the one pipeline b24 makes them. */
-export const bitrixPipelines = async (portal: BitrixTransport, kind: "deal" | "lead"): Promise<CrmPipeline[]> => {
+export const bitrixPipelines = async (portal: BitrixCaller, kind: "deal" | "lead"): Promise<CrmPipeline[]> => {
   if (kind === "lead") return [{ ...LEAD_PIPELINE, stages: await stagesOf(portal, "STATUS") }]
   const answer = await portal.call("crm.category.list", { entityTypeId: 2 })
   const categories = (answer.result as { categories?: unknown })?.categories

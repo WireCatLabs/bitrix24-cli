@@ -48,10 +48,11 @@ const storeFor = async (
 /** The selected profile's portal for one command; cli-core closes the store before the answer prints. */
 const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }): Promise<CrmRun> => {
   const { env, profile, tokens } = contextOf(command)
-  const [{ PROVIDER }, { bitrixCrmSource }, { bitrixCrmWriter }] = await Promise.all([
+  const [{ PROVIDER }, { bitrixCrmSource }, { bitrixCrmWriter }, { ownMemoryAt, ownMemoryFile }] = await Promise.all([
     import("../store.js"),
     import("../crm/source.js"),
     import("../crm/writer.js"),
+    import("../crm/own-memory.js"),
   ])
   const accountOf = (): AccountKey => {
     return { provider: PROVIDER.name, account: new URL(parseWebhook(tokens.need(profile)).origin).host }
@@ -60,7 +61,7 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
   let transport: ReturnType<typeof transportFor> | undefined
   const portal = () => (transport ??= transportFor(command, webhookOf(command)))
   let source: ReturnType<typeof bitrixCrmSource> | undefined
-  const crm = () => (source ??= bitrixCrmSource(portal))
+  const crm = () => (source ??= bitrixCrmSource(portal, Date.now, ownMemoryAt(ownMemoryFile(env, profile))))
   return {
     profile,
     account,

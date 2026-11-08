@@ -37,7 +37,18 @@ export const DENIED_FAMILIES = [
 ]
 
 /** The families `b24` reads itself: a read outside them asks, since it may hold what the owner keeps from agents. */
-const READ_FAMILIES = ["crm", "catalog", "user", "profile", "methods", "method", "scope", "server.time", "app.info"]
+const READ_FAMILIES = [
+  "crm",
+  "catalog",
+  "user",
+  "department",
+  "profile",
+  "methods",
+  "method",
+  "scope",
+  "server.time",
+  "app.info",
+]
 
 const inFamily = (families: readonly string[], method: string) =>
   families.some((family) => method === family || method.startsWith(`${family}.`))
@@ -124,6 +135,9 @@ const readKeysOf = (method: string, body: Body): string[] => {
   if (product) return [product[1] === "get" ? "products.show" : "products.list"]
   // `users list` and `users show` both read through user.get.
   if (method === "user.get" || method === "user.search") return ["users.list", "users.show"]
+  // The org chart says who works with whom, as the user list does; own companies are organizations.
+  if (method.startsWith("department.")) return ["users.list"]
+  if (method.startsWith("crm.mycompany.")) return ["organizations.list"]
   if (method.startsWith("crm.category.")) return ["pipelines.list"]
   if (method.startsWith("crm.status.")) return ["stages.list"]
   return []

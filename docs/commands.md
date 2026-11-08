@@ -896,6 +896,138 @@ b24 api call <method> [options]
 
 **Example:** `b24 work api call crm.deal.list --body '{"select":["id","title"],"pagination":{"limit":5}}'`, `b24 work api call crm.status.list --body '{"filter":{"ENTITY_ID":"STATUS"}}'`
 
+## `b24 schedule`
+
+run a b24 command or an agent later or on a timer (systemd, launchd, Task Scheduler); an agent cannot send
+
+### `b24 schedule command`
+
+run b24 <args…> on a timer — reads save what they read, so this is how a chat's history fills the store
+
+**Changes something on this computer only.**
+
+```sh
+b24 schedule command <name> <args> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `name` | required | lowercase letters, digits and dashes. |
+| `args` | required | the b24 command after its name, e.g. -- messages list <chat> --limit 50. |
+
+| Option | What it does |
+|---|---|
+| `--every <duration>` | repeat: 30m, 2h, 1d. |
+| `--at <HH:MM>` | every day at this local time. |
+| `--at-time <time>` | one run: 30m, 2d from now, or an ISO time; the schedule removes itself after it. |
+| `--notify-on <when>` | desktop notice after a run (default failures for an agent that repeats with --every, else always). One of: `always`, `failures`, `never`. |
+| `--deliver-to <route>` | also send the result, when --notify-on says so, by the owner's own tg or mail: telegram-bot:<profile>/<chat id or user:id>, or email:<profile>/<address>; repeat it for more. |
+
+**Returns:** run b24 <args…> on a timer — reads save what they read, so this is how a…
+
+**Example:** `b24 personal schedule command health --every 1h -- doctor`, `b24 personal schedule command morning-check --at 08:00 -- doctor`
+
+### `b24 schedule agent`
+
+start an agent (claude or codex) with a prompt on a timer; it runs with B24_READ_ONLY=1, so it reads and drafts and cannot send — its answer is kept and you are notified
+
+**Changes something on this computer only.**
+
+```sh
+b24 schedule agent <name> <harness> <prompt> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `name` | required | lowercase letters, digits and dashes. |
+| `harness` | required | the agent to start. One of: `claude`, `codex`. |
+| `prompt` | required | what to do, e.g. "summarize what came in during the last day: b24 personal search messages 'date>1d' --newest --limit 20". |
+
+| Option | What it does |
+|---|---|
+| `--model <model>` | the model it runs on: an alias such as sonnet, or a model id; "" for the harness's default (default sonnet for claude, codex's own for codex, or the config file's). |
+| `--max-cost <usd>` | claude only: stop a run that costs more than this, in US dollars. |
+| `--max-cost-per-day <usd>` | claude only: start no run for the rest of the day once its runs cost this much, in US dollars; 0 for no cap (default 5, or the config file's). |
+| `--every <duration>` | repeat: 30m, 2h, 1d. |
+| `--at <HH:MM>` | every day at this local time. |
+| `--at-time <time>` | one run: 30m, 2d from now, or an ISO time; the schedule removes itself after it. |
+| `--notify-on <when>` | desktop notice after a run (default failures for an agent that repeats with --every, else always). One of: `always`, `failures`, `never`. |
+| `--deliver-to <route>` | also send the result, when --notify-on says so, by the owner's own tg or mail: telegram-bot:<profile>/<chat id or user:id>, or email:<profile>/<address>; repeat it for more. |
+
+**Returns:** start an agent (claude or codex) with a prompt on a timer; it runs with…
+
+**Example:** `b24 personal schedule agent review claude "review what came in overnight and draft replies" --at 08:30`, `b24 personal schedule agent triage codex "list what needs an answer today" --every 2h --max-cost 1`, `b24 personal schedule agent weekly claude "review the week's open threads" --at 09:00 --model opus`
+
+### `b24 schedule list`
+
+the schedules, when they run and how their last run went
+
+```sh
+b24 schedule list [query]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+**Returns:** scheduled job — name, kind, when, last, notify, deliver_to, spent_today_usd, max_cost_usd, and 1 more; every field: b24 commands info schedule list
+
+**Example:** `b24 personal schedule list`, `b24 personal schedule list kind:agent`
+
+### `b24 schedule run`
+
+run a schedule now, as its timer would, and wait for it
+
+**Changes something in the service.**
+
+```sh
+b24 schedule run <name>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `name` | required | the schedule's name, as `schedule list` shows it. |
+
+**Returns:** run a schedule now, as its timer would, and wait for it
+
+**Example:** `b24 personal schedule run health`
+
+### `b24 schedule remove`
+
+stop a schedule and remove its timer; its past output stays
+
+**Changes something on this computer only.**
+
+```sh
+b24 schedule remove <name>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `name` | required | the schedule's name, as `schedule list` shows it. |
+
+**Returns:** stop a schedule and remove its timer; its past output stays
+
+**Example:** `b24 personal schedule remove health`
+
+### `b24 schedule exec`
+
+what a timer runs, given the schedule's file; to run one by hand, use run
+
+**Changes something in the service.**
+
+```sh
+b24 schedule exec <file>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `file` | required | the schedule's schedule.json in the state folder, as the timer passes it. |
+
+**Returns:** what a timer runs, given the schedule's file; to run one by hand, use run
+
+**Example:** `b24 personal schedule exec ~/.local/share/bitrix24-cli/schedules/health/schedule.json`
+
 ## `b24 doctor`
 
 the state this installation is in, without connecting unless --online

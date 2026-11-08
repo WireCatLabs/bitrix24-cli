@@ -1,6 +1,7 @@
 import type { CrmItem, CrmPipeline } from "@wirecat/cli-core"
+import { contactsOn } from "./deal.js"
 import type { ItemType } from "./items.js"
-import { amountOf, epoch, id, ids, type Metadata, type Raw, text } from "./values.js"
+import { amountOf, epoch, id, type Metadata, type Raw, text } from "./values.js"
 
 /** Bitrix24's leads have no pipelines, only the one list of lead stages: core gets one pipeline of b24's making. */
 export const LEAD_PIPELINE: Omit<CrmPipeline, "stages"> = { externalId: "0", name: "Leads" }
@@ -12,7 +13,7 @@ export const fromBitrixLead = (raw: Raw, metadata?: Metadata): CrmItem => ({
   stage: text(raw.stageId) ?? "",
   ...amountOf(raw.opportunity, raw.currencyId),
   organization: id(raw.companyId),
-  people: ids(raw.contactsId).map((externalId) => ({ externalId, role: "contact" as const })),
+  people: contactsOn(raw),
   createdAt: epoch(raw.createdTime),
   updatedAt: epoch(raw.updatedTime),
   url: text(raw.url),
@@ -31,6 +32,7 @@ export const LEAD: ItemType<CrmItem> = {
     "opportunity",
     "currencyId",
     "companyId",
+    "contactId",
     "contactsId",
     "createdTime",
     "updatedTime",

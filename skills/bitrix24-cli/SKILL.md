@@ -37,7 +37,19 @@ Find your way with the tool itself, not this file:
 - Writes: `deals create --title … --pipeline … --stage … --amount … --currency … --close-date … --owner …`, `update`,
   `move <ref> <stage>`, `close <ref> won|lost`, `delete <ref>`; custom fields with `--field <label or code>=<value>`.
   After `outcome_unknown`, sync and `show` the record before writing it again: Bitrix24 makes a repeat a second time.
-- `b24 work session status --check` says whose rights the webhook carries.
+- `sync` also stores who is who: a contact is a person, `member-of` each of its companies with role `contact` (job
+  title beside it, never a role); a deal's contacts have role `contact` and its responsible employee role `owner`;
+  employees are people, `member-of` the own company ("My companies") as `employee`, and `reports-to` their
+  department's head. These are `reported`: the portal says so, the owner has not confirmed them. An ended one is
+  kept, not deleted. Read them with memo (`memo context person:<id>`, `memo organizations context`, `memo deals
+  context`; they need a memo version that has them).
+- Bitrix24 has no deal contact roles (decision-maker, influencer), no reporting lines between contacts, no parent
+  company and no relationship dates. Never infer them; say they are unknown unless the owner made the link.
+- A sync whose webhook lacks `user` or `department` reads the rest and names the gap in `issues`; answer "unknown",
+  not "none". Without `user_basic` employees have no e-mail, so they are not joined to the same person in mail; that gap,
+  and refused own companies, are kept as the account's gaps, not in `issues`.
+- `b24 work session status --check` says whose rights the webhook carries. Only the owner installs a sync timer
+  (`schedule command crm --every 1h -- sync`); MCP does not offer `schedule`.
 
 ## Rules
 

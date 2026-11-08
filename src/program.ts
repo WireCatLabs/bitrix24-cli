@@ -22,6 +22,7 @@ import { apiCommand } from "./commands/api.js"
 import { crmCommands } from "./commands/crm.js"
 import { crmSharedCommands } from "./commands/crm-shared.js"
 import { addWrites } from "./commands/crm-writes.js"
+import { scheduleCommand } from "./commands/schedule.js"
 import { sessionCommand } from "./commands/session.js"
 import { configuration } from "./config.js"
 import { IDENTITY, PACKAGE, SKILL } from "./identity.js"
@@ -81,6 +82,7 @@ export const definition = (): ProgramDefinition => ({
     ...crmSharedCommands(),
     ...crmCommands().map(addWrites),
     apiCommand(),
+    scheduleCommand(),
     appDoctorCommand(IDENTITY, configuration, { packageName: PACKAGE }),
     skillCommand(IDENTITY, SKILL),
     mcpCommand(),

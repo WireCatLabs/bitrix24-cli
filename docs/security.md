@@ -14,7 +14,10 @@ the fields it refused, never Bitrix24's description, which can quote what was ty
 
 The webhook acts with the rights of the employee who made it. A webhook made by an admin lets an agent read and
 change everything in the CRM. `session status --check` says whose rights it carries; make the webhook with an
-employee whose rights fit the work, and only the scopes it needs.
+employee whose rights fit the work, and only the scopes it needs. `sync` uses `crm`, `user_basic` for employees'
+e-mail addresses and `department` for the company structure. `user_basic` is enough: `sync` never changes an
+employee, and the full `user` scope adds the right to invite and edit them. The sync stores each employee's name,
+e-mail address, position and department head in the local store, where every WireCat tool can read them.
 
 Every write is checked against the permissions and kept in the send journal. `B24_READ_ONLY=1` refuses every write.
 Assigning a record to another employee is refused until you allow it. A stage change can still start the portal's own
@@ -28,9 +31,10 @@ stage, a pipeline or an owner is refused. Deleting a deal or a lead asks first. 
 leads, and names each kind it left out in `missing` and on stderr. With every kind it was asked for denied, it is
 refused.
 
-`api call` works from an allow list. It allows the CRM, catalog and user reads `b24` makes itself, and the deal, lead,
+`api call` works from an allow list. It allows the CRM, catalog, user and department reads `b24` makes itself, and the deal, lead,
 contact and company writes. Reads and writes both check the key of the command that reads or writes the same records:
-`api call crm.deal.list` checks `deals.list`, and `crm.item.update` with `entityTypeId` 2 checks `deals.update`. A body
+`api call crm.deal.list` checks `deals.list`, and `crm.item.update` with `entityTypeId` 2 checks `deals.update`.
+`department.get` checks `users.list`, and `crm.mycompany.*` checks `organizations.list`. A body
 that names one field twice in any spelling (`assignedById` and `ASSIGNED_BY_ID`, `fields` and `FIELDS`), an
 `entityTypeId` that is not a plain number, and a method with a suffix other than one `.json` are refused before
 anything is sent. A delete asks. Every other method asks too, and is refused without a terminal unless you pass
@@ -39,6 +43,12 @@ anything is sent. A delete asks. Every other method asks too, and is refused wit
 `user.add`, public file links, `event.bind` and `batch`. Their reads are refused too, since they hold messages,
 e-mails and tasks. `api show <method>` names a method's level. `api call` is
 not offered over MCP.
+
+`schedule command` installs a timer (systemd, launchd or Task Scheduler) that runs `b24` on its own, with no
+terminal. The timer runs `b24 schedule exec <file>`, and the schedule file in the state folder holds the words, the
+profile, your `PATH` and the folders `b24` uses (`B24_CONFIG_DIR`, `B24_STATE_DIR`, `MESSAGING_STORE`), never the
+webhook's address. Each run checks the permissions again. `B24_READ_ONLY` refuses
+`schedule command`, `remove`, `run` and `exec`, and no MCP tool offers `schedule`.
 
 A write that got no answer is not sent again: it is `outcome_unknown` with its `operation_id`. Check the portal, and
 write it again only if it is not there: Bitrix24 would make a repeat a second time.

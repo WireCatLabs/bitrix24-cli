@@ -459,6 +459,72 @@
     },
     {
       "path": [
+        "schedule",
+        "command"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "schedule.command"
+    },
+    {
+      "path": [
+        "schedule",
+        "agent"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "schedule.agent"
+    },
+    {
+      "path": [
+        "schedule",
+        "list"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "schedule.list"
+    },
+    {
+      "path": [
+        "schedule",
+        "run"
+      ],
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "schedule.run"
+    },
+    {
+      "path": [
+        "schedule",
+        "remove"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "schedule.remove"
+    },
+    {
+      "path": [
+        "schedule",
+        "exec"
+      ],
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "schedule.exec"
+    },
+    {
+      "path": [
         "doctor"
       ],
       "effects": {

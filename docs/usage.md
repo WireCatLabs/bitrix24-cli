@@ -15,8 +15,9 @@ command without one stops with exit code 2 and lists the profiles on this comput
 
 ## Sign in
 
-Make an incoming webhook in Bitrix24 (Developer resources → Other → Incoming webhook) with the scopes `crm` and
-`user`, and copy its address. Then:
+Make an incoming webhook in Bitrix24 (Developer resources → Other → Incoming webhook) with the scopes `crm`,
+`user_basic` (or `user`) and `department`, and copy its address. Without `user_basic` the sync gets no employee's
+e-mail; without `department` it gets no reporting lines; see [Who is who](#who-is-who). Then:
 
 ```sh
 b24 work session start
@@ -46,6 +47,78 @@ A sync reads by each record's change time, with an overlap, so a record changed 
 Once a day it also lists every id, and marks deleted the ones the portal no longer has; a list that would mark more
 than half of them is held back, as a webhook that lost its rights lists none. A sync stops before its deadline or
 `--max-pages` and the next one goes on from there.
+
+### Who is who
+
+The sync also stores who belongs where, as relationships between people, organizations and deals. Every WireCat
+tool reads them from the same store.
+
+| In Bitrix24 | In the store |
+|---|---|
+| A company | An organization. A company of the same name elsewhere stays a separate organization. |
+| Your own companies ("My companies") | Organizations marked as your own, read on every sync. |
+| A contact | A person, joined to one you already have only by the same e-mail address. |
+| A contact's companies | The person is a member of each, with the role `contact`. The first company is the main one. The job title (`post`) is kept beside it, never as a role. |
+| A deal's or lead's contacts | People on the deal with the role `contact`. The main contact is marked. |
+| The person responsible for a deal or lead | The deal's `owner`. |
+| An employee (a portal user) | A person, a member of your own company with the role `employee`. An employee who left keeps the person, and the membership ends. |
+| A department head | Each employee reports to the head of their department, and a head to the head of the parent department. |
+| A lead turned into a deal | The lead points to its deal. |
+
+Bitrix24 does not say everything, so some relationships come only from you:
+
+- A deal contact's part (decision-maker, influencer). Bitrix24 keeps no role for a deal's contact.
+- Who a contact reports to. Bitrix24 has reporting lines only between its own employees.
+- A company's parent company. Bitrix24 has no field for it.
+- When a relationship started or ended. Bitrix24 gives no dates.
+
+A relationship the sync stores is `reported`: Bitrix24 says so, and you have not confirmed it. It counts in every
+answer. When Bitrix24 stops saying it, for example when a contact leaves a company, the sync ends it: it stays, with
+the date it ended, and is never deleted. A relationship you made or confirmed is never changed by a sync. If you
+removed one, the sync does not write it again.
+
+To have new relationships wait for your review instead, set the account's `links` setting to `review`. The account is
+`bitrix24:` and your portal's address:
+
+```sh
+b24 work config set crm.bitrix24:example.bitrix24.com.links review
+```
+
+A company type, such as `CUSTOMER`, means nothing by itself, since an admin can rename or add types. Say what a type
+means, and the next sync makes each company of that type a customer of your own company, a supplier to it or a
+partner of it:
+
+```sh
+b24 work config set crm.bitrix24:example.bitrix24.com.company-types CUSTOMER=customer-of,SUPPLIER=supplier
+```
+
+When the webhook lacks the `user` or the `department` scope, the sync reads the rest and says what it could not read
+in `issues`. Nothing it stored before is ended for that. Without `user_basic` the employees come without their e-mail
+addresses, so an employee is not joined to the same person in your mail; a portal that refuses its own companies
+leaves its employees in no company. The sync keeps these two as gaps of the account, which memo's answers name, not
+in `issues`.
+
+### Keep it up to date
+
+`schedule` installs a timer (a systemd user timer on Linux, a launchd agent on macOS, a Task Scheduler task on
+Windows) that runs `sync` on its own:
+
+```sh
+b24 work schedule command crm --every 1h -- sync
+b24 work schedule list                           # the schedule and how its last run went
+b24 work schedule remove crm
+```
+
+### Ask memo about a client
+
+The relationships the sync stores are what `memo` answers from. These commands need a `memo` version that has them,
+which is not released yet:
+
+```sh
+memo context person:12                    # a person's companies, deals and reporting lines, with what was not read
+memo organizations context organization:4 # a company's people, deals and open work
+memo deals context deal:7 --brief         # a deal's people with their parts, its owner and stage
+```
 
 ## Read
 

@@ -2,6 +2,33 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Added
+
+- `sync` stores who is who in the local store: a contact is a member of each of its companies with the role
+  `contact`, its job title beside it; a deal's and a lead's contacts are on it with the main one marked, and the
+  person responsible is its `owner`; employees are members of your own companies, read every sync, and report to
+  their department's head; a converted lead points to its deal. These relationships are `reported` until you confirm
+  them, end instead of being deleted when the portal stops saying them, and never change one you made. Watch for: the
+  webhook needs the `user_basic` and `department` scopes for employees' e-mails and reporting lines; without them the
+  sync reads the rest.
+- `schedule` installs a timer that runs `sync`, or another `b24` command, on its own. MCP does not offer it.
+
+### Changed — may break callers
+
+- A deal's and a lead's `people` now include the employee responsible for it, with the role `owner`, beside its
+  contacts. Watch for: code that took every entry in `people` for a client's contact.
+- `store status` counts your own companies among the organizations and the portal's employees among the people.
+- `api call department.get` and `crm.mycompany.basic.list` run without asking, as the other reads `b24` makes do;
+  `department.get` is refused under `users.list: deny`, and `crm.mycompany.*` under `organizations.list: deny`.
+- A webhook made with only the `crm` and `user` scopes now gets an entry in the sync's `issues` on every sync:
+  Bitrix24 refuses it the departments. Add the `department` scope, or expect that entry.
+
+### Fixed
+
+- `api show department.get` and `api call` named the method's scope `basic`; Bitrix24's is `department`.
+
 ## 0.8.0 — 08.11.2026
 
 ### Added

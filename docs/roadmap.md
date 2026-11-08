@@ -10,10 +10,12 @@ feature: it may already be on the way. The order is approximate and can change. 
 and companies (`organizations`), moves and closes deals and leads, and reads pipelines, stages, products and
 employees (`users`). `fields list` shows the portal's own fields with their options. `sync` copies pipelines,
 companies, contacts, deals and leads into the local WireCat store, so `deals`, `leads`, `pipelines` and `stages` work
-offline too, and `search all` searches them. `pipelines show` is the sales funnel board: each stage's deals or leads,
-with their number and their total in each currency. `deals list`, `leads list`, `people list` and `organizations list`
-print a page as a CSV table for a spreadsheet with `--format csv`. `b24 api` reaches any portal method by name. Every
-command is in the [command reference](commands.md).
+offline too, and `search all` searches them. It also stores who is who: contacts as members of their companies,
+deals' contacts and owners, employees of your own company and their reporting lines. `pipelines show` is the sales
+funnel board: each stage's deals or leads, with their number and their total in each currency. `deals list`,
+`leads list`, `people list` and `organizations list` print a page as a CSV table for a spreadsheet with
+`--format csv`. `schedule` runs `sync` on a timer. `b24 api` reaches any portal method by name. Every command is in
+the [command reference](commands.md).
 
 ## Next
 

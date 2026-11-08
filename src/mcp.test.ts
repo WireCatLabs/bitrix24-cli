@@ -28,7 +28,7 @@ it("serves search, read and write, and runs a command through the CLI", async ()
   }
 })
 
-it("pins the commands an agent can find, and never offers api call", async () => {
+it("pins the commands an agent can find, and never offers api call or schedule", async () => {
   const program = createProgram()
   const tools = toolsFromCommands(describeProgram(program), {
     includeUnavailable: true,
@@ -40,5 +40,6 @@ it("pins the commands an agent can find, and never offers api call", async () =>
   const catalogue = Object.fromEntries(tools.map((tool) => [tool.command, tool.writes ? "write" : "read"]))
   await expect(`${JSON.stringify(catalogue, null, 2)}\n`).toMatchFileSnapshot("../contracts/mcp-catalogue.json")
   expect(Object.keys(catalogue)).not.toContain("api call")
+  expect(Object.keys(catalogue).filter((command) => command.startsWith("schedule"))).toEqual([])
   expect(catalogue["deals update"]).toBe("write")
 })

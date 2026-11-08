@@ -45,7 +45,7 @@ const API_METHOD_QUERY = {
   entity: "api_method",
   backend: "native",
   fields: [
-    termField("scope", "enum", "scope:crm", { values: ["crm", "user", "catalog", "task", "basic"] }),
+    termField("scope", "enum", "scope:crm", { values: ["crm", "user", "catalog", "task", "department", "basic"] }),
     termField("effect", "enum", "effect:read", { values: ["read", "write", "destructive"] }),
   ],
 } as const satisfies QueryRegistry

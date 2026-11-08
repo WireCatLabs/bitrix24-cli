@@ -1,5 +1,6 @@
 import { CliError, type CliErrorDetails, type ErrorCode } from "@wirecat/cli-base"
 import { retryableStatus, statusToCode } from "@wirecat/cli-base/http"
+import { scopeOf } from "./methods.js"
 
 /** The 503 refusal of a portal over its 2 requests a second (apidocs "REST API limits"). */
 const QUERY_LIMIT_WAIT_MS = 1_000
@@ -70,9 +71,14 @@ export const bitrixError = (
       retryable: true,
     })
   if (code && SCOPE.has(code))
-    return as("permission_error", `this webhook has no scope for ${method}${named}; add it in Bitrix24`, {
-      reason: "webhook.scope-missing",
-    })
+    return as(
+      "permission_error",
+      `this webhook has no ${scopeOf(method)} scope for ${method}${named}; add it in Bitrix24`,
+      {
+        reason: "webhook.scope-missing",
+        scope: scopeOf(method),
+      },
+    )
   if (code === "PORTAL_DELETED") return as("authentication_error", "this Bitrix24 portal was deleted")
   if ((code && DENIED.has(code)) || status === 403)
     return as("permission_error", `the webhook's user may not do ${method}${named}`, { reason: "bitrix.access-denied" })
@@ -82,12 +88,10 @@ export const bitrixError = (
       `Bitrix24 refused this webhook${named}; set a working one with \`b24 <profile> session start\``,
       { reason: "webhook.refused" },
     )
-  if (code === "ERROR_METHOD_NOT_FOUND")
-    return as(
-      "not_found",
-      `Bitrix24 does not know ${method}, or the webhook has no scope for it (ERROR_METHOD_NOT_FOUND)`,
-      { reason: "method.unknown" },
-    )
+  if (code === "ERROR_METHOD_NOT_FOUND" || code === "BITRIX_REST_V3_EXCEPTION_METHODNOTFOUNDEXCEPTION")
+    return as("not_found", `Bitrix24 does not know ${method}, or the webhook has no scope for it${named}`, {
+      reason: "method.unknown",
+    })
   if (code && NOT_FOUND.has(code)) return as("not_found", `${method}: Bitrix24 has no such record${named}`)
   if (code === "BITRIX_REST_V3_EXCEPTION_IDEMPOTENCYKEYREUSEDEXCEPTION")
     return as(

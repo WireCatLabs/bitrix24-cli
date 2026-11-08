@@ -17,6 +17,12 @@ b24 personal config unset limit
 key. Over MCP there is no one to ask, so `ask` lets the command run. `B24_READ_ONLY=1` refuses every write, whatever
 the permissions say.
 
+## CRM relationships
+
+Two settings of the shared store, not of a profile, say how the sync stores relationships:
+`crm.bitrix24:<portal>.links` (`reported` or `review`) and `crm.bitrix24:<portal>.company-types` (what each company
+type means). [Who is who](usage.md#who-is-who) shows both.
+
 ## Run records
 
 A command that fails is kept as a run, for `b24 runs list` and `runs show`. A command that calls the portal is kept
