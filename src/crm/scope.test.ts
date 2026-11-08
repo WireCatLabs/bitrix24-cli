@@ -1,6 +1,8 @@
+import { memoryKeyring } from "@wirecat/cli-base"
 import { openCache } from "@wirecat/cli-core/store"
 import { describe, expect, it } from "vitest"
 import { fakeCrm } from "../testing/fake-crm.js"
+import { FAKE_HOOK } from "../testing/fake-portal.js"
 import { b24 } from "../testing/harness.js"
 
 const SCOPE = "crm.bitrix24:example.bitrix24.test.scope"
@@ -36,14 +38,14 @@ const set = async (setting: string, value: string) =>
 describe("sync scope", () => {
   it("copies the webhook user's deals and leads by default, and the unassigned users' once set", async () => {
     const { crm } = portal()
-    expect((await sync(crm)).scope).toEqual({ mode: "mine", also: [] })
+    expect((await sync(crm)).scope).toEqual({ mode: "mine", self: "7", also: [] })
     expect(await titles(crm)).toEqual(["Own"])
     expect(await titles(crm, "leads")).toEqual([])
     const listed = crm.calls.filter(({ method }) => method === "crm.deal.list")
     expect(listed[0]?.body.filter).toContainEqual(["assignedById", "in", [OWN]])
 
     await set(UNASSIGNED, String(INTEGRATION))
-    expect((await sync(crm)).scope).toEqual({ mode: "mine", also: [String(INTEGRATION)] })
+    expect((await sync(crm)).scope).toEqual({ mode: "mine", self: "7", also: [String(INTEGRATION)] })
     expect(await titles(crm)).toEqual(["Own", "Website form"])
   })
 
@@ -93,5 +95,24 @@ describe("sync scope", () => {
     expect(answer.next).toBeUndefined()
     expect(String(answer.item.hint)).toContain(`b24 work config set ${UNASSIGNED}`)
     expect(await titles(crm)).toEqual([])
+  })
+
+  it("reads the webhook's user id however its address spells it", async () => {
+    const { crm } = portal()
+    const keyring = memoryKeyring({ "bitrix24-cli:token:work": FAKE_HOOK.replace("/rest/7/", "/rest/07/") })
+    const ran = await b24(["work", "sync", "--json"], { portal: crm, keyring })
+    expect((ran.json() as { item: Record<string, unknown> }).item.scope).toEqual({ mode: "mine", self: "7", also: [] })
+    expect(crm.calls.find(({ method }) => method === "crm.deal.list")?.body.filter).toContainEqual([
+      "assignedById",
+      "in",
+      [OWN],
+    ])
+    expect(await titles(crm)).toEqual(["Own"])
+  })
+
+  it("fails a kind whose list answer has no items, rather than take it for the end of the list", async () => {
+    const crm = fakeCrm({ "crm.deal.list": { body: { result: {} } } })
+    const deal = ((await sync(crm)).synced as Record<string, unknown>[]).find(({ kind }) => kind === "deal")
+    expect(deal?.error).toMatch(/without its items/)
   })
 })

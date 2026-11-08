@@ -12,8 +12,16 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 - A sync copies only the deals and leads of the webhook's own user by default, and those of the users in
   `crm.bitrix24:<portal>.unassigned` (Bitrix24 always names a responsible person, so this is how a website form's or
   an integration's deals count as nobody's). `config set crm.bitrix24:<portal>.scope all` copies every one. The sync
-  answer has `scope`, and each kind's `out_of_scope`: a deal given to another user leaves the local copy at the next
-  sync. Contacts and companies are copied whole as before.
+  answer has `scope` (with the webhook's user as `self`), and each kind's `out_of_scope`: a deal given to another user
+  leaves the local copy at the next sync. Contacts and companies are copied whole as before.
+- One portal's copy belongs to one user: a sync through a webhook of another user than the first sync's is refused
+  until `config unset crm.bitrix24:<portal>.self`.
+
+### Changed — may break callers
+
+- The first sync after the upgrade marks other users' deals and leads deleted in the local copy: they leave lists and
+  search, and their earlier copy stays in the store file. Set `crm.bitrix24:<portal>.scope all` before it to keep them.
+- A list answer without its items now fails that kind's sync (`invalid_response`) instead of ending the list there.
 
 ### Fixed
 
@@ -42,11 +50,6 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 
 - The first sync of a large portal is about twice as fast. It no longer slows down with every deal it saves: on
   synthetic data with 10 deal owners, 20,000 deals, 10,000 leads and 20,000 contacts sync in 30 s instead of 61 s.
-
-### Changed — may break callers
-
-- The first sync after the upgrade marks other users' deals and leads deleted in the local copy. Set
-  `crm.bitrix24:<portal>.scope all` before it to keep them.
 
 ## 0.6.0 — 08.11.2026
 

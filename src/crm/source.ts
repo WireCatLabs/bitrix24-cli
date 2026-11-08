@@ -39,22 +39,25 @@ const toOrganization = (raw: Raw, metadata?: Metadata): CrmOrganization => ({
   ...(metadata ? { metadata } : {}),
 })
 
+/** A list answer without `items` is refused: read as an empty page, it would end the round and empty an id pass. */
 const rowsOf = (result: unknown): Raw[] => {
   const items = (result as { items?: unknown })?.items
-  return Array.isArray(items) ? (items as Raw[]) : []
+  if (!Array.isArray(items)) throw new CliError("invalid_response", "the portal answered a list without its items")
+  return items as Raw[]
 }
 
 /**
- * The responsible users a `mine` scope lists: the webhook's own and the owner's `unassigned` ones. A Bitrix24 deal or
- * lead always has one, the creator by default, so the portal has no unassigned items of its own.
+ * The responsible users a `mine` scope keeps, as numbers for the portal's filter; core has normalised them. A Bitrix24
+ * deal or lead always has one, the creator by default, so the portal has no unassigned items of its own.
  */
-const assigneesOf = (kind: CrmKind, userId: string, context?: CrmCallContext): string[] | null => {
+const assigneesOf = (kind: CrmKind, context?: CrmCallContext): number[] | null => {
   const scope = context?.scope
   if (scope?.mode !== "mine" || (kind !== "deal" && kind !== "lead")) return null
-  const bad = scope.also.find((one) => !/^\d+$/.test(one))
+  const ids = [scope.self, ...scope.also]
+  const bad = ids.find((one) => !/^\d+$/.test(one))
   if (bad !== undefined)
     throw new CliError("validation_error", `unassigned takes Bitrix24 user ids, numbers: not "${bad}"`)
-  return [...new Set([userId, ...scope.also])]
+  return [...new Set(ids.map(Number))]
 }
 
 /** `<last id>@<when the round started>`: keyset paging by id, so a row changed mid-round never shifts the rest. */
@@ -108,42 +111,37 @@ export const bitrixCrmSource = (portal: () => BitrixTransport, now: () => number
 
   return {
     provider: "bitrix24",
-    traits: { kinds: ["organization", "person", "deal", "lead"], removedInChanges: false, scoped: true },
+    traits: { kinds: ["organization", "person", "deal", "lead"], removedInChanges: false },
+    self: () => portal().userId,
     pipelines: (kind) => bitrixPipelines(portal(), kind),
     async changes<K extends CrmKind>(kind: K, cursor: string | null, page?: string, context?: CrmCallContext) {
       const since = cursor === null ? null : Date.parse(cursor)
       if (since !== null && Number.isNaN(since)) return { reset: true } as CrmChanges<CrmRecords[K]>
       const { after, started } = pageOf(page, now())
-      const assignees = assigneesOf(kind, portal().userId, context)
+      const assignees = assigneesOf(kind, context)
       const defined = await custom(kind)
-      // A round of changes reads every assignee's, so a row given to someone else is seen leaving the scope.
+      // Only a full round is filtered: a round of changes reads every assignee's, so core sees a deal given away.
       const filter = [
         ...(after ? [["id", ">", after]] : []),
         ...(since === null
           ? assignees
-            ? [["assignedById", "in", assignees.map(Number)]]
+            ? [["assignedById", "in", assignees]]
             : []
           : [["updatedTime", ">=", portalTime(since - OVERLAP_MS)]]),
       ]
       const rows = rowsOf(
         (await list(kind, [...TYPES[kind].select, ...defined.map(({ code }) => code)], filter)).result,
       )
-      const inScope = (raw: Raw) => !assignees || assignees.includes(id(raw.assignedById) ?? "")
-      const items = rows.filter(inScope).map((raw) => mapped(kind, raw, defined)) as CrmRecords[K][]
-      const outOfScope = rows.filter((raw) => !inScope(raw)).flatMap((raw) => id(raw.id) ?? [])
-      const left = outOfScope.length ? { outOfScope } : {}
+      const items = rows.map((raw) => mapped(kind, raw, defined)) as CrmRecords[K][]
       const last = id(rows.at(-1)?.id)
       // An empty page ends the round, not a short one: a portal that caps pages below PAGE still lists every row.
-      if (last !== null) return { items, ...left, nextPage: `${last}@${started}` }
-      return { items, ...left, cursor: new Date(started).toISOString() }
+      if (last !== null) return { items, nextPage: `${last}@${started}` }
+      return { items, cursor: new Date(started).toISOString() }
     },
     async ids(kind, page, context): Promise<CrmIdPage> {
       const after = Number(page) || 0
-      const assignees = assigneesOf(kind, portal().userId, context)
-      const filter = [
-        ...(after ? [["id", ">", after]] : []),
-        ...(assignees ? [["assignedById", "in", assignees.map(Number)]] : []),
-      ]
+      const assignees = assigneesOf(kind, context)
+      const filter = [...(after ? [["id", ">", after]] : []), ...(assignees ? [["assignedById", "in", assignees]] : [])]
       const rows = rowsOf((await list(kind, ["id"], filter)).result)
       const ids = rows.map((raw) => id(raw.id)).filter((one): one is string => one !== null)
       const last = ids.at(-1)
