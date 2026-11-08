@@ -2,6 +2,14 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Added
+
+- The package ships `contracts/wirecat.json`, so WireCat Desktop can read what `b24` does, how to sign in and what
+  `sync` copies before it installs it. `b24 --wcat-describe` now answers format 2 with that file's Desktop section
+  and its SHA-256.
+
 ## 0.7.0 — 08.11.2026
 
 ### Added

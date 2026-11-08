@@ -1,0 +1,822 @@
+{
+  "wcat_manifest": 2,
+  "name": "b24",
+  "description": "read and change a Bitrix24 portal's CRM",
+  "docs_url": "https://wirecat.dev/en/docs/b24",
+  "package": "@wirecat/bitrix24-cli",
+  "bin": "wcat-b24",
+  "commands": [
+    {
+      "path": [
+        "commands"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "none"
+      }
+    },
+    {
+      "path": [
+        "commands",
+        "info"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "none"
+      }
+    },
+    {
+      "path": [
+        "session",
+        "start"
+      ],
+      "effects": {
+        "remote": "read",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "session",
+        "status"
+      ],
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "session",
+        "end"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "session",
+        "list"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "sync"
+      ],
+      "effects": {
+        "remote": "read",
+        "local": "write"
+      },
+      "permission": "sync"
+    },
+    {
+      "path": [
+        "store",
+        "status"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "store.status"
+    },
+    {
+      "path": [
+        "deals",
+        "list"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "deals.list"
+    },
+    {
+      "path": [
+        "deals",
+        "show"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "deals.show"
+    },
+    {
+      "path": [
+        "deals",
+        "create"
+      ],
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "deals.create"
+    },
+    {
+      "path": [
+        "deals",
+        "update"
+      ],
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "deals.update"
+    },
+    {
+      "path": [
+        "deals",
+        "move"
+      ],
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "deals.move"
+    },
+    {
+      "path": [
+        "deals",
+        "close"
+      ],
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "deals.close"
+    },
+    {
+      "path": [
+        "deals",
+        "delete"
+      ],
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "deals.delete"
+    },
+    {
+      "path": [
+        "leads",
+        "list"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "leads.list"
+    },
+    {
+      "path": [
+        "leads",
+        "show"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "leads.show"
+    },
+    {
+      "path": [
+        "leads",
+        "create"
+      ],
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "leads.create"
+    },
+    {
+      "path": [
+        "leads",
+        "update"
+      ],
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "leads.update"
+    },
+    {
+      "path": [
+        "leads",
+        "move"
+      ],
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "leads.move"
+    },
+    {
+      "path": [
+        "leads",
+        "close"
+      ],
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "leads.close"
+    },
+    {
+      "path": [
+        "leads",
+        "delete"
+      ],
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "leads.delete"
+    },
+    {
+      "path": [
+        "pipelines",
+        "list"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "pipelines.list"
+    },
+    {
+      "path": [
+        "pipelines",
+        "show"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "pipelines.show"
+    },
+    {
+      "path": [
+        "stages",
+        "list"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "stages.list"
+    },
+    {
+      "path": [
+        "fields",
+        "list"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "fields.list"
+    },
+    {
+      "path": [
+        "search",
+        "all"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "search.all"
+    },
+    {
+      "path": [
+        "people",
+        "list"
+      ],
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "people.list"
+    },
+    {
+      "path": [
+        "people",
+        "show"
+      ],
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "people.show"
+    },
+    {
+      "path": [
+        "people",
+        "create"
+      ],
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "people.create"
+    },
+    {
+      "path": [
+        "people",
+        "update"
+      ],
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "people.update"
+    },
+    {
+      "path": [
+        "organizations",
+        "list"
+      ],
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "organizations.list"
+    },
+    {
+      "path": [
+        "organizations",
+        "show"
+      ],
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "organizations.show"
+    },
+    {
+      "path": [
+        "organizations",
+        "create"
+      ],
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "organizations.create"
+    },
+    {
+      "path": [
+        "organizations",
+        "update"
+      ],
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "organizations.update"
+    },
+    {
+      "path": [
+        "products",
+        "list"
+      ],
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "products.list"
+    },
+    {
+      "path": [
+        "products",
+        "show"
+      ],
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "products.show"
+    },
+    {
+      "path": [
+        "users",
+        "list"
+      ],
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "users.list"
+    },
+    {
+      "path": [
+        "users",
+        "show"
+      ],
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "users.show"
+    },
+    {
+      "path": [
+        "api",
+        "list"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "none"
+      }
+    },
+    {
+      "path": [
+        "api",
+        "show"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "none"
+      }
+    },
+    {
+      "path": [
+        "api",
+        "call"
+      ],
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "doctor"
+      ],
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "skill",
+        "show"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "skill",
+        "install"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "skill",
+        "status"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "mcp",
+        "serve"
+      ],
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "mcp",
+        "revoke"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "mcp",
+        "server",
+        "start"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "mcp",
+        "server",
+        "stop"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "mcp",
+        "server",
+        "status"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "mcp",
+        "config"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "mcp",
+        "add"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "mcp",
+        "check"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "upgrade"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "config",
+        "show"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "config",
+        "set"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "config",
+        "unset"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "config",
+        "migrate"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "config",
+        "repair"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      }
+    },
+    {
+      "path": [
+        "runs",
+        "list"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "runs",
+        "show"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      }
+    },
+    {
+      "path": [
+        "runs",
+        "path"
+      ],
+      "effects": {
+        "remote": "none",
+        "local": "none"
+      }
+    }
+  ],
+  "desktop": {
+    "tagline": "Bitrix24 CRM: deals, leads, contacts and companies",
+    "profiles": {
+      "args": [
+        "session",
+        "list",
+        "--no-record",
+        "--json"
+      ],
+      "shape": "items"
+    },
+    "doctor": [
+      "{profile}",
+      "doctor",
+      "--record",
+      "--json"
+    ],
+    "runs": {
+      "list": [
+        "runs",
+        "list",
+        "{query}",
+        "--limit",
+        "{limit}",
+        "--page",
+        "{page}",
+        "--no-record",
+        "--json"
+      ],
+      "show": [
+        "runs",
+        "show",
+        "{run}",
+        "--no-record",
+        "--json"
+      ]
+    },
+    "search": null,
+    "setup": [
+      "{profile}",
+      "session",
+      "start"
+    ],
+    "signIn": {
+      "gives": "Lets your agent read and change the portal's CRM with the rights of the employee who made the webhook.",
+      "asks": "An incoming webhook address, from Developer resources → Other → Incoming webhook, with the crm and user scopes, and department for reporting lines."
+    },
+    "skill": {
+      "status": [
+        "skill",
+        "status",
+        "--no-record",
+        "--json"
+      ],
+      "install": [
+        "skill",
+        "install",
+        "--for",
+        "{target}",
+        "--json"
+      ],
+      "show": [
+        "skill",
+        "show",
+        "--no-record",
+        "--json"
+      ]
+    },
+    "mcpServer": {
+      "start": [
+        "mcp",
+        "server",
+        "start",
+        "--port",
+        "{port}",
+        "--public-url",
+        "{url}",
+        "--profiles",
+        "all",
+        "--json"
+      ],
+      "stop": [
+        "mcp",
+        "server",
+        "stop",
+        "--profiles",
+        "all",
+        "--json"
+      ],
+      "status": [
+        "mcp",
+        "server",
+        "status",
+        "--profiles",
+        "all",
+        "--no-record",
+        "--json"
+      ],
+      "revoke": [
+        "mcp",
+        "revoke",
+        "--profiles",
+        "all",
+        "--json"
+      ],
+      "config": [
+        "mcp",
+        "config",
+        "--profiles",
+        "all",
+        "--no-record",
+        "--json"
+      ]
+    },
+    "tasks": null,
+    "sync": {
+      "run": [
+        "{profile}",
+        "sync",
+        "--record",
+        "--json"
+      ],
+      "last": [
+        "runs",
+        "list",
+        "command:sync",
+        "status:success",
+        "--limit",
+        "50",
+        "--no-record",
+        "--json"
+      ],
+      "lastShape": "runs",
+      "what": "deals, leads, contacts and companies",
+      "note": null
+    },
+    "storeInfo": null,
+    "storeTables": null,
+    "storeTableSizes": null,
+    "storeCheck": null,
+    "storeBackup": null,
+    "storeBackupEncrypted": null,
+    "storeResetPreview": null,
+    "storeReset": null,
+    "storage": {
+      "app": "bitrix24-cli",
+      "env": "B24"
+    },
+    "settings": null
+  }
+}
