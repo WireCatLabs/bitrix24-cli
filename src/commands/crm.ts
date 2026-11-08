@@ -57,7 +57,9 @@ interface Noun<T> {
   /** Deals, leads, people and organizations: a list that names the portal's own fields in its query or `--json`. */
   custom?: (portal: BitrixTransport, ask: CustomAsk, window: Window) => Promise<Listed<T> & { fields: Field[] }>
   show: (portal: BitrixTransport, reference: string) => Promise<T>
+  /** The argument `show` takes, a singular noun (WC-CMD-13). */
   reference: string
+  takes: string
 }
 
 const nativeQuery = (
@@ -147,7 +149,7 @@ const showCommand = <T>(noun: Noun<T>) =>
     noun.schema,
   )
     .description(`show one of the ${noun.what} on the portal`)
-    .argument(`<${noun.reference}>`, `the ${noun.reference} as list prints it`)
+    .argument(`<${noun.reference}>`, `the ${noun.reference}'s ${noun.takes}, as list prints it`)
     .action(async function (this: Command, reference: string) {
       const item = await withPortal(this, (portal) => noun.show(portal, reference))
       renderAnswer(this, outputFor(this), itemOf(item))
@@ -178,7 +180,8 @@ const itemNoun = <T extends { id: string }>(
     query,
     ...(word ? { word } : {}),
     examples: listExamples,
-    reference: "id-or-name",
+    reference: type.word,
+    takes: "id or name",
     list: (portal, terms, window) => listItems(portal, type, conditionsOf(terms, shape.fields), window),
     custom: async (portal, { names, wanted, terms: termsOf }, window) => {
       const fields = await loadFields(portal, type.type)
@@ -237,7 +240,8 @@ export const crmCommands = (): Command[] => [
       query: nativeQuery("product", productSchema, PRODUCT_FIELDS),
       word: "name",
       examples: [`${B24} work products list`, `${B24} work products list active:true name:chair*`],
-      reference: "id",
+      reference: "product",
+      takes: "id",
       list: (portal, terms, window) => listProducts(portal, conditionsOf(terms, PRODUCT_FIELDS), window),
       show: getProduct,
     },
@@ -251,7 +255,8 @@ export const crmCommands = (): Command[] => [
       what: "employees",
       query: nativeQuery("user", userSchema, USER_FIELDS),
       examples: [`${B24} work users list`, `${B24} work users list active:true`],
-      reference: "id",
+      reference: "user",
+      takes: "id",
       list: (portal, terms, window) => listUsers(portal, conditionsOf(terms, USER_FIELDS), window),
       show: getUser,
     },
