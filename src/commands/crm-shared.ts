@@ -47,7 +47,7 @@ const storeFor = async (
     const folder = mkdtempSync(join(tmpdir(), "b24-empty-"))
     const removing = () => rmSync(folder, { recursive: true, force: true })
     try {
-      const empty = await withProfile(openB24Store({ ...env, MESSAGING_STORE: join(folder, "wirecat.db") }), profile, {
+      const empty = await withProfile({ ...env, MESSAGING_STORE: join(folder, "wirecat.db") }, profile, {
         provider: PROVIDER.name,
         account: profile,
       })
@@ -59,11 +59,12 @@ const storeFor = async (
       throw error
     }
   }
-  return withProfile(openB24Store(env), profile, accountOf())
+  return withProfile(env, profile, accountOf())
 }
 
-const withProfile = async (opening: Promise<MessageStore>, profile: string, account: AccountKey) => {
-  const store = await opening
+const withProfile = async (env: NodeJS.ProcessEnv, profile: string, account: AccountKey) => {
+  const { openB24Store } = await import("../store.js")
+  const store = await openB24Store(env)
   try {
     await store.accounts.saveAccount(account, { name: null })
     await store.accounts.saveProfile(IDENTITY.command, profile, account)
