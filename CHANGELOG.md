@@ -14,6 +14,8 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   an integration's deals count as nobody's). `config set crm.bitrix24:<portal>.scope all` copies every one. The sync
   answer has `scope` (with the webhook's user as `self`), and each kind's `out_of_scope`: a deal given to another user
   leaves the local copy at the next sync. Contacts and companies are copied whole as before.
+- Without a `scope` setting, a first `mine` that would mark more than half of the stored deals or leads deleted keeps
+  them (`crm.narrowing-held`) until the owner sets `scope`. An agent cannot set `scope`, `self` or `unassigned`.
 - One portal's copy belongs to one user: a sync through a webhook of another user than the first sync's is refused
   until `config unset crm.bitrix24:<portal>.self`.
 
