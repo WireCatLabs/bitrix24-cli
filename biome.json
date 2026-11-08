@@ -1,6 +1,6 @@
 {
   "files": {
-    "includes": ["**", "!**/node_modules", "!**/dist", "!.worktrees", "!pnpm-lock.yaml", "!config/wirecat"]
+    "includes": ["**", "!**/node_modules", "!**/dist", "!.worktrees", "!**/pnpm-lock.yaml", "!config/wirecat"]
   },
   "extends": ["./config/wirecat/biome.base.json"],
   "plugins": [
