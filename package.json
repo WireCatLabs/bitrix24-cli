@@ -20,6 +20,7 @@
   "files": [
     "dist",
     "skills",
+    "contracts/wirecat.json",
     "/README.md",
     "CHANGELOG.md",
     "LICENSE"
@@ -34,8 +35,8 @@
     "test:slow": "vitest run --reporter=json --outputFile=coverage/tests.json >/dev/null; cli-dev slow-tests",
     "test:matrix": "vitest run >/dev/null && pnpm build >/dev/null && pnpm test:matrix:check",
     "test:matrix:check": "cli-dev test-matrix --program scripts/command-program.ts --untested scripts/test-matrix-untested.ts --name b24 --check && git diff --exit-code -- docs/dev/test-matrix.md",
-    "generate": "pnpm build && node --experimental-strip-types scripts/commands.ts",
-    "generate:check": "pnpm build && node --experimental-strip-types scripts/commands.ts --check",
+    "generate": "pnpm build && node --experimental-strip-types scripts/commands.ts && cli-dev manifest --program dist/program.js --identity dist/wcat.js",
+    "generate:check": "pnpm build && node --experimental-strip-types scripts/commands.ts --check && cli-dev manifest --program dist/program.js --identity dist/wcat.js --check",
     "smoke": "node --experimental-strip-types scripts/smoke.ts",
     "smoke:bun": "bun scripts/smoke.ts && bun scripts/smoke-bundle.ts",
     "smoke:node": "node --experimental-strip-types scripts/smoke-bundle.ts",
@@ -57,7 +58,7 @@
     "docs:spell": "cspell lint --config cspell.json --no-progress --no-summary README.md SECURITY.md CHANGELOG.md AGENTS.md CLAUDE.md 'docs/*.md' 'skills/**/*.md'"
   },
   "dependencies": {
-    "@wirecat/cli-base": "0.80.9",
+    "@wirecat/cli-base": "0.82.0",
     "@wirecat/cli-core": "0.609.0",
     "commander": "15.0.0",
     "valibot": "1.5.0"

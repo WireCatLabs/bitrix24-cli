@@ -1,3 +1,4 @@
+import type { ManifestIdentity } from "@wirecat/cli-base/wcat/manifest"
 import type { AppIdentity } from "@wirecat/cli-core/cli"
 import { DETAILS, REASONS } from "./reasons.js"
 import { VERSION } from "./version.js"
@@ -16,6 +17,19 @@ export const IDENTITY: AppIdentity = {
   // The portal allows 2 requests a second shared by every app and webhook; a run's budget counts on half that.
   requestMs: 1_000,
   errors: { reasons: REASONS, details: DETAILS },
+}
+
+// The bin hands this to wcatStart before the program loads, so it must not import the command tree; src/wcat.ts adds
+// the permission keys for the manifest.
+export const DESKTOP: ManifestIdentity = {
+  ...IDENTITY,
+  docs: "https://wirecat.dev/en/docs/b24",
+  tagline: "Bitrix24 CRM: deals, leads, contacts and companies",
+  syncs: "deals, leads, contacts and companies",
+  signIn: {
+    gives: "Lets your agent read and change the portal's CRM with the rights of the employee who made the webhook.",
+    asks: "An incoming webhook address, from Developer resources → Other → Incoming webhook, with the crm and user scopes.",
+  },
 }
 
 export const SKILL = new URL("../skills/bitrix24-cli/SKILL.md", import.meta.url)
