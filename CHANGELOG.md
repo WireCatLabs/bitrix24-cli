@@ -2,7 +2,7 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
-## Unreleased
+## 0.8.0 — 08.11.2026
 
 ### Added
 
@@ -17,6 +17,8 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 - `session add` asks for the webhook again when nothing arrived. An empty Enter at the hidden prompt, as after a
   Ctrl+V that pasted nothing in a Linux terminal, failed at once with "no token was given". It now says to paste with
   Ctrl+Shift+V (Cmd+V on macOS) and asks again, up to three times.
+- A crash while `b24` starts, or one an awaited step throws, prints the `command.crashed` JSON error and exits 1. It
+  printed a raw Node stack.
 
 ## 0.7.0 — 08.11.2026
 
