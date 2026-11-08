@@ -14,6 +14,7 @@ import {
   withPaging,
   withQuery,
 } from "@wirecat/cli-core/cli"
+import { csvColumnPaths, csvFormatOption, printCsv, refuseCsvConflict } from "@wirecat/cli-core/crm/cli"
 import { Command } from "commander"
 import type * as v from "valibot"
 import type { BitrixTransport } from "../bitrix/transport.js"
@@ -35,7 +36,6 @@ import { getUser, listUsers, USER_FIELDS, userSchema } from "../crm/user.js"
 import type { Window } from "../crm/walk.js"
 import { IDENTITY } from "../identity.js"
 import { contextOf, withPortal } from "../portal.js"
-import { csvFormatOption, csvPaths, printCsv, refuseOtherOutput } from "./crm-csv.js"
 
 const B24 = IDENTITY.command
 
@@ -100,7 +100,12 @@ const windowOf = (command: Command): Window => {
   return settings.all ? { offset: 0 } : { offset: (settings.page - 1) * settings.limit, limit: settings.limit }
 }
 
-const listCommand = <T>(noun: Noun<T>) => {
+const csvDefaults = (schema: Noun<unknown>["schema"]): string[] => [
+  ...Object.keys(schema.entries).filter((key) => key !== "provider_metadata"),
+  "provider_metadata",
+]
+
+const listCommand = <T extends Record<string, unknown>>(noun: Noun<T>) => {
   const command = withPaging(
     withQuery(
       answerEntity(
@@ -116,13 +121,13 @@ const listCommand = <T>(noun: Noun<T>) => {
   if (noun.custom) command.addOption(csvFormatOption())
   return command.action(async function (this: Command, words: string[]) {
     const csv = this.opts<{ format?: "csv" }>().format === "csv"
-    if (csv) refuseOtherOutput(this)
+    if (csv) refuseCsvConflict(this)
     const path = commandPath(this)
     const text = typedQuery(words)
     const options = noun.word ? { defaultField: noun.word } : {}
     const termsOf = (registry: QueryRegistry) => nativeTerms(listQuery(text, registry, path, options), path)
     const names = noun.custom ? customNames(text, noun.query, path, noun.word) : []
-    const paths = csv ? csvPaths(this, Object.keys(noun.schema.entries)) : []
+    const paths = csv ? csvColumnPaths(this, csvDefaults(noun.schema)) : []
     const columns = this.optsWithGlobals<{ fields?: string }>().fields
     const wanted = csv && columns === undefined ? "all" : noun.custom ? wantedCodes(columns) : undefined
     const terms = names.length ? undefined : termsOf(noun.query)
@@ -133,7 +138,10 @@ const listCommand = <T>(noun: Noun<T>) => {
         ? noun.custom(portal, { names, wanted, terms: termsOf }, window)
         : noun.list(portal, terms ?? new Map(), window),
     )
-    if (csv) return printCsv(this, { ...found, fields: found.fields ?? [] }, paths)
+    if (csv) {
+      const page = { items: found.items, fields: found.fields ?? [], page: settings.page, hasMore: found.has_more }
+      return printCsv(this, page, paths)
+    }
     renderAnswer(this, outputFor(this), pagedList(path, settings, found))
   })
 }
@@ -155,13 +163,13 @@ const showCommand = <T>(noun: Noun<T>) =>
       renderAnswer(this, outputFor(this), itemOf(item))
     })
 
-const nounCommand = <T>(noun: Noun<T>, description: string): Command =>
+const nounCommand = <T extends Record<string, unknown>>(noun: Noun<T>, description: string): Command =>
   annotate(new Command(noun.noun), { effects: REMOTE_READ })
     .description(description)
     .addCommand(listCommand(noun))
     .addCommand(showCommand(noun))
 
-const itemNoun = <T extends { id: string }>(
+const itemNoun = <T extends { id: string } & Record<string, unknown>>(
   type: ItemType<T>,
   shape: {
     noun: string
