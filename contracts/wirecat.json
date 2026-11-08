@@ -10,6 +10,7 @@
       "path": [
         "commands"
       ],
+      "summary": "every command by section; --json prints its contract, one path per call",
       "effects": {
         "remote": "none",
         "local": "none"
@@ -20,6 +21,7 @@
         "commands",
         "info"
       ],
+      "summary": "one command contract, or all schemas, error reasons and explicit overrides",
       "effects": {
         "remote": "none",
         "local": "none"
@@ -30,6 +32,7 @@
         "session",
         "start"
       ],
+      "summary": "sign in with a Bitrix24 incoming webhook",
       "effects": {
         "remote": "read",
         "local": "write"
@@ -40,6 +43,7 @@
         "session",
         "status"
       ],
+      "summary": "show where the webhook comes from, and with --check as whom it acts",
       "effects": {
         "remote": "read",
         "local": "read"
@@ -50,6 +54,7 @@
         "session",
         "end"
       ],
+      "summary": "forget this profile's webhook address on this computer",
       "effects": {
         "remote": "none",
         "local": "write"
@@ -60,6 +65,7 @@
         "session",
         "list"
       ],
+      "summary": "list the profiles here and whether each is signed in",
       "effects": {
         "remote": "none",
         "local": "read"
@@ -69,379 +75,448 @@
       "path": [
         "sync"
       ],
+      "summary": "bring the CRM's copy in the local store up to date: pipelines, companies,…",
       "effects": {
         "remote": "read",
         "local": "write"
       },
-      "permission": "sync"
+      "permission": "sync",
+      "entity": "crm_sync"
     },
     {
       "path": [
         "store",
         "status"
       ],
+      "summary": "how far each kind's sync is: rows saved, partial or complete, when it last…",
       "effects": {
         "remote": "none",
         "local": "read"
       },
-      "permission": "store.status"
+      "permission": "store.status",
+      "entity": "crm_sync_progress"
     },
     {
       "path": [
         "deals",
         "list"
       ],
+      "summary": "deals copied from the CRM, newest first; run sync to bring them up to date",
       "effects": {
         "remote": "none",
         "local": "read"
       },
-      "permission": "deals.list"
+      "permission": "deals.list",
+      "entity": "deal"
     },
     {
       "path": [
         "deals",
         "show"
       ],
+      "summary": "one deal with its pipeline, stage, status, amount and the people on it",
       "effects": {
         "remote": "none",
         "local": "read"
       },
-      "permission": "deals.show"
+      "permission": "deals.show",
+      "entity": "deal"
     },
     {
       "path": [
         "deals",
         "create"
       ],
+      "summary": "make a deal in the CRM, then store the CRM's copy of it",
       "effects": {
         "remote": "write",
         "local": "write"
       },
-      "permission": "deals.create"
+      "permission": "deals.create",
+      "entity": "crm_write"
     },
     {
       "path": [
         "deals",
         "update"
       ],
+      "summary": "change a deal in the CRM; what is left out keeps its value; the CRM's copy…",
       "effects": {
         "remote": "write",
         "local": "write"
       },
-      "permission": "deals.update"
+      "permission": "deals.update",
+      "entity": "crm_write"
     },
     {
       "path": [
         "deals",
         "move"
       ],
+      "summary": "move a deal to another stage of its pipeline; a won or lost stage checks the…",
       "effects": {
         "remote": "write",
         "local": "write"
       },
-      "permission": "deals.move"
+      "permission": "deals.move",
+      "entity": "crm_write"
     },
     {
       "path": [
         "deals",
         "close"
       ],
+      "summary": "mark a deal won or lost, the CRM's own way",
       "effects": {
         "remote": "write",
         "local": "write"
       },
-      "permission": "deals.close"
+      "permission": "deals.close",
+      "entity": "crm_write"
     },
     {
       "path": [
         "deals",
         "delete"
       ],
+      "summary": "delete a deal in the CRM; asks first unless allowed",
       "effects": {
         "remote": "write",
         "local": "write"
       },
-      "permission": "deals.delete"
+      "permission": "deals.delete",
+      "entity": "crm_removal"
     },
     {
       "path": [
         "leads",
         "list"
       ],
+      "summary": "leads copied from the CRM, newest first; run sync to bring them up to date",
       "effects": {
         "remote": "none",
         "local": "read"
       },
-      "permission": "leads.list"
+      "permission": "leads.list",
+      "entity": "lead"
     },
     {
       "path": [
         "leads",
         "show"
       ],
+      "summary": "one lead with its pipeline, stage, status, amount and the people on it",
       "effects": {
         "remote": "none",
         "local": "read"
       },
-      "permission": "leads.show"
+      "permission": "leads.show",
+      "entity": "lead"
     },
     {
       "path": [
         "leads",
         "create"
       ],
+      "summary": "make a lead in the CRM, then store the CRM's copy of it",
       "effects": {
         "remote": "write",
         "local": "write"
       },
-      "permission": "leads.create"
+      "permission": "leads.create",
+      "entity": "crm_write"
     },
     {
       "path": [
         "leads",
         "update"
       ],
+      "summary": "change a lead in the CRM; what is left out keeps its value; the CRM's copy…",
       "effects": {
         "remote": "write",
         "local": "write"
       },
-      "permission": "leads.update"
+      "permission": "leads.update",
+      "entity": "crm_write"
     },
     {
       "path": [
         "leads",
         "move"
       ],
+      "summary": "move a lead to another stage of its pipeline; a won or lost stage checks the…",
       "effects": {
         "remote": "write",
         "local": "write"
       },
-      "permission": "leads.move"
+      "permission": "leads.move",
+      "entity": "crm_write"
     },
     {
       "path": [
         "leads",
         "close"
       ],
+      "summary": "mark a lead won or lost, the CRM's own way",
       "effects": {
         "remote": "write",
         "local": "write"
       },
-      "permission": "leads.close"
+      "permission": "leads.close",
+      "entity": "crm_write"
     },
     {
       "path": [
         "leads",
         "delete"
       ],
+      "summary": "delete a lead in the CRM; asks first unless allowed",
       "effects": {
         "remote": "write",
         "local": "write"
       },
-      "permission": "leads.delete"
+      "permission": "leads.delete",
+      "entity": "crm_removal"
     },
     {
       "path": [
         "pipelines",
         "list"
       ],
+      "summary": "pipelines copied from the CRM, with their stages in order and how many are…",
       "effects": {
         "remote": "none",
         "local": "read"
       },
-      "permission": "pipelines.list"
+      "permission": "pipelines.list",
+      "entity": "pipeline"
     },
     {
       "path": [
         "pipelines",
         "show"
       ],
+      "summary": "one pipeline as a board and a funnel: how many stand in each stage and their…",
       "effects": {
         "remote": "none",
         "local": "read"
       },
-      "permission": "pipelines.show"
+      "permission": "pipelines.show",
+      "entity": "pipeline"
     },
     {
       "path": [
         "stages",
         "list"
       ],
+      "summary": "every stage of the CRM's pipelines in order, with its outcome and how many…",
       "effects": {
         "remote": "none",
         "local": "read"
       },
-      "permission": "stages.list"
+      "permission": "stages.list",
+      "entity": "stage"
     },
     {
       "path": [
         "fields",
         "list"
       ],
+      "summary": "the CRM's custom fields of one kind, in its order, with a list field's options",
       "effects": {
         "remote": "none",
         "local": "read"
       },
-      "permission": "fields.list"
+      "permission": "fields.list",
+      "entity": "crm_field"
     },
     {
       "path": [
         "search",
         "all"
       ],
+      "summary": "search stored deals and leads, messages, notes and calendar events",
       "effects": {
         "remote": "none",
         "local": "read"
       },
-      "permission": "search.all"
+      "permission": "search.all",
+      "entity": "hit"
     },
     {
       "path": [
         "people",
         "list"
       ],
+      "summary": "list contacts on the portal, newest first",
       "effects": {
         "remote": "read",
         "local": "read"
       },
-      "permission": "people.list"
+      "permission": "people.list",
+      "entity": "crm_person"
     },
     {
       "path": [
         "people",
         "show"
       ],
+      "summary": "show one of the contacts on the portal",
       "effects": {
         "remote": "read",
         "local": "read"
       },
-      "permission": "people.show"
+      "permission": "people.show",
+      "entity": "crm_person"
     },
     {
       "path": [
         "people",
         "create"
       ],
+      "summary": "create one person on the portal",
       "effects": {
         "remote": "write",
         "local": "write"
       },
-      "permission": "people.create"
+      "permission": "people.create",
+      "entity": "crm_record_created"
     },
     {
       "path": [
         "people",
         "update"
       ],
+      "summary": "change one person on the portal; options left out keep their values",
       "effects": {
         "remote": "write",
         "local": "write"
       },
-      "permission": "people.update"
+      "permission": "people.update",
+      "entity": "crm_record_updated"
     },
     {
       "path": [
         "organizations",
         "list"
       ],
+      "summary": "list companies on the portal, newest first",
       "effects": {
         "remote": "read",
         "local": "read"
       },
-      "permission": "organizations.list"
+      "permission": "organizations.list",
+      "entity": "crm_organization"
     },
     {
       "path": [
         "organizations",
         "show"
       ],
+      "summary": "show one of the companies on the portal",
       "effects": {
         "remote": "read",
         "local": "read"
       },
-      "permission": "organizations.show"
+      "permission": "organizations.show",
+      "entity": "crm_organization"
     },
     {
       "path": [
         "organizations",
         "create"
       ],
+      "summary": "create one organization on the portal",
       "effects": {
         "remote": "write",
         "local": "write"
       },
-      "permission": "organizations.create"
+      "permission": "organizations.create",
+      "entity": "crm_record_created"
     },
     {
       "path": [
         "organizations",
         "update"
       ],
+      "summary": "change one organization on the portal; options left out keep their values",
       "effects": {
         "remote": "write",
         "local": "write"
       },
-      "permission": "organizations.update"
+      "permission": "organizations.update",
+      "entity": "crm_record_updated"
     },
     {
       "path": [
         "products",
         "list"
       ],
+      "summary": "list catalog products on the portal, newest first",
       "effects": {
         "remote": "read",
         "local": "read"
       },
-      "permission": "products.list"
+      "permission": "products.list",
+      "entity": "product"
     },
     {
       "path": [
         "products",
         "show"
       ],
+      "summary": "show one of the catalog products on the portal",
       "effects": {
         "remote": "read",
         "local": "read"
       },
-      "permission": "products.show"
+      "permission": "products.show",
+      "entity": "product"
     },
     {
       "path": [
         "users",
         "list"
       ],
+      "summary": "list employees on the portal, newest first",
       "effects": {
         "remote": "read",
         "local": "read"
       },
-      "permission": "users.list"
+      "permission": "users.list",
+      "entity": "user"
     },
     {
       "path": [
         "users",
         "show"
       ],
+      "summary": "show one of the employees on the portal",
       "effects": {
         "remote": "read",
         "local": "read"
       },
-      "permission": "users.show"
+      "permission": "users.show",
+      "entity": "user"
     },
     {
       "path": [
         "api",
         "list"
       ],
+      "summary": "list the Bitrix24 methods b24 calls, with their permissions",
       "effects": {
         "remote": "none",
         "local": "none"
-      }
+      },
+      "entity": "api_method"
     },
     {
       "path": [
         "api",
         "show"
       ],
+      "summary": "show a method's REST version and permissions; calls nothing",
       "effects": {
         "remote": "none",
         "local": "none"
@@ -452,6 +527,7 @@
         "api",
         "call"
       ],
+      "summary": "call one Bitrix24 method by name with JSON parameters",
       "effects": {
         "remote": "write",
         "local": "write"
@@ -462,6 +538,7 @@
         "schedule",
         "command"
       ],
+      "summary": "run b24 <args…> on a timer — reads save what they read, so this is how a…",
       "effects": {
         "remote": "none",
         "local": "write"
@@ -473,6 +550,7 @@
         "schedule",
         "agent"
       ],
+      "summary": "start an agent (claude or codex) with a prompt on a timer; it runs with…",
       "effects": {
         "remote": "none",
         "local": "write"
@@ -484,17 +562,20 @@
         "schedule",
         "list"
       ],
+      "summary": "the schedules, when they run and how their last run went",
       "effects": {
         "remote": "none",
         "local": "read"
       },
-      "permission": "schedule.list"
+      "permission": "schedule.list",
+      "entity": "scheduled_job"
     },
     {
       "path": [
         "schedule",
         "run"
       ],
+      "summary": "run a schedule now, as its timer would, and wait for it",
       "effects": {
         "remote": "write",
         "local": "write"
@@ -506,6 +587,7 @@
         "schedule",
         "remove"
       ],
+      "summary": "stop a schedule and remove its timer; its past output stays",
       "effects": {
         "remote": "none",
         "local": "write"
@@ -517,6 +599,7 @@
         "schedule",
         "exec"
       ],
+      "summary": "what a timer runs, given the schedule's file; to run one by hand, use run",
       "effects": {
         "remote": "write",
         "local": "write"
@@ -527,6 +610,7 @@
       "path": [
         "doctor"
       ],
+      "summary": "the state this installation is in, without connecting unless --online",
       "effects": {
         "remote": "read",
         "local": "read"
@@ -537,6 +621,7 @@
         "skill",
         "show"
       ],
+      "summary": "print the tool's instructions for AI agents",
       "effects": {
         "remote": "none",
         "local": "read"
@@ -547,6 +632,7 @@
         "skill",
         "install"
       ],
+      "summary": "install the tool's instructions for AI agents",
       "effects": {
         "remote": "none",
         "local": "write"
@@ -557,6 +643,7 @@
         "skill",
         "status"
       ],
+      "summary": "whether the installed instructions for AI agents match this version",
       "effects": {
         "remote": "none",
         "local": "read"
@@ -567,6 +654,7 @@
         "mcp",
         "serve"
       ],
+      "summary": "serve this profile's commands to an AI agent",
       "effects": {
         "remote": "write",
         "local": "write"
@@ -577,6 +665,7 @@
         "mcp",
         "revoke"
       ],
+      "summary": "forget every login given to a browser app",
       "effects": {
         "remote": "none",
         "local": "write"
@@ -588,6 +677,7 @@
         "server",
         "start"
       ],
+      "summary": "start the HTTP MCP server in the background",
       "effects": {
         "remote": "none",
         "local": "write"
@@ -599,6 +689,7 @@
         "server",
         "stop"
       ],
+      "summary": "stop the background HTTP MCP server",
       "effects": {
         "remote": "none",
         "local": "write"
@@ -610,6 +701,7 @@
         "server",
         "status"
       ],
+      "summary": "whether the HTTP MCP server runs, its login code and the apps logged in",
       "effects": {
         "remote": "none",
         "local": "read"
@@ -620,6 +712,7 @@
         "mcp",
         "config"
       ],
+      "summary": "print the local MCP configuration of this profile, or of those --profiles names",
       "effects": {
         "remote": "none",
         "local": "read"
@@ -630,6 +723,7 @@
         "mcp",
         "add"
       ],
+      "summary": "add this profile's local MCP server to Codex or Claude Code",
       "effects": {
         "remote": "none",
         "local": "write"
@@ -640,6 +734,7 @@
         "mcp",
         "check"
       ],
+      "summary": "check this profile's local MCP handshake and tool list",
       "effects": {
         "remote": "none",
         "local": "read"
@@ -649,6 +744,7 @@
       "path": [
         "upgrade"
       ],
+      "summary": "upgrade b24 with the package manager that installed it; --check only looks",
       "effects": {
         "remote": "none",
         "local": "write"
@@ -659,6 +755,7 @@
         "config",
         "show"
       ],
+      "summary": "the profile, the profiles that exist, and each setting with where it came from",
       "effects": {
         "remote": "none",
         "local": "read"
@@ -669,6 +766,7 @@
         "config",
         "set"
       ],
+      "summary": "save a setting to the configuration file",
       "effects": {
         "remote": "none",
         "local": "write"
@@ -679,6 +777,7 @@
         "config",
         "unset"
       ],
+      "summary": "remove a setting from the configuration file",
       "effects": {
         "remote": "none",
         "local": "write"
@@ -689,6 +788,7 @@
         "config",
         "migrate"
       ],
+      "summary": "write each setting the file lacks at its default, keeping yours",
       "effects": {
         "remote": "none",
         "local": "write"
@@ -699,6 +799,7 @@
         "config",
         "repair"
       ],
+      "summary": "fix the settings file's JSON syntax, keeping every value",
       "effects": {
         "remote": "none",
         "local": "write"
@@ -709,32 +810,167 @@
         "runs",
         "list"
       ],
+      "summary": "recorded runs, newest first",
       "effects": {
         "remote": "none",
         "local": "read"
-      }
+      },
+      "entity": "run"
     },
     {
       "path": [
         "runs",
         "show"
       ],
+      "summary": "one run: what it was, how it ended, and every event it logged",
       "effects": {
         "remote": "none",
         "local": "read"
-      }
+      },
+      "entity": "run"
     },
     {
       "path": [
         "runs",
         "path"
       ],
+      "summary": "the directory holding one run",
       "effects": {
         "remote": "none",
         "local": "none"
-      }
+      },
+      "entity": "run_location"
     }
   ],
+  "entities": {
+    "deal": {
+      "fields": [
+        "status",
+        "organization"
+      ]
+    },
+    "lead": {
+      "fields": [
+        "status",
+        "organization"
+      ]
+    },
+    "pipeline": {
+      "fields": [
+        "kind"
+      ]
+    },
+    "stage": {
+      "fields": [
+        "kind"
+      ]
+    },
+    "crm_field": {
+      "fields": [
+        "code",
+        "label",
+        "type",
+        "multiple",
+        "filterable",
+        "untrusted"
+      ]
+    },
+    "crm_person": {
+      "fields": [
+        "id",
+        "name",
+        "first_name",
+        "last_name",
+        "position",
+        "organization_ids",
+        "assigned_to",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "crm_organization": {
+      "fields": [
+        "id",
+        "name",
+        "type_id",
+        "industry_id",
+        "revenue",
+        "currency",
+        "person_ids",
+        "assigned_to",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "product": {
+      "fields": [
+        "id",
+        "name",
+        "price",
+        "currency",
+        "active",
+        "section_id"
+      ]
+    },
+    "user": {
+      "fields": [
+        "id",
+        "name",
+        "email",
+        "position",
+        "active",
+        "department_ids"
+      ]
+    },
+    "api_method": {
+      "fields": [
+        "scope",
+        "effect"
+      ]
+    },
+    "scheduled_job": {
+      "fields": [
+        "name",
+        "kind",
+        "when",
+        "notify",
+        "deliver_to",
+        "spent_today_usd",
+        "max_cost_usd",
+        "max_cost_per_day_usd"
+      ]
+    },
+    "run": {
+      "fields": [
+        "run_id",
+        "command",
+        "profile",
+        "started_at",
+        "completed_at",
+        "status",
+        "requests",
+        "duration_ms",
+        "cli_version",
+        "runtime",
+        "platform",
+        "arch",
+        "error_code",
+        "provider_error",
+        "kept_because_failed",
+        "operations",
+        "codes",
+        "trace_id",
+        "cli_command",
+        "argv",
+        "unknown_command",
+        "via",
+        "events_dropped",
+        "directory",
+        "event_count",
+        "events_truncated"
+      ]
+    }
+  },
   "desktop": {
     "tagline": "Bitrix24 CRM: deals, leads, contacts and companies",
     "profiles": {
