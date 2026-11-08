@@ -1,3 +1,4 @@
+import { openCache } from "@wirecat/cli-core/store"
 import { describe, expect, it } from "vitest"
 import { fakeCrm } from "../testing/fake-crm.js"
 import { b24 } from "../testing/harness.js"
@@ -72,11 +73,25 @@ describe("sync scope", () => {
     expect(await titles(crm, "leads")).toEqual([])
   })
 
-  it("refuses an unassigned id that is not a Bitrix24 user id, and stores nothing of that kind", async () => {
+  it("refuses an unassigned list with an entry that is not a user id when it is set", async () => {
+    const ran = await b24(["work", "config", "set", UNASSIGNED, "15,bot", "--json"])
+    expect(ran.code).not.toBe(0)
+    expect(ran.json().error).toMatchObject({ code: "validation_error" })
+    expect(String((ran.json().error as { message: string }).message)).toContain('not "bot"')
+  })
+
+  it("reads no deal under a malformed unassigned value already stored, and points to the setting, not a retry", async () => {
     const { crm } = portal()
-    await set(UNASSIGNED, "bot")
-    const deal = ((await sync(crm)).synced as Record<string, unknown>[]).find(({ kind }) => kind === "deal")
-    expect(deal?.error).toMatch(/user ids, numbers: not "bot"/)
+    await set(SCOPE, "mine")
+    const database = await openCache(String(process.env.MESSAGING_STORE))
+    database
+      .prepare("INSERT INTO store_settings (key, value, at) VALUES (?, ?, 1)")
+      .run(UNASSIGNED, JSON.stringify(["bot"]))
+    database.close()
+    const ran = await b24(["work", "sync", "--json"], { portal: crm })
+    const answer = ran.json() as { item: Record<string, unknown>; next?: unknown }
+    expect(answer.next).toBeUndefined()
+    expect(String(answer.item.hint)).toContain(`b24 work config set ${UNASSIGNED}`)
     expect(await titles(crm)).toEqual([])
   })
 })
