@@ -10,6 +10,14 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   `sync` copies before it installs it. `b24 --wcat-describe` now answers format 2 with that file's Desktop section
   and its SHA-256.
 
+### Fixed
+
+- The first sync of a large portal uses far less memory and takes a third less time: on synthetic data with 20,000
+  deals, its peak falls from 3.7 GB to 0.55 GB.
+- `session add` asks for the webhook again when nothing arrived. An empty Enter at the hidden prompt, as after a
+  Ctrl+V that pasted nothing in a Linux terminal, failed at once with "no token was given". It now says to paste with
+  Ctrl+Shift+V (Cmd+V on macOS) and asks again, up to three times.
+
 ## 0.7.0 — 08.11.2026
 
 ### Added
