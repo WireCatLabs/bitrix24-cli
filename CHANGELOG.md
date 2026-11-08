@@ -13,9 +13,6 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 
 - The first sync of a large portal is faster and needs much less memory. On 20,000 synthetic deals it peaks at about
   0.6 GB instead of 3.7 GB and takes a third less time.
-- `people list --format csv` and `organizations list --format csv` give a column to a custom field that a row holds
-  but the portal's field list leaves out. Such a field had no column. The table comes from cli-core's CSV helpers,
-  the same ones `deals list` and `leads list` use.
 
 ## 0.6.0 — 08.11.2026
 
