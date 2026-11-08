@@ -47,7 +47,7 @@ interface Listed<T> {
 interface Noun<T> {
   noun: string
   entity: string
-  schema: v.GenericSchema
+  schema: v.StrictObjectSchema<v.ObjectEntries, undefined>
   what: string
   query: QueryRegistry
   /** The field a bare word in the query means. */
@@ -120,7 +120,7 @@ const listCommand = <T>(noun: Noun<T>) => {
     const options = noun.word ? { defaultField: noun.word } : {}
     const termsOf = (registry: QueryRegistry) => nativeTerms(listQuery(text, registry, path, options), path)
     const names = noun.custom ? customNames(text, noun.query, path, noun.word) : []
-    const paths = csv ? csvPaths(this, Object.keys((noun.schema as { entries?: object }).entries ?? {})) : []
+    const paths = csv ? csvPaths(this, Object.keys(noun.schema.entries)) : []
     const columns = this.optsWithGlobals<{ fields?: string }>().fields
     const wanted = csv && columns === undefined ? "all" : noun.custom ? wantedCodes(columns) : undefined
     const terms = names.length ? undefined : termsOf(noun.query)
@@ -161,7 +161,13 @@ const nounCommand = <T>(noun: Noun<T>, description: string): Command =>
 
 const itemNoun = <T extends { id: string }>(
   type: ItemType<T>,
-  shape: { noun: string; entity: string; schema: v.GenericSchema; what: string; fields: Record<string, FieldMap> },
+  shape: {
+    noun: string
+    entity: string
+    schema: v.StrictObjectSchema<v.ObjectEntries, undefined>
+    what: string
+    fields: Record<string, FieldMap>
+  },
   examples: Record<string, string>,
   listExamples: string[],
 ): Noun<T> => {

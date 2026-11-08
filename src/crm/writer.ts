@@ -7,7 +7,7 @@ import { BITRIX_WRITES } from "./capabilities.js"
 import { LEAD_PIPELINE } from "./lead.js"
 import { REST3_FIELDS } from "./rest3-fields.js"
 import type { BitrixCrmSource } from "./source.js"
-import { id, numericId, type Raw } from "./values.js"
+import { fieldOf, id, numericId, type Raw } from "./values.js"
 
 /** A lead's REST 2 stage is `STATUS_ID`. */
 const STANDARD: Record<DealKind, ReadonlySet<string>> = {
@@ -85,7 +85,7 @@ export const bitrixCrmWriter = (portal: () => BitrixTransport, source: BitrixCrm
     async create(kind, draft, options) {
       const fields = await fieldsOf(kind, draft)
       const answer = await portal().call(`crm.${kind}.add`, { fields }, keyed(options))
-      const externalId = id((answer.result as { id?: unknown })?.id)
+      const externalId = id(fieldOf(answer.result, "id"))
       if (externalId === null)
         throw new CliError(
           "invalid_response",

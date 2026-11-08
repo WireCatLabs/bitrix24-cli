@@ -3,6 +3,7 @@ import { annotateOption } from "@wirecat/cli-base/commands"
 import { environmentOf, fieldsOf, writeCsv } from "@wirecat/cli-core/cli"
 import { type Command, Option } from "commander"
 import type { Field } from "../crm/fields.js"
+import { isRaw } from "../crm/values.js"
 import { contextOf } from "../portal.js"
 
 /** The same `--format csv` as cli-core's `deals list`: off MCP, since a table carries no `untrusted` marker. */
@@ -38,28 +39,25 @@ export const csvPaths = (command: Command, schemaKeys: readonly string[]): strin
 
 interface Column {
   header: string
-  cell: (item: Record<string, unknown>) => unknown
+  cell: (item: unknown) => unknown
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value)
-
 const at = (item: unknown, path: readonly string[]): unknown =>
-  path.reduce<unknown>((value, key) => (isRecord(value) ? value[key] : undefined), item)
+  path.reduce<unknown>((value, key) => (isRaw(value) ? value[key] : undefined), item)
 
 /** A phone or e-mail by its value, a list joined, so no cell holds JSON a spreadsheet cannot read. */
 const flat = (value: unknown): unknown => {
   if (Array.isArray(value)) return value.map(flat).join("; ")
-  if (isRecord(value)) return value.value ?? value.name ?? JSON.stringify(value)
+  if (isRaw(value)) return value.value ?? value.name ?? JSON.stringify(value)
   return value
 }
 
 const MONEY = /^(-?\d+(?:\.\d+)?)\|([A-Za-z]{3})$/
 
 const customColumns = (field: Field, header: string): Column[] => {
-  const value = (item: Record<string, unknown>) => at(item, ["provider_metadata", field.code, "value"])
+  const value = (item: unknown) => at(item, ["provider_metadata", field.code, "value"])
   if (field.type !== "money") return [{ header, cell: (item) => flat(value(item)) }]
-  const part = (index: 1 | 2) => (item: Record<string, unknown>) => {
+  const part = (index: 1 | 2) => (item: unknown) => {
     const raw = value(item)
     const money = typeof raw === "string" ? MONEY.exec(raw) : null
     return money ? money[index] : index === 1 ? flat(raw) : null
@@ -97,7 +95,7 @@ export const printCsv = (
   writeCsv(
     streams,
     columns.map((column) => column.header),
-    page.items.map((item) => columns.map((column) => column.cell(item as Record<string, unknown>))),
+    page.items.map((item) => columns.map((column) => column.cell(item))),
   )
   if (page.has_more) renderer.note(`→ more rows: run it again with --page ${settings.page + 1}`)
 }

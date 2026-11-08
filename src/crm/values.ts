@@ -5,6 +5,11 @@ import * as v from "valibot"
 
 export type Raw = Record<string, unknown>
 
+export const isRaw = (value: unknown): value is Raw =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+
+export const fieldOf = (value: unknown, key: string): unknown => (isRaw(value) ? value[key] : undefined)
+
 /** Bitrix24's stage semantics: `S` success, `F` failure, anything else still in progress (apidocs crm.status.fields). */
 export const outcomeOf = (semantics: unknown): StageOutcome =>
   semantics === "S" ? "won" : semantics === "F" ? "lost" : "open"
@@ -78,8 +83,8 @@ export interface Contact {
 export const contacts = (value: unknown): Contact[] =>
   Array.isArray(value)
     ? value.flatMap((one) => {
-        const found = text((one as Raw)?.value)
-        return found === null ? [] : [{ type: text((one as Raw)?.valueTypeId)?.toLowerCase() ?? null, value: found }]
+        const found = text(fieldOf(one, "value"))
+        return found === null ? [] : [{ type: text(fieldOf(one, "valueTypeId"))?.toLowerCase() ?? null, value: found }]
       })
     : []
 
