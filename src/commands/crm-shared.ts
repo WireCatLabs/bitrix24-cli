@@ -1,4 +1,3 @@
-import { CliError } from "@wirecat/cli-base"
 import { outputFor } from "@wirecat/cli-core/cli"
 import type { CrmRun } from "@wirecat/cli-core/crm/cli"
 import { addCrmCommands } from "@wirecat/cli-core/crm/cli"
@@ -9,7 +8,7 @@ import { parseWebhook } from "../bitrix/webhook.js"
 import { permissions } from "../config.js"
 import { BITRIX_WRITES } from "../crm/capabilities.js"
 import { IDENTITY } from "../identity.js"
-import { contextOf, signInWords, transportFor, webhookOf } from "../portal.js"
+import { contextOf, transportFor, webhookOf } from "../portal.js"
 
 /**
  * A read finds the profile's account from the rows an earlier sync saved, so it never reads the sign-in; the first
@@ -55,12 +54,7 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
     import("../crm/writer.js"),
   ])
   const accountOf = (): AccountKey => {
-    const stored = tokens.read(profile)
-    if (!stored)
-      throw new CliError("authentication_error", `profile ${profile} is not signed in — run ${signInWords(profile)}`, {
-        reason: "webhook.missing",
-      })
-    return { provider: PROVIDER.name, account: new URL(parseWebhook(stored.secret).origin).host }
+    return { provider: PROVIDER.name, account: new URL(parseWebhook(tokens.need(profile)).origin).host }
   }
   const { store, account } = await storeFor(env, profile, readOnly, accountOf)
   let transport: ReturnType<typeof transportFor> | undefined

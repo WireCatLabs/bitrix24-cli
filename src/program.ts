@@ -1,13 +1,13 @@
 import { join } from "node:path"
-import { type KeyringStore, resolvePaths } from "@wirecat/cli-base"
+import { resolvePaths } from "@wirecat/cli-base"
 import {
   appDoctorCommand,
   appMcpCommand,
   commandsCommand,
   configCommand,
   createProgram as createSharedProgram,
-  environmentOf,
   outputFor,
+  ProfileTokenStore,
   type ProgramDefinition,
   type ProgramOptions,
   type RunOptions,
@@ -25,7 +25,6 @@ import { addWrites } from "./commands/crm-writes.js"
 import { sessionCommand } from "./commands/session.js"
 import { configuration } from "./config.js"
 import { IDENTITY, PACKAGE, SKILL } from "./identity.js"
-import { tokens } from "./token.js"
 
 const update = appUpdate({
   packageName: PACKAGE,
@@ -39,10 +38,8 @@ const update = appUpdate({
   offVariables: [`${IDENTITY.envPrefix}_NO_UPDATE_CHECK`],
 })
 
-const mcpCommand = () => {
-  // cli-core asks `signedIn` with no keyring; the run's own one, a test's `memoryKeyring()`, is taken here, as gcal does.
-  let keyring: KeyringStore | undefined
-  const mcp = appMcpCommand(IDENTITY, configuration, {
+const mcpCommand = () =>
+  appMcpCommand(IDENTITY, configuration, {
     name: "Bitrix24",
     untrusted: [
       "deal and lead titles",
@@ -55,19 +52,9 @@ const mcpCommand = () => {
     ],
     permissionExample: "deals.delete=deny",
     skill: SKILL,
-    signedIn: (profile, env) => {
-      try {
-        return tokens(env, keyring).read(profile) !== undefined
-      } catch {
-        // A keyring that cannot be read fails the server's tools as well.
-        return false
-      }
-    },
+    signedIn: (profile, env, keyring) =>
+      new ProfileTokenStore({ app: IDENTITY, env, ...(keyring ? { keyring } : {}) }).signedIn(profile),
   })
-  return mcp.hook("preAction", (_mcp, action) => {
-    keyring = environmentOf(action).keyring
-  })
-}
 
 export const definition = (): ProgramDefinition => ({
   app: IDENTITY,

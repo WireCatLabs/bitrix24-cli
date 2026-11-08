@@ -21,6 +21,10 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 
 - A custom field the portal does not have, named in a list's query or in `--json`, is refused with `param` set to
   `--query` or `--json`, where it said `--field`.
+- A command on a profile with no webhook is refused with reason `session.missing`, where it said `webhook.missing`:
+  the one "not signed in" every WireCat tool with an API token gives. The webhook is read and kept where it was,
+  `B24_TOKEN`, then the keyring entry `token:<profile>` under `bitrix24-cli`, then a private file, now by cli-core's
+  shared token store.
 
 ## 0.5.0 — 07.11.2026
 
