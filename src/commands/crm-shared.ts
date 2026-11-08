@@ -1,4 +1,8 @@
-import { outputFor } from "@wirecat/cli-core/cli"
+import { mkdtempSync, rmSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
+import { isCliError } from "@wirecat/cli-base"
+import { outputFor, readOnlyLockOf } from "@wirecat/cli-core/cli"
 import type { CrmRun } from "@wirecat/cli-core/crm/cli"
 import { addCrmCommands } from "@wirecat/cli-core/crm/cli"
 import type { AccountKey, MessageStore } from "@wirecat/cli-core/store"
@@ -13,7 +17,9 @@ import { contextOf, transportFor, webhookOf } from "../portal.js"
 /**
  * A read finds the profile's account from the rows an earlier sync saved, so it never reads the sign-in; the first
  * read of a profile, a store that is missing or needs a migration, and every sync and write open it for writing and
- * save those rows, as gcal does.
+ * save those rows, as gcal does. Under `B24_READ_ONLY` a read with no store or no saved profile reads an empty store
+ * in a temporary folder instead, so the lock creates no `wirecat.db`; a sync still writes, as cli-core lets a fetch
+ * through.
  */
 const storeFor = async (
   env: NodeJS.ProcessEnv,
@@ -21,9 +27,13 @@ const storeFor = async (
   readOnly: boolean,
   accountOf: () => AccountKey,
 ): Promise<{ store: MessageStore; account: AccountKey }> => {
-  const { openB24Store } = await import("../store.js")
+  const { openB24Store, PROVIDER } = await import("../store.js")
+  const locked = readOnly && readOnlyLockOf(IDENTITY, env) !== undefined
   if (readOnly) {
-    const store = await openB24Store(env, { readOnly: true }).catch(() => undefined)
+    const store = await openB24Store(env, { readOnly: true }).catch((error: unknown) => {
+      if (locked && !(isCliError(error) && error.code === "not_found")) throw error
+      return undefined
+    })
     if (store) {
       const saved = await store.accounts
         .profiles()
@@ -33,7 +43,27 @@ const storeFor = async (
       await store.close()
     }
   }
-  const account = accountOf()
+  if (locked) {
+    const folder = mkdtempSync(join(tmpdir(), "b24-empty-"))
+    const removing = () => rmSync(folder, { recursive: true, force: true })
+    try {
+      const empty = await withProfile({ ...env, MESSAGING_STORE: join(folder, "wirecat.db") }, profile, {
+        provider: PROVIDER.name,
+        account: profile,
+      })
+      const close = empty.store.close.bind(empty.store)
+      empty.store.close = () => close().finally(removing)
+      return empty
+    } catch (error) {
+      removing()
+      throw error
+    }
+  }
+  return withProfile(env, profile, accountOf())
+}
+
+const withProfile = async (env: NodeJS.ProcessEnv, profile: string, account: AccountKey) => {
+  const { openB24Store } = await import("../store.js")
   const store = await openB24Store(env)
   try {
     await store.accounts.saveAccount(account, { name: null })
