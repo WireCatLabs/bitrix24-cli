@@ -414,6 +414,10 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
     deny: (method: string) => denied.add(method),
     allow: (method: string) => denied.delete(method),
     row: (type: Type, id: number) => rows[type].get(id),
+    /** Sets the portal's clock, so a row put after a sync is newer than its cursor. */
+    setClock: (ms: number) => {
+      clock = ms
+    },
     remove: (type: Type, id: number) => rows[type].delete(id),
     loseNextAnswer: () => {
       lose = true

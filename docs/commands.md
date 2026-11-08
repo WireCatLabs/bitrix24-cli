@@ -132,7 +132,7 @@ b24 sync [options]
 | `--rescan` | list everything again, every id too, dropping a round in progress. |
 | `--max-pages <pages>` | at most this many requests to the CRM in this run. |
 
-**Returns:** crm sync — provider, account, pipelines, skipped_owner_rejected, synced, issues, complete, state, and 4 more; every field: b24 commands info sync
+**Returns:** crm sync — provider, account, scope, pipelines, skipped_owner_rejected, synced, issues, complete, and 6 more; every field: b24 commands info sync
 
 **Example:** `b24 work sync`, `b24 work sync --rescan`, `b24 work sync --max-pages 20`
 
@@ -1299,7 +1299,7 @@ b24 config set <setting> <value> [options]
 
 | Argument | | What it is |
 |---|---|---|
-| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types. |
+| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types, crm.<provider>:<account>.scope, crm.<provider>:<account>.unassigned, crm.<provider>:<account>.self. |
 | `value` | required | a number, true or false; for a group tg:work,max:Alice,email:me@x. |
 
 | Option | What it does |
@@ -1322,7 +1322,7 @@ b24 config unset <setting> [options]
 
 | Argument | | What it is |
 |---|---|---|
-| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types. |
+| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types, crm.<provider>:<account>.scope, crm.<provider>:<account>.unassigned, crm.<provider>:<account>.self. |
 
 | Option | What it does |
 |---|---|
