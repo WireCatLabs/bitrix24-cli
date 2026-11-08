@@ -8,11 +8,17 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 
 - The package also installs the command as `wcat-b24`, so `wcat b24` runs it and `wcat --help` lists it.
   `b24 --wcat-describe` prints what the tool is, its version and its docs page.
+- `config set owner_languages` names the languages the owner reads.
+
+### Changed — may break callers
+
+- A search with no letter or digit is refused (`validation_error`). `""`, a lone `?` or an emoji alone found nothing
+  and said nothing. A lone `*` still reads as a wildcard.
 
 ### Fixed
 
 - The first sync of a large portal is about twice as fast. It no longer slows down with every deal it saves: on
-  synthetic data, 20,000 deals, 10,000 leads and 20,000 contacts sync in 30 s instead of 61 s.
+  synthetic data with 10 deal owners, 20,000 deals, 10,000 leads and 20,000 contacts sync in 30 s instead of 61 s.
 
 ## 0.6.0 — 08.11.2026
 
