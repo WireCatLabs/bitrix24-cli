@@ -12,8 +12,10 @@ export const jsonNumber = (value: unknown): string | undefined =>
   value !== null &&
   // A body's own `{"isLosslessNumber":true}` is a plain object; the parser's numbers are class instances.
   Object.getPrototypeOf(value) !== Object.prototype &&
-  (value as { isLosslessNumber?: unknown }).isLosslessNumber === true
-    ? String((value as { value: unknown }).value)
+  "isLosslessNumber" in value &&
+  value.isLosslessNumber === true &&
+  "value" in value
+    ? String(value.value)
     : undefined
 
 export const isRecord = (value: unknown): value is Record<string, unknown> =>
