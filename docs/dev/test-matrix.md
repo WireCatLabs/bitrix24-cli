@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**173 ✅ · 23 ⛔ · 0 ❌** — 64 commands, 132 options.
+**177 ✅ · 23 ⛔ · 0 ❌** — 64 commands, 136 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -26,6 +26,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `deals list` |  | ✅ |  |
 | `deals list` | `--limit` | ✅ |  |
 | `deals list` | `--page` | ✅ |  |
+| `deals list` | `--format` | ✅ |  |
 | `deals show` |  | ✅ |  |
 | `deals create` |  | ✅ |  |
 | `deals create` | `--title` | ✅ |  |
@@ -52,6 +53,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `leads list` |  | ✅ |  |
 | `leads list` | `--limit` | ✅ |  |
 | `leads list` | `--page` | ✅ |  |
+| `leads list` | `--format` | ✅ |  |
 | `leads show` |  | ✅ |  |
 | `leads create` |  | ✅ |  |
 | `leads create` | `--title` | ✅ |  |
@@ -94,6 +96,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `people list` | `--limit` | ✅ |  |
 | `people list` | `--page` | ✅ |  |
 | `people list` | `--all` | ✅ |  |
+| `people list` | `--format` | ✅ |  |
 | `people show` |  | ✅ |  |
 | `people create` |  | ✅ |  |
 | `people create` | `--first-name` | ✅ |  |
@@ -109,6 +112,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `organizations list` | `--limit` | ✅ |  |
 | `organizations list` | `--page` | ✅ |  |
 | `organizations list` | `--all` | ✅ |  |
+| `organizations list` | `--format` | ✅ |  |
 | `organizations show` |  | ✅ |  |
 | `organizations create` |  | ✅ |  |
 | `organizations create` | `--name` | ✅ |  |

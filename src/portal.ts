@@ -5,6 +5,7 @@ import {
   type EventSink,
   environmentOf,
   type GlobalFlags,
+  refuseOffline,
 } from "@wirecat/cli-core/cli"
 import { Pacer, pacePathFor } from "@wirecat/cli-core/sends"
 import type { Command } from "commander"
@@ -36,13 +37,6 @@ export const contextOf = (command: Command) => {
 
 export const signInWords = (profile: string) => `\`${IDENTITY.command} ${profile} session start\``
 
-export const refuseOffline = (flags: GlobalFlags) => {
-  if (flags.offline)
-    throw new CliError("permission_error", "this needs the Bitrix24 portal; leave out --offline", {
-      reason: "offline.refused",
-    })
-}
-
 export const transportFor = (command: Command, webhook: Webhook, events?: EventSink): BitrixTransport => {
   const { environment, env, profile } = contextOf(command)
   return new BitrixTransport({
@@ -57,8 +51,8 @@ export const transportFor = (command: Command, webhook: Webhook, events?: EventS
 
 /** The profile's webhook, or an authentication error that names the command to sign in. */
 export const webhookOf = (command: Command): Webhook => {
-  const { flags, profile, tokens } = contextOf(command)
-  refuseOffline(flags)
+  const { profile, tokens } = contextOf(command)
+  refuseOffline(command, "the Bitrix24 portal")
   const stored = tokens.read(profile)
   if (!stored)
     throw new CliError("authentication_error", `profile ${profile} is not signed in — run ${signInWords(profile)}`, {
