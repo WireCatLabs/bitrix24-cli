@@ -1,0 +1,117 @@
+{
+  "command": "node",
+  "args": ["../dist/bin/b24.js"],
+  "previous": {
+    "entry": "./previous/node_modules/@wirecat/previous-cli/dist/bin/b24.js",
+    "version": "0.6.0"
+  },
+  "canaries": ["wirecat-synthetic-deal-canary"],
+  "cases": [
+    {
+      "id": "seed-previous-sync",
+      "args": ["{{previousEntry}}"],
+      "entry": "./seed.mjs",
+      "exit": 0,
+      "stream": "stdout",
+      "kind": "json",
+      "json": {
+        "seeded": true
+      }
+    },
+    {
+      "id": "previous-deals",
+      "args": ["contract", "deals", "list", "--offline", "--json"],
+      "exit": 0,
+      "stream": "stdout",
+      "kind": "json",
+      "previous": true,
+      "allowSensitiveOutput": true,
+      "json": {
+        "items": [
+          {
+            "title": "wirecat-synthetic-deal-canary"
+          }
+        ]
+      },
+      "capture": {
+        "deal": "/items/0/ref"
+      }
+    },
+    {
+      "id": "candidate-deals",
+      "args": ["contract", "deals", "list", "--offline", "--json"],
+      "exit": 0,
+      "stream": "stdout",
+      "kind": "json",
+      "allowSensitiveOutput": true,
+      "json": {
+        "items": [
+          {
+            "ref": "{{deal}}",
+            "title": "wirecat-synthetic-deal-canary",
+            "external_id": "7",
+            "stage": "New",
+            "amount": "1500.00",
+            "currency": "EUR",
+            "close_date": "2026-10-20",
+            "pipeline_name": "Synthetic pipeline"
+          }
+        ]
+      }
+    },
+    {
+      "id": "candidate-sync-cursor",
+      "args": ["contract", "store", "status", "--json"],
+      "exit": 0,
+      "stream": "stdout",
+      "kind": "json",
+      "json": {
+        "items": [
+          {
+            "kind": "organization",
+            "state": "complete"
+          },
+          {
+            "kind": "person",
+            "state": "complete"
+          },
+          {
+            "kind": "deal",
+            "state": "complete",
+            "stored": 1,
+            "updated_at": "2026-10-01T10:00:00.000Z"
+          },
+          {
+            "kind": "lead",
+            "state": "complete"
+          }
+        ]
+      }
+    },
+    {
+      "id": "candidate-pipelines",
+      "args": ["contract", "pipelines", "list", "--offline", "--json"],
+      "exit": 0,
+      "stream": "stdout",
+      "kind": "json",
+      "allowSensitiveOutput": true,
+      "json": {
+        "items": [
+          {
+            "kind": "lead"
+          },
+          {
+            "kind": "deal",
+            "name": "Synthetic pipeline",
+            "stages": [
+              {
+                "external_id": "NEW",
+                "open": 1
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -29,10 +29,6 @@ jobs:
       platform-run: |
         node dist/bin/b24.js commands --json >/dev/null
         node dist/bin/b24.js doctor --json >/dev/null
-      # contracts:upgrade needs local state of the CLI's own and a published version to upgrade from (WC-TEST-14).
-      # Once a CLI has both, it adds the script and removes this skip; see docs/dev/TESTING.md.
-      skip: |
-        contracts:upgrade
       # Reads the lockfile, so a frozen install cannot hide a cli-core/cli-base peer mismatch: the packed CLI would
       # get two cli-base copies and crash at start while every local test passes.
       checks: |

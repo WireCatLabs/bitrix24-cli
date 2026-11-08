@@ -2,6 +2,13 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Added
+
+- The package also installs the command as `wcat-b24`, so `wcat b24` runs it and `wcat --help` lists it.
+  `b24 --wcat-describe` prints what the tool is, its version and its docs page.
+
 ## 0.6.0 — 08.11.2026
 
 ### Added
