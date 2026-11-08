@@ -44,7 +44,8 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
 ### The store and the portal
 
 - Deals, leads, pipelines and stages are read from cli-core's store after `sync`, with `--offline` too. People,
-  organizations, products, users and fields ask the portal on every read, and refuse `--offline`.
+  organizations, products and users ask the portal on every read, and refuse `--offline`. `fields` reads the
+  definitions the last sync stored.
 - A list follows WC-OUT-5. Bitrix24's newer API (REST 3.0) gives no total, so `page.total` is left out and
   `page.has_more` says whether another page exists. `--all` has no cap: a long walk is cut by the run's budget and
   answers `meta.complete: false` (WC-CMD-10).
@@ -115,9 +116,9 @@ and `type`); field names are from the REST 3.0 field pages and the `user.get` an
    organizations, a free word in a list query goes to the portal's REST 2 `crm.item.list`, which matches part of a
    name; REST 3.0 matches only whole values.
 2. **`search all`.** It finds stored deals and leads beside the other WireCat tools' data.
-3. **Without a network.** `deals`, `leads`, `pipelines`, `stages` and `store status` read the store, with
+3. **Without a network.** `deals`, `leads`, `pipelines`, `stages`, `fields` and `store status` read the store, with
    `--offline` too; `sync`, the writes and the portal's own reads (`people`, `organizations`, `products`, `users`,
-   `fields`, `api`) refuse `--offline`.
+   `api`) refuse `--offline`.
 
 ### Security
 
