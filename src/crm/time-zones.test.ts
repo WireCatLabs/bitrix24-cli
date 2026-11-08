@@ -1,15 +1,13 @@
 import { mkdtempSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { seededCrm } from "../testing/fake-crm.js"
 import { b24 } from "../testing/harness.js"
 
-const zone = process.env.TZ
-
 const storedUnder = async (tz: string) => {
-  process.env.TZ = tz
-  process.env.MESSAGING_STORE = join(mkdtempSync(join(tmpdir(), "zone-")), "store.db")
+  vi.stubEnv("TZ", tz)
+  vi.stubEnv("MESSAGING_STORE", join(mkdtempSync(join(tmpdir(), "zone-")), "store.db"))
   const portal = seededCrm()
   expect((await b24(["work", "sync", "--json"], { portal })).code).toBe(0)
   const items = async (kind: string) =>
@@ -19,8 +17,7 @@ const storedUnder = async (tz: string) => {
 
 describe("time zones (WC-TIME-6)", () => {
   afterEach(() => {
-    if (zone === undefined) delete process.env.TZ
-    else process.env.TZ = zone
+    vi.unstubAllEnvs()
   })
 
   it("stores the same portal answers identically under two zones", async () => {
