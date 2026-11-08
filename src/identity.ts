@@ -28,7 +28,7 @@ export const DESKTOP: ManifestIdentity = {
   syncs: "deals, leads, contacts and companies",
   signIn: {
     gives: "Lets your agent read and change the portal's CRM with the rights of the employee who made the webhook.",
-    asks: "An incoming webhook address, from Developer resources → Other → Incoming webhook, with the crm and user scopes.",
+    asks: "An incoming webhook address, from Developer resources → Other → Incoming webhook, with the crm and user scopes, and department for reporting lines.",
   },
 }
 
