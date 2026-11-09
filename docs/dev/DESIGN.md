@@ -64,8 +64,12 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
    round's start less ten minutes, then cli-core's daily id-only pass that finds deletions. Bitrix24 sends events only to an installed app, and a webhook cannot install one, so
    there is no change token to follow. `store status` shows where the sync stands.
 3. **Whose deals and leads.** A sync copies the webhook user's own and the unassigned ones (`scope mine`, cli-core's);
-   `scope all`, every one, is a manager's, and a sync under it for anyone else is refused (`configuration_error`,
-   reason `bitrix.scope-all-manager-only`), checked on every sync. REST has no method that reads a user's CRM access
+   `scope all`, the whole CRM, is an administrator's, and a sync under it for anyone else is refused
+   (`configuration_error`, reason `bitrix.scope-all-admin-only`), checked on every sync. Under `mine` contacts and
+   companies are only those assigned to the same users, or named (`contactId`, `contactsId`, `companyId`) on their deals
+   and leads: a full round lists the assigned ones, then the named ones by id; a round of changes keeps only those; the
+   id passes list only those too. A department head may copy no more than an employee: the owner's rule is that no one
+   but an administrator takes the client base home. REST has no method that reads a user's CRM access
    level, so a manager is who the portal names: [`user.admin`](https://apidocs.bitrix24.com/api-reference/common/users/user-admin.html)
    true, or the head of an active department, [`department.get`](https://apidocs.bitrix24.com/api-reference/departments/department-get.html)
    filtered by `UF_HEAD`. Without the `department` scope the head check is refused and the user counts as an employee.

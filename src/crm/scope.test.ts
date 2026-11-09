@@ -32,6 +32,9 @@ const titles = async (crm: ReturnType<typeof fakeCrm>, kind = "deals") =>
     .map(({ title }) => title)
     .sort()
 
+const saved = (item: Record<string, unknown>, kind: string) =>
+  (item.synced as { kind: string; saved: number }[]).find((one) => one.kind === kind)?.saved
+
 const set = async (setting: string, value: string) =>
   expect((await b24(["work", "config", "set", setting, value, "--json"])).code).toBe(0)
 
@@ -62,9 +65,11 @@ describe("sync scope", () => {
     expect(await titles(crm)).toEqual([])
   })
 
-  it("copies every deal for a department head under all, and drops the others' again for mine", async () => {
+  it("refuses scope all to a department head, copies every deal for an administrator, and drops them under mine", async () => {
     const { crm } = portal()
     await set(SCOPE, "all")
+    expect((await b24(["work", "sync", "--json"], { portal: crm })).code).not.toBe(0)
+    crm.setAdmin(true)
     expect((await sync(crm)).scope).toEqual({ mode: "all" })
     expect(await titles(crm)).toEqual(["Other's", "Own", "Website form"])
     expect(await titles(crm, "leads")).toEqual(["Other's lead"])
@@ -103,21 +108,13 @@ describe("sync scope", () => {
     expect(ran.code).not.toBe(0)
     const error = ran.json().error as { code: string; message: string }
     expect(error.code).toBe("configuration_error")
-    expect(error.message).toContain("neither a Bitrix24 administrator nor the head of a department")
+    expect(error.message).toContain("is no Bitrix24 administrator")
     expect(error.message).toContain(`config set ${SCOPE} mine`)
     expect(await titles(crm)).toEqual([])
 
     await set(SCOPE, "mine")
     await sync(crm)
     expect(await titles(crm)).toEqual(["Own"])
-  })
-
-  it("counts an employee whose webhook cannot read departments as no head, and says why", async () => {
-    const { crm } = portal()
-    crm.withhold("department")
-    await set(SCOPE, "all")
-    const ran = await b24(["work", "sync", "--json"], { portal: crm })
-    expect((ran.json().error as { message: string }).message).toContain("needs the webhook's department scope")
   })
 
   it("copies every deal for a portal administrator who heads no department", async () => {
@@ -129,12 +126,13 @@ describe("sync scope", () => {
     expect(await titles(crm)).toEqual(["Other's", "Own", "Website form"])
   })
 
-  it("stops a manager who is no longer one from copying every deal", async () => {
+  it("stops an administrator who is no longer one from copying every deal", async () => {
     const { crm } = portal()
+    crm.setAdmin(true)
     await set(SCOPE, "all")
     await sync(crm)
     expect(await titles(crm)).toEqual(["Other's", "Own", "Website form"])
-    crm.putDepartment({ ID: "1", NAME: "Example company", UF_HEAD: String(OTHER) })
+    crm.setAdmin(false)
     expect((await b24(["work", "sync", "--json"], { portal: crm })).code).not.toBe(0)
     await set(SCOPE, "mine")
     await sync(crm)
@@ -221,6 +219,37 @@ describe("sync scope", () => {
       [OWN],
     ])
     expect(await titles(crm)).toEqual(["Own"])
+  })
+
+  it("copies only the user's clients: assigned to them, or named on their deals and leads", async () => {
+    const { crm, ids } = portal()
+    const contact = (name: string, assignedById: number) => crm.put("contact", { name, assignedById })
+    const company = (title: string, assignedById: number) => crm.put("company", { title, assignedById })
+    contact("Mine", OWN)
+    const onDeal = contact("On my deal", OTHER)
+    const onLead = contact("On my lead", OTHER)
+    contact("Stranger", OTHER)
+    company("My company", OWN)
+    const client = company("My deal's company", OTHER)
+    company("Strange company", OTHER)
+    crm.put("deal", { ...crm.row("deal", ids.own), contactsId: [onDeal], companyId: client })
+    crm.put("lead", { title: "Own lead", stageId: "IN_PROCESS", assignedById: OWN, contactsId: [onLead] })
+    const full = await sync(crm)
+    expect(saved(full, "person")).toBe(3)
+    expect(saved(full, "organization")).toBe(2)
+    const contacts = crm.calls.filter(({ method }) => method === "crm.contact.list").map(({ body }) => body.filter)
+    expect(contacts).toContainEqual([["assignedById", "in", [OWN]]])
+    expect(contacts).toContainEqual([["id", "in", [onDeal, onLead]]])
+
+    crm.setClock(Date.now())
+    contact("Another stranger", OTHER)
+    contact("New mine", OWN)
+    expect(saved(await sync(crm), "person")).toBe(1)
+    const passes = crm.calls.filter(
+      ({ method, body }) => method === "crm.deal.list" && JSON.stringify(body.select) === JSON.stringify(["id"]),
+    )
+    expect(passes.length).toBeGreaterThan(0)
+    for (const { body } of passes) expect(body.filter).toContainEqual(["assignedById", "in", [OWN]])
   })
 
   it("fails a kind whose list answer has no items, rather than take it for the end of the list", async () => {

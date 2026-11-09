@@ -27,8 +27,9 @@ Find your way with the tool itself, not this file:
 - `b24 work sync` first: `deals`, `leads`, `pipelines` and `stages` read the local store, offline too. `b24 work store
   status` says how far it is.
 - A sync copies only the webhook user's deals and leads, and those of the users in `crm.bitrix24:<portal>.unassigned`;
-  its answer's `scope` says so. Only the owner sets `crm.bitrix24:<portal>.scope all` to copy every one, and only a
-  Bitrix24 administrator or department head may: anyone else's sync under `all` is refused, and for them `unassigned`
+  its answer's `scope` says so. Contacts and companies are only their clients: assigned to them or named on
+  their deals and leads. Only the owner sets `crm.bitrix24:<portal>.scope all` to copy the whole CRM, and only a
+  Bitrix24 administrator may: anyone else's sync under `all` is refused, and for them `unassigned`
   counts only dismissed users and non-employees (`crm.unassigned-dropped` names the rest).
 - Lists filter with a query: `b24 work deals list status:open stage:"Quote sent" pipeline:Sales`. `b24 help deals
   list` lists the fields. A deal answers `ref` (`deal:12`), `pipeline`, `stage`, `status`, `close_date`, and `amount`

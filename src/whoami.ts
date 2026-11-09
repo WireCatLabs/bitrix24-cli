@@ -4,7 +4,7 @@ import { fieldOf, rawsOf } from "./crm/values.js"
 
 const text = (value: unknown) => (typeof value === "string" ? value.trim() : "")
 
-/** Who may copy every deal and lead: a portal administrator, or the head of a department. */
+/** A portal administrator copies the whole CRM; an administrator or a department head names anyone unassigned. */
 export interface Role {
   manager: boolean
   /** Why: `admin`, `head`, or `employee`; `employee` also when the webhook may not read departments. */
