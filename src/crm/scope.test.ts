@@ -178,10 +178,13 @@ describe("sync scope", () => {
     expect(await titles(crm)).toEqual(["Own"])
   })
 
-  it("lets a manager count a working employee as unassigned", async () => {
+  it("lets only an administrator count a working employee as unassigned, not a department head", async () => {
     const { crm } = portal()
     crm.putUser({ ID: String(INTEGRATION), NAME: "Shared sales account" })
     await set(UNASSIGNED, String(INTEGRATION))
+    expect((await sync(crm)).scope).toEqual({ mode: "mine", self: "7", also: [] })
+
+    crm.setAdmin(true)
     expect((await sync(crm)).scope).toEqual({ mode: "mine", self: "7", also: [String(INTEGRATION)] })
     expect(await titles(crm)).toEqual(["Own", "Website form"])
   })

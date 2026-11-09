@@ -3,6 +3,7 @@ import type { CrmField, CrmItem, CrmKind, CrmOrganization, CrmPerson, CrmRecords
 import type { CrmCallContext, CrmChanges, CrmIdPage, CrmSource } from "@wirecat/cli-core/crm"
 import type { BitrixCaller, BitrixTransport } from "../bitrix/transport.js"
 import { type Role, roleOf } from "../whoami.js"
+import { clientsOf as namedClients } from "./clients.js"
 import { DEAL } from "./deal.js"
 import { loadFields, metadataOf } from "./fields.js"
 import type { ItemType } from "./items.js"
@@ -219,27 +220,10 @@ export const bitrixCrmSource = (
     const key = `${assignees.join(",")}@${started}`
     let found = rounds.get(key)
     if (!found) {
-      found = (async () => {
-        const clients = { person: new Set<string>(), organization: new Set<string>() }
-        for (const type of [DEAL.type, LEAD.type]) {
-          const { items } = await rest3Rows(
-            caller,
-            `crm.${type}.list`,
-            {
-              select: ["id", "companyId", "contactId", "contactsId"],
-              filter: [["assignedById", "in", assignees]],
-              order: { id: "ASC" },
-            },
-            PAGE,
-          )
-          for (const raw of items) {
-            for (const one of [id(raw.contactId), ...ids(raw.contactsId)]) if (one) clients.person.add(one)
-            const company = id(raw.companyId)
-            if (company) clients.organization.add(company)
-          }
-        }
-        return clients
-      })()
+      found = namedClients(caller, assignees).then(({ contact, company }) => ({
+        person: contact,
+        organization: company,
+      }))
       rounds.set(key, found)
     }
     return found
@@ -287,10 +271,10 @@ export const bitrixCrmSource = (
         { setting, reason: "bitrix.scope-all-admin-only" },
       )
     },
-    // The owner's rule: an employee counts as nobody's only a dismissed user or one who is no employee (extranet,
-    // e-mail, bot); a manager may name anyone. Asked at every sync, so someone rehired leaves the list.
+    // The owner's rule: anyone but an administrator counts as nobody's only a dismissed user or one who is no employee
+    // (extranet, e-mail, bot), so a head cannot take a colleague's clients that way. Asked at every sync.
     async unassigned(users) {
-      if ((await roleNow()).manager) return { kept: [...users] }
+      if ((await roleNow()).as === "admin") return { kept: [...users] }
       let active: Set<string>
       try {
         active = await activeEmployees(portal())
@@ -304,8 +288,8 @@ export const bitrixCrmSource = (
       return {
         kept: users.filter((user) => !active.has(user)),
         message:
-          "a working employee of the portal; only a Bitrix24 administrator or a department head may count one as " +
-          "nobody's, anyone else only a dismissed user or one who is not an employee",
+          "a working employee of the portal; only a Bitrix24 administrator may count one as nobody's, anyone " +
+          "else only a dismissed user or one who is not an employee",
       }
     },
     pipelines: (kind, context) => bitrixPipelines(metered(context), kind),

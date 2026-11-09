@@ -61,7 +61,7 @@ b24 work config set crm.bitrix24:example.bitrix24.ru.scope all         # an admi
 b24 work config set crm.bitrix24:example.bitrix24.ru.scope mine        # your own and the unassigned ones
 ```
 
-`example.bitrix24.ru` stands for your portal's host. A manager may name anyone as unassigned; anyone else only a
+`example.bitrix24.ru` stands for your portal's host. An administrator may name anyone as unassigned; anyone else only a
 dismissed user or one who is not an employee (an extranet, e-mail or bot user, as Bitrix24's `USER_TYPE` says). The
 sync checks the list every time: a user it may not count is left out, with the reason in `issues`
 (`crm.unassigned-dropped`), and their deals and leads leave the copy. A webhook without the `user` scope counts no one
@@ -188,6 +188,13 @@ b24 work organizations list --json=id,name,provider_metadata.UF_CRM_174551248604
 A list shows the newest first: `--limit`, `--page` and, for `people` and `organizations`, `--all` change that. The
 fields a list can filter by are in its help, `b24 help deals list`.
 
+Phones and e-mails are your clients' only, unless you are a Bitrix24 administrator. Your clients are the contacts and
+companies assigned to you, and the ones on your deals and leads. A list shows anyone else's without them. `people show`
+or `organizations show` of one who is not your client gives them, at most 100 such contacts and companies a day (UTC),
+counted for you and your agents together; showing the same one again that day is free, and your own clients are never
+counted. The count is kept on this computer, so it guards against an accident and an agent, not against someone who
+means to take the base: Bitrix24's own access rights do that.
+
 ## Write
 
 ```sh
@@ -220,7 +227,9 @@ Bitrix24 tells that employee:
 
 `b24 work api call crm.deal.get --body '{"id":12}'` calls any other Bitrix24 method, here a read of deal 12. It
 checks the same permissions as the command that does the same thing, and refuses writes that send messages, start the
-portal's automation or create tasks until you allow them. `b24 api list` and `b24 api show crm.deal.update` show what
+portal's automation or create tasks until you allow them. Only a Bitrix24 administrator reads contacts or companies
+through it (`crm.contact.*`, `crm.company.*`, `crm.item.*` of type 3 or 4, requisites, addresses and duplicate
+searches): for anyone else they are refused, whatever the permissions say. `b24 api list` and `b24 api show crm.deal.update` show what
 each method checks.
 
 ## Output for scripts

@@ -75,10 +75,15 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
    filtered by `UF_HEAD`. Without the `department` scope the head check is refused and the user counts as an employee.
    Bitrix24 fills `ASSIGNED_BY_ID` with the caller by default ([crm.deal.add](https://apidocs.bitrix24.com/api-reference/crm/deals/crm-deal-add.html)),
    so no deal is unassigned on the portal: unassigned is the owner's list `crm.bitrix24:<portal>.unassigned`. A
-   manager may list anyone; for anyone else cli-core asks `unassigned()` at every sync, which keeps only users that
+   administrator may list anyone; for anyone else, a department head too, cli-core asks `unassigned()` at every sync, which keeps only users that
    `user.get` with `USER_TYPE: employee` and `ACTIVE: true` does not list (dismissed users, extranet, e-mail and bot
    users), and none when the `user` scope is missing.
-   Contacts and companies stay whole.
+   Outside the sync, phones and e-mails of a contact or company that is not the user's client are the owner's to
+   ration (NEED-2487): `src/crm/clients.ts` strips them from `people` and `organizations` lists, counts each one `show`
+   gives in a file under the state folder, at most 100 a UTC day, and `api call` refuses contact and company reads
+   (`readsClients` in `src/api-keys.ts`). An administrator, read from `user.admin` once per run, skips all three. A
+   department head's own mode, the department's clients without contact data, needs cli-core to take extra users into
+   a `mine` scope, and waits for it.
 4. **When the portal deletes something.** The local copy is marked deleted and kept, never wiped, and only after a
    full id pass has finished (WC-DATA-7).
 5. **Deleting local data.** Per account, through cli-core's shared commands, as every CLI does; there is no command

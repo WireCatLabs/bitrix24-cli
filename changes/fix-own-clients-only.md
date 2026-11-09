@@ -7,3 +7,10 @@
   `sync --rescan`.
 - Only a Bitrix24 administrator may sync under `scope all`. A department head is refused like an employee
   (`bitrix.scope-all-admin-only`, was `bitrix.scope-all-manager-only`).
+- Anyone but a Bitrix24 administrator sees phones and e-mails only of their own clients. `people list` and
+  `organizations list` leave them out of the rest; `people show` and `organizations show` of one give them, at most
+  100 such contacts and companies a day for the user and their agents together. `api call` refuses contact and
+  company reads (`crm.contact.*`, `crm.company.*`, `crm.item.*` of type 3 or 4, requisites, addresses, duplicate
+  searches) to anyone but an administrator, whatever the permissions say.
+- Only a Bitrix24 administrator may name a working employee in `crm.bitrix24:<portal>.unassigned`; a department head
+  is held to dismissed users and non-employees like everyone else.

@@ -36,6 +36,10 @@ Find your way with the tool itself, not this file:
   as a decimal string in `currency`; every write and `show` takes that `ref`.
 - Leads have no pipelines in Bitrix24: they stand in one pipeline named `Leads`. Won or lost is `status`, never the
   stage's name.
+- Phones and e-mails come only with the user's own clients (assigned to them, or on their deals and leads), unless
+  the webhook user is a Bitrix24 administrator. A list leaves them out of anyone else's; `people show` or
+  `organizations show` of one gives them, at most 100 a day for the user and their agents together, so show only the
+  one the task needs. `api call` refuses contact and company reads to anyone but an administrator.
 - `people` and `organizations` read the portal: `show` takes an id or an exact name, and gives the portal's own fields
   in `provider_metadata`, by code with their label. `b24 work fields list deals` lists them with type and options,
   as the last `sync` stored them.

@@ -114,6 +114,21 @@ const typeOf = (method: string, body: Body) => {
   return item?.[1] && type ? { type, action: item[1] } : undefined
 }
 
+/** Where a contact's or a company's phones, e-mails and papers come from, besides their own methods. */
+const CLIENT_DATA = ["crm.requisite", "crm.address", "crm.duplicate"]
+
+/**
+ * A raw read that returns contacts or companies, or their contact data: for anyone but an administrator `api call`
+ * refuses it whatever the permissions say (NEED-2488), since one list call would hand over the whole client base.
+ * Field definitions name no client and stay open.
+ */
+export const readsClients = (method: string, body: Body): boolean => {
+  if (inFamily(CLIENT_DATA, method)) return true
+  const found = typeOf(method, body)
+  if (!found || (found.type !== "contact" && found.type !== "company")) return false
+  return !/^(fields$|field\.|userfield\.)/.test(found.action)
+}
+
 /** The CRM type and action a raw write does, whether named `crm.deal.update` or `crm.item.update` with its type id. */
 const crmWriteOf = (method: string, body: Body) => {
   const found = typeOf(method, body)
