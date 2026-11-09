@@ -19,6 +19,12 @@ e-mail addresses and `department` for the company structure. `user_basic` is eno
 employee, and the full `user` scope adds the right to invite and edit them. The sync stores each employee's name,
 e-mail address, position and department head in the local store, where every WireCat tool can read them.
 
+Unless the webhook's user is a Bitrix24 administrator, the sync copies only their own clients: the contacts and
+companies assigned to them or named on their deals and leads. Lists show phones and e-mails of those alone; `people
+show` and `organizations show` give them for anyone else's, at most 100 a day for the user and their agents together.
+That count is kept on this computer, so it stops an accident or an agent, not someone who means to take the base:
+Bitrix24's own access rights do that.
+
 Every write is checked against the permissions and kept in the send journal. `B24_READ_ONLY=1` refuses every write.
 Assigning a record to another employee is refused until you allow it. A stage change can still start the portal's own
 robots, which may write to your clients: set `permissions.deals.move` and `permissions.leads.move` to `ask` or `deny`
@@ -32,7 +38,7 @@ leads, and names each kind it left out in `missing` and on stderr. With every ki
 refused.
 
 `api call` works from an allow list. It allows the CRM, catalog, user and department reads `b24` makes itself, and the deal, lead,
-contact and company writes. Reads and writes both check the key of the command that reads or writes the same records:
+contact and company writes. Contact and company reads are an administrator's alone, whatever the permissions say. Reads and writes both check the key of the command that reads or writes the same records:
 `api call crm.deal.list` checks `deals.list`, and `crm.item.update` with `entityTypeId` 2 checks `deals.update`.
 `department.get` checks `users.list`, and `crm.mycompany.*` checks `organizations.list`. A body
 that names one field twice in any spelling (`assignedById` and `ASSIGNED_BY_ID`, `fields` and `FIELDS`), an
