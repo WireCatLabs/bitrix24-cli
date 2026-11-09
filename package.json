@@ -58,8 +58,8 @@
     "docs:spell": "cspell lint --config cspell.json --no-progress --no-summary README.md SECURITY.md CHANGELOG.md AGENTS.md CLAUDE.md 'docs/*.md' 'skills/**/*.md'"
   },
   "dependencies": {
-    "@wirecat/cli-base": "0.90.1",
-    "@wirecat/cli-core": "0.621.0",
+    "@wirecat/cli-base": "0.93.0",
+    "@wirecat/cli-core": "0.623.0",
     "commander": "15.0.0",
     "valibot": "1.5.0"
   },
