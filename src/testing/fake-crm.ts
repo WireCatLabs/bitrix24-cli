@@ -118,8 +118,15 @@ const brokenFilter = (): Reply => ({
 
 /** The scope each method needs, from the top of its page in the API reference. */
 type Scope = "crm" | "user" | "department"
-const scopeOf = (method: string): Scope =>
-  method.startsWith("user.") ? "user" : method.startsWith("department.") ? "department" : "crm"
+/** `user.admin` is in scope `basic`, which every webhook has (apidocs user-admin). */
+const scopeOf = (method: string): Scope | null =>
+  method === "user.admin"
+    ? null
+    : method.startsWith("user.")
+      ? "user"
+      : method.startsWith("department.")
+        ? "department"
+        : "crm"
 /** REST 3.0 serves the CRM objects by type, but not their REST 2 `userfield` lists (apidocs rest-v3). */
 const apiOf = (method: string): 2 | 3 =>
   /^crm\.(deal|lead|contact|company|mycompany)\./.test(method) && !/\.userfield\./.test(method) ? 3 : 2
@@ -356,7 +363,14 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
       )
     return paged(all, Number(body.start ?? 0))
   }
-  methods["department.get"] = ({ body }) => paged([...departments.values()], Number(body.start ?? 0))
+  let admin = false
+  methods["user.admin"] = () => ok(admin)
+  // department.get filters by its upper-case fields given at the top level (apidocs department-get).
+  methods["department.get"] = ({ body }) =>
+    paged(
+      [...departments.values()].filter((row) => body.UF_HEAD === undefined || String(body.UF_HEAD) === row.UF_HEAD),
+      Number(body.start ?? 0),
+    )
   methods["crm.category.list"] = () => ok({ categories: CATEGORIES })
   methods["crm.status.list"] = ({ body }) => {
     const directory = (body.filter as { ENTITY_ID?: string } | undefined)?.ENTITY_ID
@@ -380,7 +394,8 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
       name,
       (call: PortalCall): Reply => {
         if (call.api !== apiOf(name)) return methodNotFound(call.api, name)
-        if (withheld.has(scopeOf(name))) return noScope(call.api)
+        const scope = scopeOf(name)
+        if (scope && withheld.has(scope)) return noScope(call.api)
         return denied.has(name) ? accessDenied() : answerOf(name, call)
       },
     ]),
@@ -408,6 +423,10 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
     },
     putUser: (fields: Raw) => users.set(String(fields.ID), { ACTIVE: true, USER_TYPE: "employee", ...fields }),
     putDepartment: (fields: Raw) => departments.set(String(fields.ID), { SORT: 500, ...fields }),
+    /** Whether `user.admin` answers true for the webhook's user. */
+    setAdmin: (value: boolean) => {
+      admin = value
+    },
     /** The webhook loses a scope; `user_basic` leaves `user.get` without `EMAIL`, as a `user_brief` webhook gets. */
     withhold: (scope: Scope | "user_basic") => withheld.add(scope),
     /** The webhook's employee loses the right to one REST 3.0 method; `allow` gives it back. */
