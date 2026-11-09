@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+# Imports a whole Bitrix24 CRM into the owner's real WireCat store, where Desktop's Clients page reads it.
+# Unlike bin/b24-live, nothing here is a throwaway folder: the profile, the sign-in and the store are the real ones,
+# and the b24 that runs is a released one from npm, never this checkout's build.
+#
+#   bin/b24-import <profile> <account>
+#
+# <profile>  the b24 profile to create or update, a name you choose for this portal, such as work
+# <account>  the keyring entry `secret-tool store --label=… service bitrix24 account <account>` holds the webhook in
+#
+# Run it again at any time: it signs the profile in again and syncs what changed.
+set -euo pipefail
+
+min_version=0.8.0
+max_rounds=200
+
+usage() {
+  echo "usage: $0 <profile> <account>" >&2
+  echo "  <profile>  the b24 profile to create or update, a name you choose for this portal" >&2
+  echo "  <account>  the keyring account (service bitrix24) that holds the portal's incoming webhook" >&2
+  exit 2
+}
+die() {
+  echo "b24-import: $*" >&2
+  exit 1
+}
+
+[ $# -eq 2 ] || usage
+profile=$1
+account=$2
+[ -n "$profile" ] && [ -n "$account" ] || usage
+
+# A moved folder or store sends the import somewhere Desktop never looks.
+for name in MESSAGING_STORE B24_CONFIG_DIR B24_STATE_DIR B24_DATA_DIR; do
+  [ -z "${!name:-}" ] || die "$name is set, so the import would not reach the store Desktop reads; unset it first"
+done
+unset B24_TOKEN B24_PROFILE
+
+command -v secret-tool >/dev/null || die "secret-tool is not installed (Debian/Ubuntu: apt install libsecret-tools)"
+command -v npm >/dev/null || die "npm is not installed; install Node.js 22.16 or newer"
+secret-tool lookup service bitrix24 account "$account" >/dev/null 2>&1 ||
+  die "no keyring entry: service bitrix24 account $account"
+
+# One JSON value on stdin; prints the expression's result, or nothing.
+json() {
+  node -e '
+    let s = ""
+    process.stdin.on("data", (d) => (s += d)).on("end", () => {
+      let v
+      try { v = new Function("j", `return (${process.argv[1]})`)(JSON.parse(s)) } catch {}
+      if (v !== undefined && v !== null) console.log(v)
+    })' "$1"
+}
+older() { [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | head -1)" = "$1" ] && [ "$1" != "$2" ]; }
+
+if ! command -v b24 >/dev/null; then
+  # As Desktop's Install button does: the exact latest version, globally with npm.
+  latest=$(npm view @wirecat/bitrix24-cli version 2>/dev/null) || die "npm could not tell the latest @wirecat/bitrix24-cli"
+  echo "installing @wirecat/bitrix24-cli@$latest with npm"
+  npm install --global "@wirecat/bitrix24-cli@$latest" --no-fund --no-audit >/dev/null
+  hash -r
+  command -v b24 >/dev/null || die "npm installed bitrix24-cli, but b24 is not on PATH (npm prefix: $(npm config get prefix))"
+fi
+case "$(readlink -f "$(command -v b24)")" in
+  */node_modules/@wirecat/bitrix24-cli/*) ;;
+  *) die "$(command -v b24) is not a released bitrix24-cli from npm (a linked checkout?); a branch build must not migrate the real store" ;;
+esac
+version=$(b24 --version)
+! older "$version" "$min_version" || die "b24 $version is older than $min_version, which Desktop's Clients page needs; update it from Desktop's Tools page"
+echo "b24 $version at $(command -v b24)"
+
+echo "signing profile $profile in with the webhook from the keyring (account $account)"
+signed=$(secret-tool lookup service bitrix24 account "$account" | b24 "$profile" session start --json) ||
+  die "session start failed (its reason is above)"
+portal=$(printf '%s' "$signed" | json 'j.item.portal')
+[ -n "$portal" ] || die "session start gave no portal"
+echo "signed in: $portal as $(printf '%s' "$signed" | json 'j.item.user.name ?? j.item.user.id')"
+
+# From the release after 0.8.0 a sync copies only the webhook user's deals and leads unless the scope is all;
+# 0.8.0 copies all of them and has no such setting.
+if older "$min_version" "$version"; then
+  b24 "$profile" config set "crm.bitrix24:$portal.scope" all --json >/dev/null ||
+    die "could not set crm.bitrix24:$portal.scope to all (run this in your own terminal, not an agent's), so the sync would copy only your own deals and leads"
+fi
+
+echo "syncing every pipeline, company, contact, deal and lead; the first run goes at the portal's pace, minutes"
+round=0
+while :; do
+  round=$((round + 1))
+  [ "$round" -le "$max_rounds" ] || die "the sync is still not complete after $max_rounds runs; run this again to go on"
+  # A run that stops before the end may exit non-zero with its answer still on stdout; only a missing answer is fatal.
+  answer=$(b24 "$profile" sync --record --json) || true
+  [ -n "$(printf '%s' "$answer" | json 'j.item ? 1 : undefined')" ] || die "sync failed in run $round (its reason is above)"
+  printf '%s' "$answer" | json 'j.item.synced.map((k) => `  ${k.kind}: saved ${k.saved}, ${k.state}${k.error ? `, error: ${k.error}` : ""}`).join("\n")'
+  failed=$(printf '%s' "$answer" | json 'j.item.synced.filter((k) => k.error).map((k) => k.kind).join(" ")')
+  [ -z "$failed" ] || die "the sync of $failed failed; the error is above"
+  [ "$(printf '%s' "$answer" | json 'j.item.complete')" = true ] && break
+  requests=$(printf '%s' "$answer" | json 'j.item.progress.requests')
+  [ "${requests:-0}" != 0 ] || die "sync run $round made no request and is not complete: $(printf '%s' "$answer" | json 'j.item.hint ?? j.item.stopped')"
+  echo "run $round stopped ($(printf '%s' "$answer" | json 'j.item.stopped')); going on"
+done
+printf '%s' "$answer" | json 'j.item.issues.map((i) => `  issue: ${i.kind} ${i.reason}: ${i.message}`).join("\n")'
+
+echo
+echo "stored for profile $profile ($portal):"
+b24 "$profile" store status --json | json 'j.items.map((k) => `  ${k.kind}: ${k.stored}`).join("\n")'
+
+if ! command -v memo >/dev/null; then
+  echo "note: Desktop's Clients page reads the store through memo, which is not installed; install it from Desktop"
+fi
