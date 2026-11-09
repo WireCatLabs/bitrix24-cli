@@ -219,10 +219,24 @@ describe("BitrixTransport", () => {
   })
 
   it("times out a read that never answers and tries it again", async () => {
-    const portal = fakePortal({ "user.current": new DOMException("timed out", "TimeoutError") })
-    const error = await failureOf(transportOf(portal).transport.call("user.current"))
-    expect(error.code).toBe("timeout")
-    expect(portal.calls).toHaveLength(4)
+    vi.useFakeTimers()
+    try {
+      let calls = 0
+      const fetch = (_url: string, init: RequestInit) => {
+        calls++
+        return new Promise<Response>((_, reject) =>
+          init.signal?.addEventListener("abort", () => reject(init.signal?.reason)),
+        )
+      }
+      const failure = failureOf(
+        new BitrixTransport({ webhook: FAKE_WEBHOOK, fetch, sleep: async () => {} }).call("user.current"),
+      )
+      await vi.advanceTimersByTimeAsync(60_000)
+      expect((await failure).code).toBe("timeout")
+      expect(calls).toBe(4)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it("a read that hangs is cut in time for a retry inside a one-shot command's 30 s", async () => {

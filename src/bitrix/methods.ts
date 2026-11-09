@@ -28,14 +28,25 @@ const effectOf = (name: string): Effect => {
   return "write"
 }
 
-const SCOPES = new Set(["crm", "user", "catalog", "task", "department"])
-/** Named under `user.` but in scope `basic` (apidocs common/users: user-admin, user-access). */
-const BASIC = new Set(["user.admin", "user.access"])
+/**
+ * A method's first word to its scope, as each method's page in apidocs.bitrix24.com names it (2026-11-09). The two
+ * differ (`tasks.task.add` is in `task`), so a word not listed here gives `unknown`, never a guess.
+ */
+const SCOPES = new Map([
+  ["crm", "crm"],
+  ["user", "user"],
+  ["catalog", "catalog"],
+  ["task", "task"],
+  ["tasks", "task"],
+  ["department", "department"],
+  ["im", "im"],
+  ["calendar", "calendar"],
+])
+/** In scope `basic` (apidocs common/users: user-admin, user-access; common/system). */
+const BASIC = new Set(["user.admin", "user.access", ...READ_METHODS])
 
-export const scopeOf = (name: string): string => {
-  const first = name.slice(0, name.indexOf("."))
-  return SCOPES.has(first) && !BASIC.has(name) ? first : "basic"
-}
+export const scopeOf = (name: string): string =>
+  BASIC.has(name) ? "basic" : (SCOPES.get(name.slice(0, name.indexOf("."))) ?? "unknown")
 
 /** Which REST version answers a method, what it does, and its scope; unknown methods go to REST 2, the older API. */
 export const methodOf = (name: string): Method => ({

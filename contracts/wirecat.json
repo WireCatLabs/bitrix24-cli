@@ -971,6 +971,10 @@
       ]
     }
   },
+  "network": {
+    "hosts": [],
+    "user_hosts": "the Bitrix24 portal in your webhook address"
+  },
   "desktop": {
     "tagline": "Bitrix24 CRM: deals, leads, contacts and companies",
     "profiles": {
