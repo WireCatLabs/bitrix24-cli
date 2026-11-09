@@ -1,6 +1,6 @@
 import { memoryKeyring } from "@wirecat/cli-base"
 import { openCache } from "@wirecat/cli-core/store"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { fakeCrm } from "../testing/fake-crm.js"
 import { FAKE_HOOK } from "../testing/fake-portal.js"
 import { b24 } from "../testing/harness.js"
@@ -62,7 +62,7 @@ describe("sync scope", () => {
     expect(await titles(crm)).toEqual([])
   })
 
-  it("copies every deal for all, and drops the others' again for mine", async () => {
+  it("copies every deal for a department head under all, and drops the others' again for mine", async () => {
     const { crm } = portal()
     await set(SCOPE, "all")
     expect((await sync(crm)).scope).toEqual({ mode: "all" })
@@ -73,6 +73,72 @@ describe("sync scope", () => {
     await sync(crm)
     expect(await titles(crm)).toEqual(["Own"])
     expect(await titles(crm, "leads")).toEqual([])
+  })
+
+  it("brings a deal given to the user, drops one given away, and marks a deleted one", async () => {
+    const { crm, ids } = portal()
+    await sync(crm)
+    crm.setClock(Date.now())
+    crm.put("deal", { ...crm.row("deal", ids.other), assignedById: OWN })
+    crm.put("deal", { ...crm.row("deal", ids.own), assignedById: OTHER })
+    await sync(crm)
+    expect(await titles(crm)).toEqual(["Other's"])
+
+    crm.remove("deal", ids.other)
+    // The id pass marks only rows saved an hour before it started, so a row a sync is still writing is never taken.
+    vi.useFakeTimers({ toFake: ["Date"], now: Date.now() + 2 * 3_600_000 })
+    try {
+      await b24(["work", "sync", "--rescan", "--json"], { portal: crm })
+    } finally {
+      vi.useRealTimers()
+    }
+    expect(await titles(crm)).toEqual([])
+  })
+
+  it("refuses scope all to an employee, and copies their own under mine", async () => {
+    const { crm } = portal()
+    crm.putDepartment({ ID: "1", NAME: "Example company", UF_HEAD: String(OTHER) })
+    await set(SCOPE, "all")
+    const ran = await b24(["work", "sync", "--json"], { portal: crm })
+    expect(ran.code).not.toBe(0)
+    const error = ran.json().error as { code: string; message: string }
+    expect(error.code).toBe("configuration_error")
+    expect(error.message).toContain("neither a Bitrix24 administrator nor the head of a department")
+    expect(error.message).toContain(`config set ${SCOPE} mine`)
+    expect(await titles(crm)).toEqual([])
+
+    await set(SCOPE, "mine")
+    await sync(crm)
+    expect(await titles(crm)).toEqual(["Own"])
+  })
+
+  it("counts an employee whose webhook cannot read departments as no head, and says why", async () => {
+    const { crm } = portal()
+    crm.withhold("department")
+    await set(SCOPE, "all")
+    const ran = await b24(["work", "sync", "--json"], { portal: crm })
+    expect((ran.json().error as { message: string }).message).toContain("needs the webhook's department scope")
+  })
+
+  it("copies every deal for a portal administrator who heads no department", async () => {
+    const { crm } = portal()
+    crm.putDepartment({ ID: "1", NAME: "Example company", UF_HEAD: String(OTHER) })
+    crm.setAdmin(true)
+    await set(SCOPE, "all")
+    expect((await sync(crm)).scope).toEqual({ mode: "all" })
+    expect(await titles(crm)).toEqual(["Other's", "Own", "Website form"])
+  })
+
+  it("stops a manager who is no longer one from copying every deal", async () => {
+    const { crm } = portal()
+    await set(SCOPE, "all")
+    await sync(crm)
+    expect(await titles(crm)).toEqual(["Other's", "Own", "Website form"])
+    crm.putDepartment({ ID: "1", NAME: "Example company", UF_HEAD: String(OTHER) })
+    expect((await b24(["work", "sync", "--json"], { portal: crm })).code).not.toBe(0)
+    await set(SCOPE, "mine")
+    await sync(crm)
+    expect(await titles(crm)).toEqual(["Own"])
   })
 
   it("refuses an unassigned list with an entry that is not a user id when it is set", async () => {

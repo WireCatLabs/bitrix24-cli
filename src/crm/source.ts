@@ -2,6 +2,7 @@ import { CliError, isCliError } from "@wirecat/cli-base"
 import type { CrmField, CrmItem, CrmKind, CrmOrganization, CrmPerson, CrmRecords } from "@wirecat/cli-core"
 import type { CrmCallContext, CrmChanges, CrmIdPage, CrmSource } from "@wirecat/cli-core/crm"
 import type { BitrixCaller, BitrixTransport } from "../bitrix/transport.js"
+import { roleOf } from "../whoami.js"
 import { DEAL } from "./deal.js"
 import { loadFields, metadataOf } from "./fields.js"
 import type { ItemType } from "./items.js"
@@ -107,6 +108,8 @@ export const bitrixCrmSource = (
   portal: () => BitrixTransport,
   now: () => number = Date.now,
   own: OwnMemory = NO_MEMORY,
+  /** The stored `scope` setting and its key: `all` is a manager's, and a sync for anyone else is refused. */
+  asked: () => Promise<{ mode: "mine" | "all"; setting: string }> = async () => ({ mode: "mine", setting: "scope" }),
 ): BitrixCrmSource => {
   /** The portal for one call of core's: core paid for its first request, each further one is spent from the budget. */
   const metered = (context?: CrmCallContext): BitrixCaller => {
@@ -221,7 +224,24 @@ export const bitrixCrmSource = (
   return {
     provider: "bitrix24",
     traits: { kinds: ["organization", "person", "deal", "lead"], removedInChanges: false },
-    self: () => portal().userId,
+    // Checked on every sync, not when the setting is made: a manager who stops being one stops copying everything.
+    async self() {
+      const self = portal().userId
+      const { mode, setting } = await asked()
+      if (mode !== "all") return self
+      const role = await roleOf(portal(), self)
+      if (role.manager) return self
+      throw new CliError(
+        "configuration_error",
+        `${setting} is all, and user ${self} is neither a Bitrix24 administrator nor the head of a department` +
+          (role.missing
+            ? " (the portal refused department.get, which needs the webhook's department scope, so a head cannot be told)"
+            : "") +
+          `: only a manager copies every deal and lead. "config set ${setting} mine" copies your own and the ` +
+          "unassigned ones",
+        { setting, reason: "bitrix.scope-all-manager-only" },
+      )
+    },
     pipelines: (kind, context) => bitrixPipelines(metered(context), kind),
     async changes<K extends CrmKind>(
       kind: K,

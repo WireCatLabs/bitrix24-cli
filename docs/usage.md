@@ -50,24 +50,30 @@ than half of them is held back, as a webhook that lost its rights lists none. A 
 
 ### Whose deals and leads
 
-By default a sync copies only the deals and leads whose responsible person is the webhook's own user. Bitrix24 always
-names a responsible person (the creator, unless someone else is set), so it has no unassigned deals: name the users
-whose deals count as nobody's, such as the one a website form or an integration creates them as. A manager copies
-every one:
+A sync copies the deals and leads whose responsible person is the webhook's own user, and those of the users you
+name as unassigned. Bitrix24 always names a responsible person (the creator, unless someone else is set), so it has
+no unassigned deals: name the users whose deals count as nobody's, such as the one a website form or an integration
+creates them as. A manager may copy every deal and lead instead:
 
 ```sh
 b24 work config set crm.bitrix24:example.bitrix24.ru.unassigned 15,31  # their deals and leads count as unassigned
-b24 work config set crm.bitrix24:example.bitrix24.ru.scope all         # every deal and lead; `mine` goes back
+b24 work config set crm.bitrix24:example.bitrix24.ru.scope all         # a manager: every deal and lead
+b24 work config set crm.bitrix24:example.bitrix24.ru.scope mine        # your own and the unassigned ones
 ```
 
-`example.bitrix24.ru` stands for your portal's host. The sync answer says which `scope` it applied and the
-webhook's own user (`self`). A deal given to another user leaves the local copy at the next sync. Switching to `all`
-lists deals and leads in full again; switching to `mine` marks the others deleted here, from the copy alone, without
-asking the portal. Deleted here means they leave lists and search; their earlier copy stays in the store file. If
-you never set `scope` and `mine` would mark more than half of the stored deals or leads deleted (the webhook's user
-holds few of them), the sync keeps them and says so (`crm.narrowing-held`) until you set `scope` to `mine` or `all`.
-Only you set `scope`, `self` and `unassigned`: an agent is refused.
-Contacts and companies are always copied whole.
+`example.bitrix24.ru` stands for your portal's host. A manager is a Bitrix24 administrator or the head of a
+department; Bitrix24's REST API cannot read a user's CRM access rights, so these are what `b24` can tell. For anyone
+else a sync under `scope all` is refused, and says to set `mine`. The role is checked on every sync, so someone who
+stops being a manager stops copying every deal. Without the webhook's `department` scope a department head counts
+as an employee, and the refusal says so.
+
+The sync answer says which `scope` it applied and the webhook's own user (`self`). A deal given to another user leaves
+the local copy at the next sync, and one given to you arrives. Switching to `all` lists deals and leads in full
+again; switching to `mine` marks the others deleted here, from the copy alone, without asking the portal. Deleted
+here means they leave lists and search; their earlier copy stays in the store file. If you never set `scope` and
+`mine` would mark more than half of the stored deals or leads deleted, the sync keeps them and says so
+(`crm.narrowing-held`) until you set `scope` to `mine` or `all`. Only you set `scope`, `self` and `unassigned`: an
+agent is refused. Contacts and companies are always copied whole.
 
 One portal's copy belongs to one user: the first sync remembers the webhook's user as `crm.bitrix24:<portal>.self`.
 A sync through a webhook of another user is refused;

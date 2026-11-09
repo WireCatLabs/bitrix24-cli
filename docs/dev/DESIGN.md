@@ -63,9 +63,18 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
    by id (keyset paging, so a record changed mid-round shifts nothing), changes from `updatedTime` at the last
    round's start less ten minutes, then cli-core's daily id-only pass that finds deletions. Bitrix24 sends events only to an installed app, and a webhook cannot install one, so
    there is no change token to follow. `store status` shows where the sync stands.
-3. **When the portal deletes something.** The local copy is marked deleted and kept, never wiped, and only after a
+3. **Whose deals and leads.** A sync copies the webhook user's own and the unassigned ones (`scope mine`, cli-core's);
+   `scope all`, every one, is a manager's, and a sync under it for anyone else is refused (`configuration_error`,
+   reason `bitrix.scope-all-manager-only`), checked on every sync. REST has no method that reads a user's CRM access
+   level, so a manager is who the portal names: [`user.admin`](https://apidocs.bitrix24.com/api-reference/common/users/user-admin.html)
+   true, or the head of an active department, [`department.get`](https://apidocs.bitrix24.com/api-reference/departments/department-get.html)
+   filtered by `UF_HEAD`. Without the `department` scope the head check is refused and the user counts as an employee.
+   Bitrix24 fills `ASSIGNED_BY_ID` with the caller by default ([crm.deal.add](https://apidocs.bitrix24.com/api-reference/crm/deals/crm-deal-add.html)),
+   so no deal is unassigned on the portal: unassigned is the owner's list `crm.bitrix24:<portal>.unassigned`.
+   Contacts and companies stay whole.
+4. **When the portal deletes something.** The local copy is marked deleted and kept, never wiped, and only after a
    full id pass has finished (WC-DATA-7).
-4. **Deleting local data.** Per account, through cli-core's shared commands, as every CLI does; there is no command
+5. **Deleting local data.** Per account, through cli-core's shared commands, as every CLI does; there is no command
    of `b24`'s own for it.
 
 ### Relationships

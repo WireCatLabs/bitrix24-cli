@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Imports a whole Bitrix24 CRM into the owner's real WireCat store, where Desktop's Clients page reads it.
+# Imports a Bitrix24 CRM into the owner's real WireCat store, where Desktop's Clients page reads it.
 # Unlike bin/b24-live, nothing here is a throwaway folder: the profile, the sign-in and the store are the real ones,
 # and the b24 that runs is a released one from npm, never this checkout's build.
 #
@@ -11,7 +11,7 @@
 # Run it again at any time: it signs the profile in again and syncs what changed.
 set -euo pipefail
 
-min_version=0.8.0
+min_version=0.10.0
 max_rounds=200
 
 usage() {
@@ -66,7 +66,7 @@ case "$(readlink -f "$(command -v b24)")" in
   *) die "$(command -v b24) is not a released bitrix24-cli from npm (a linked checkout?); a branch build must not migrate the real store" ;;
 esac
 version=$(b24 --version)
-! older "$version" "$min_version" || die "b24 $version is older than $min_version, which Desktop's Clients page needs; update it from Desktop's Tools page"
+! older "$version" "$min_version" || die "b24 $version is older than $min_version, which sets the sync scope by the user's role; update it from Desktop's Tools page"
 echo "b24 $version at $(command -v b24)"
 
 echo "signing profile $profile in with the webhook from the keyring (account $account)"
@@ -76,14 +76,14 @@ portal=$(printf '%s' "$signed" | json 'j.item.portal')
 [ -n "$portal" ] || die "session start gave no portal"
 echo "signed in: $portal as $(printf '%s' "$signed" | json 'j.item.user.name ?? j.item.user.id')"
 
-# From the release after 0.8.0 a sync copies only the webhook user's deals and leads unless the scope is all;
-# 0.8.0 copies all of them and has no such setting.
-if older "$min_version" "$version"; then
-  b24 "$profile" config set "crm.bitrix24:$portal.scope" all --json >/dev/null ||
-    die "could not set crm.bitrix24:$portal.scope to all (run this in your own terminal, not an agent's), so the sync would copy only your own deals and leads"
-fi
+# A Bitrix24 administrator or a department head copies every deal and lead; anyone else their own and the unassigned
+# ones, and b24 refuses them all. Set either way, so a re-run after a change of role follows it.
+if [ "$(printf '%s' "$signed" | json 'j.item.user.manager')" = true ]; then scope=all; else scope=mine; fi
+b24 "$profile" config set "crm.bitrix24:$portal.scope" "$scope" --json >/dev/null ||
+  die "could not set crm.bitrix24:$portal.scope to $scope (run this in your own terminal, not an agent's)"
+echo "scope: $scope"
 
-echo "syncing every pipeline, company, contact, deal and lead; the first run goes at the portal's pace, minutes"
+echo "syncing every pipeline, company and contact, and the deals and leads of scope $scope; the first run goes at the portal's pace, minutes"
 round=0
 while :; do
   round=$((round + 1))
