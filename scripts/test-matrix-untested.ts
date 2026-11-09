@@ -1,9 +1,28 @@
 const SHARED_MCP =
   "cli-core's appMcpCommand; its app-mcp-command and mcp-server-command tests drive it, and src/mcp.test.ts and " +
   "src/permissions.test.ts run b24's own server"
+const SHARED_SCHEDULE =
+  "cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, " +
+  "lists and removes b24's sync timer"
 const LONG_RUNNING = `starts an HTTP server or a background process that runs until stopped; ${SHARED_MCP}`
 
 export const UNTESTED: { command: string; option?: string; reason: string }[] = [
+  ...[
+    ...["--at", "--at-time", "--notify-on", "--deliver-to"].map((option) => ({ command: "schedule command", option })),
+    { command: "schedule agent" },
+    ...[
+      "--model",
+      "--max-cost",
+      "--max-cost-per-day",
+      "--every",
+      "--at",
+      "--at-time",
+      "--notify-on",
+      "--deliver-to",
+    ].map((option) => ({ command: "schedule agent", option })),
+    { command: "schedule run" },
+    { command: "schedule exec" },
+  ].map((one) => ({ ...one, reason: SHARED_SCHEDULE })),
   ...["--port", "--public-url", "--profiles"].map((option) => ({
     command: "mcp serve",
     option,

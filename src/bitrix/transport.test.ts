@@ -262,7 +262,7 @@ describe("BitrixTransport", () => {
 })
 
 describe("bitrixError", () => {
-  const code = (status: number, body: unknown) => bitrixError("m", status, body as never)
+  const code = (status: number, body: unknown) => bitrixError("m", status, body)
 
   it("maps Bitrix24's refusals to stable codes", () => {
     expect(code(429, { error: "OPERATION_TIME_LIMIT", time: { operating_reset_at: 1030 } })).toMatchObject({
@@ -280,6 +280,7 @@ describe("bitrixError", () => {
     expect(code(401, { error: "NO_AUTH_FOUND" }).code).toBe("authentication_error")
     expect(code(401, { error: "expired_token" }).code).toBe("authentication_error")
     expect(code(403, { error: "PORTAL_DELETED" }).code).toBe("authentication_error")
+    expect(code(403, { error: "WRONG_AUTH_TYPE" }).details.reason).toBe("webhook.app-only")
     expect(code(404, { error: "ERROR_METHOD_NOT_FOUND" }).details.reason).toBe("method.unknown")
     expect(code(400, { error: "", error_description: "Not found" }).code).toBe("not_found")
     expect(code(400, { error: { code: "BITRIX_REST_V3_EXCEPTION_ENTITYNOTFOUNDEXCEPTION" } }).code).toBe("not_found")

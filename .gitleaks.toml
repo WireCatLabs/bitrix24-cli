@@ -4,24 +4,6 @@ useDefault = true
 [allowlist]
 paths = ['''pnpm-lock\.yaml''']
 
-# gitleaks' own rules know Google API keys (AIza…) only. Google calls its OAuth tokens opaque, so these prefixes are
-# the observed format, not a promised one: ya29. in Apigee's sample access token, 1// in the sample refresh token of
-# the web-server OAuth guide.
-[[rules]]
-id = "google-oauth-access-token"
-description = "Google OAuth 2.0 access token"
-regex = '''\b(ya29\.[A-Za-z0-9._-]{20,})'''
-secretGroup = 1
-keywords = ["ya29."]
-
-[[rules]]
-id = "google-oauth-refresh-token"
-description = "Google OAuth 2.0 refresh token"
-regex = '''(?:^|[^A-Za-z0-9/])(1//[A-Za-z0-9_-]{30,})'''
-secretGroup = 1
-entropy = 3.5
-keywords = ["1//"]
-
 # A Bitrix24 incoming webhook is a password: its secret is a segment of the address,
 # https://<portal>/rest/<user id>/<secret>/<method> (apidocs "Webhooks"), with or without the trailing slash, and with
 # the `-` and `_` that parseWebhook takes. The tests' fake secret starts with wirecatfake.
@@ -34,3 +16,30 @@ keywords = ["/rest/"]
 
 [[rules.allowlists]]
 regexes = ['''^wirecatfake''']
+
+# A CRM holds its clients' phone numbers and e-mail addresses; neither may reach a fixture, a doc or a capture.
+[[rules]]
+id = "phone-number-e164"
+description = "A phone number of a contact, a company or an employee"
+regex = '''(?i)(?:phone|msisdn|number)["'\s:=]{1,10}\+?[1-9]\d{9,14}'''
+tags = ["pii"]
+
+[[rules.allowlists]]
+regexTarget = "match"
+regexes = ['''\+?71234567890''']
+
+[[rules]]
+id = "email-address"
+description = "An e-mail address of a contact, a company or an employee"
+regex = '''\b[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}\b'''
+tags = ["pii"]
+
+[[rules.allowlists]]
+regexTarget = "match"
+regexes = [
+  # The domains RFC 2606 and RFC 6761 keep for examples, and the addresses of tools that commit here.
+  '''@(?:[A-Za-z0-9-]+\.)*(?:example\.(?:com|org|net)|example|test|invalid|localhost)$''',
+  '''@wirecat\.dev$''',
+  '''^noreply@anthropic\.com$''',
+  '''@users\.noreply\.github\.com$''',
+]

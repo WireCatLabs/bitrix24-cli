@@ -1,12 +1,5 @@
 [
   {
-    "rule": "list-without-query",
-    "target": "session list",
-    "reason": "Lists the few profiles on this computer, every one at once by design (WC-ACCT-12), as gcal-cli's session list does; a filter would let a caller narrow it to one and read that as the only profile.",
-    "owner": "@WireCatLabs",
-    "review_after": "2027-02-06"
-  },
-  {
     "rule": "unknown-verb",
     "target": "api call",
     "reason": "Calls one Bitrix24 method by its API name, the same command gcal-cli and drive-cli have; no shared verb names a raw API call. Review when the vocabulary names it: https://github.com/WireCatLabs/cli-base/issues/425",

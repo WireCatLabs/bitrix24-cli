@@ -3,7 +3,7 @@
   "args": ["../dist/bin/b24.js"],
   "previous": {
     "entry": "./previous/node_modules/@wirecat/previous-cli/dist/bin/b24.js",
-    "version": "0.6.0"
+    "version": "0.8.0"
   },
   "canaries": ["wirecat-synthetic-deal-canary"],
   "cases": [

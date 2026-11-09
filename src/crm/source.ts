@@ -1,15 +1,30 @@
 import { CliError, isCliError } from "@wirecat/cli-base"
 import type { CrmField, CrmItem, CrmKind, CrmOrganization, CrmPerson, CrmRecords } from "@wirecat/cli-core"
 import type { CrmCallContext, CrmChanges, CrmIdPage, CrmSource } from "@wirecat/cli-core/crm"
-import type { BitrixTransport } from "../bitrix/transport.js"
+import type { BitrixCaller, BitrixTransport } from "../bitrix/transport.js"
 import { DEAL } from "./deal.js"
 import { loadFields, metadataOf } from "./fields.js"
 import type { ItemType } from "./items.js"
 import { LEAD } from "./lead.js"
 import { ORGANIZATION } from "./organization.js"
+import { NO_MEMORY, type OwnMemory } from "./own-memory.js"
 import { PERSON } from "./person.js"
 import { bitrixPipelines } from "./pipelines.js"
-import { contacts, customFields, fullName, id, type Metadata, portalTime, type Raw, text } from "./values.js"
+import { portalDepartments, portalUsers } from "./user.js"
+import {
+  contacts,
+  customFields,
+  fieldOf,
+  fullName,
+  id,
+  ids,
+  isRaw,
+  type Metadata,
+  portalTime,
+  type Raw,
+  text,
+} from "./values.js"
+import { rest3Rows } from "./walk.js"
 
 /**
  * Re-read before the last cursor: rows the portal saved while the round ran, and this computer's clock running ahead
@@ -17,30 +32,38 @@ import { contacts, customFields, fullName, id, type Metadata, portalTime, type R
  */
 const OVERLAP_MS = 10 * 60_000
 const PAGE = 500
+/** `crm.mycompany.basic.list`'s default page; the docs name no larger one. */
+const MY_PAGE = 50
 
-const TYPES: Record<CrmKind, ItemType<unknown>> = {
-  deal: DEAL as ItemType<unknown>,
-  lead: LEAD as ItemType<unknown>,
-  person: PERSON as ItemType<unknown>,
-  organization: ORGANIZATION as ItemType<unknown>,
+const TYPES: Record<CrmKind, Pick<ItemType<unknown>, "type" | "select">> = {
+  deal: DEAL,
+  lead: LEAD,
+  person: PERSON,
+  organization: ORGANIZATION,
 }
 
+/** `companiesId` lists the contact's companies, the primary one first (apidocs fields-contact). */
 const toPerson = (raw: Raw): CrmPerson => ({
   externalId: id(raw.id) ?? "",
   name: fullName(raw.name, raw.secondName, raw.lastName),
   email: contacts(raw.email)[0]?.value ?? null,
   phone: contacts(raw.phone)[0]?.value ?? null,
+  position: text(raw.post),
+  ...(Array.isArray(raw.companiesId)
+    ? { organizations: ids(raw.companiesId).map((externalId, at) => ({ externalId, primary: at === 0 })) }
+    : {}),
 })
 
 const toOrganization = (raw: Raw, metadata?: Metadata): CrmOrganization => ({
   externalId: id(raw.id) ?? "",
   name: text(raw.title) ?? "",
   url: text(raw.url),
+  type: text(raw.typeId),
   ...(metadata ? { metadata } : {}),
 })
 
 /** A list answer without `items` is refused: read as an empty page, it would end the round and empty an id pass. */
-const rowsOf = (result: unknown): Raw[] => {
+const listedRows = (result: unknown): Raw[] => {
   const items = (result as { items?: unknown })?.items
   if (!Array.isArray(items)) throw new CliError("invalid_response", "the portal answered a list without its items")
   return items as Raw[]
@@ -56,6 +79,13 @@ const assigneesOf = (kind: CrmKind, context?: CrmCallContext): number[] | null =
   return [...new Set([scope.self, ...scope.also].map(Number))]
 }
 
+const MAPPERS: { [K in CrmKind]: (raw: Raw, metadata?: Metadata) => CrmRecords[K] } = {
+  deal: DEAL.map,
+  lead: LEAD.map,
+  person: (raw) => toPerson(raw),
+  organization: toOrganization,
+}
+
 /** `<last id>@<when the round started>`: keyset paging by id, so a row changed mid-round never shifts the rest. */
 const pageOf = (page: string | undefined, now: number) => {
   const [after, started] = (page ?? "").split("@")
@@ -66,21 +96,36 @@ export interface BitrixCrmSource extends CrmSource {
   /** One deal or lead as the portal holds it now, custom fields included: what a write answers. */
   item(kind: "deal" | "lead", externalId: string): Promise<CrmItem>
   /** The portal's custom fields of a kind, read once per source. */
-  fields(kind: CrmKind): Promise<CrmField[]>
+  fields(kind: CrmKind, context?: CrmCallContext): Promise<CrmField[]>
 }
 
 /**
  * The portal's CRM for core's sync: REST 3.0 lists by id with `updatedTime` for changes, since a webhook gets no
  * event feed, and a list of every id to find deletions. A `mine` scope limits a full round by `assignedById`.
  */
-export const bitrixCrmSource = (portal: () => BitrixTransport, now: () => number = Date.now): BitrixCrmSource => {
+export const bitrixCrmSource = (
+  portal: () => BitrixTransport,
+  now: () => number = Date.now,
+  own: OwnMemory = NO_MEMORY,
+): BitrixCrmSource => {
+  /** The portal for one call of core's: core paid for its first request, each further one is spent from the budget. */
+  const metered = (context?: CrmCallContext): BitrixCaller => {
+    let paid = false
+    return {
+      call: (method, params, options) => {
+        if (paid) context?.spend()
+        paid = true
+        return portal().call(method, params, options)
+      },
+    }
+  }
   const loaded = new Map<CrmKind, Promise<CrmField[]>>()
-  const fields = (kind: CrmKind) => {
+  const fields = (kind: CrmKind, caller: BitrixCaller = portal()) => {
     let found = loaded.get(kind)
     if (!found) {
       // A webhook without the rights to read field definitions still syncs its records, with no definitions. Any
       // other failure fails the sync rather than mark every stored definition deleted over a passing fault.
-      found = loadFields(portal(), TYPES[kind].type).catch((error: unknown) => {
+      found = loadFields(caller, TYPES[kind].type).catch((error: unknown) => {
         if (isCliError(error) && error.code === "permission_error") return []
         throw error
       })
@@ -89,33 +134,107 @@ export const bitrixCrmSource = (portal: () => BitrixTransport, now: () => number
     return found
   }
   // core's CrmPerson has no metadata, so a contact's values are not read; its definitions still are, for `fields list`.
-  const custom = async (kind: CrmKind) => (kind === "person" ? [] : await fields(kind))
-  const mapped = (kind: CrmKind, raw: Raw, defined: readonly CrmField[]): unknown => {
+  const custom = async (kind: CrmKind, caller: BitrixCaller) => (kind === "person" ? [] : await fields(kind, caller))
+  const mapped = <K extends CrmKind>(kind: K, raw: Raw, defined: readonly CrmField[]): CrmRecords[K] => {
     const values = customFields(raw)
-    const metadata = Object.keys(values).length ? metadataOf(values, defined) : undefined
-    if (kind === "person") return toPerson(raw)
-    if (kind === "organization") return toOrganization(raw, metadata)
-    return TYPES[kind].map(raw, metadata)
+    return MAPPERS[kind](raw, Object.keys(values).length ? metadataOf(values, defined) : undefined)
   }
-  const list = (kind: CrmKind, select: readonly string[], filter: unknown[]) =>
-    portal().call(`crm.${TYPES[kind].type}.list`, {
+  const list = (caller: BitrixCaller, kind: CrmKind, select: readonly string[], filter: unknown[]) =>
+    caller.call(`crm.${TYPES[kind].type}.list`, {
       select,
       filter,
       order: { id: "ASC" },
       pagination: { limit: PAGE, offset: 0 },
     })
+  /**
+   * The account's own companies, which `crm.company.list` never returns. `basic.list` needs no CRM admin right, but
+   * filters only by `=` and `in`, so it is read whole by offset, at the end of every round of companies. A portal that
+   * refuses it, or lacks it, still syncs its client companies and their deletions; its own companies are a gap.
+   */
+  const ownCompanies = async (caller: BitrixCaller, context?: CrmCallContext): Promise<CrmOrganization[] | null> => {
+    let rows: Raw[]
+    try {
+      rows = (
+        await rest3Rows(caller, "crm.mycompany.basic.list", { select: ["id", "title"], order: { id: "ASC" } }, MY_PAGE)
+      ).items
+    } catch (error) {
+      if (!isCliError(error) || (error.code !== "permission_error" && error.code !== "not_found")) throw error
+      const scope = error.details?.scope
+      context?.gap({
+        kind: "organization",
+        message:
+          `the portal did not list its own companies (${error.code}): users are nobody's employees, and the own ` +
+          "companies stored before are kept, never taken for deleted",
+        ...(typeof scope === "string" ? { scope } : {}),
+      })
+      return null
+    }
+    const found = rows.flatMap((raw) => {
+      const externalId = id(raw.id)
+      return externalId ? [{ externalId, name: text(raw.title) ?? "", own: true }] : []
+    })
+    own.write(found.map(({ externalId }) => externalId))
+    return found
+  }
+  /** REST 3.0 gives a lead no field for the deal it became; the deal names its lead in `leadId` (apidocs fields-deal). */
+  const dealsOf = async (caller: BitrixCaller, leads: readonly string[]): Promise<Map<string, string>> => {
+    const found = new Map<string, string>()
+    if (!leads.length) return found
+    const { items } = await rest3Rows(
+      caller,
+      "crm.deal.list",
+      { select: ["id", "leadId"], filter: [["leadId", "in", leads.map(Number)]], order: { id: "ASC" } },
+      PAGE,
+    )
+    for (const raw of items) {
+      const lead = id(raw.leadId)
+      const deal = id(raw.id)
+      if (lead && deal && !found.has(lead)) found.set(lead, deal)
+    }
+    return found
+  }
+  /** What a page gets beyond its rows: each lead its deal, and the last page of companies the own ones. */
+  const completed: {
+    [K in CrmKind]: (
+      items: CrmRecords[K][],
+      caller: BitrixCaller,
+      ended: boolean,
+      context?: CrmCallContext,
+    ) => Promise<CrmRecords[K][]>
+  } = {
+    deal: async (items) => items,
+    person: async (items) => items,
+    lead: async (leads, caller) => {
+      const deals = await dealsOf(
+        caller,
+        leads.map(({ externalId }) => externalId),
+      )
+      return leads.map((lead) => {
+        const deal = deals.get(lead.externalId)
+        return deal ? { ...lead, deal } : lead
+      })
+    },
+    organization: async (items, caller, ended, context) =>
+      ended ? [...items, ...((await ownCompanies(caller, context)) ?? [])] : items,
+  }
 
   return {
     provider: "bitrix24",
     traits: { kinds: ["organization", "person", "deal", "lead"], removedInChanges: false },
     self: () => portal().userId,
-    pipelines: (kind) => bitrixPipelines(portal(), kind),
-    async changes<K extends CrmKind>(kind: K, cursor: string | null, page?: string, context?: CrmCallContext) {
+    pipelines: (kind, context) => bitrixPipelines(metered(context), kind),
+    async changes<K extends CrmKind>(
+      kind: K,
+      cursor: string | null,
+      page?: string,
+      context?: CrmCallContext,
+    ): Promise<CrmChanges<CrmRecords[K]>> {
       const since = cursor === null ? null : Date.parse(cursor)
-      if (since !== null && Number.isNaN(since)) return { reset: true } as CrmChanges<CrmRecords[K]>
+      if (since !== null && Number.isNaN(since)) return { reset: true }
+      const caller = metered(context)
       const { after, started } = pageOf(page, now())
       const assignees = assigneesOf(kind, context)
-      const defined = await custom(kind)
+      const defined = await custom(kind, caller)
       // Only a full round is filtered: a round of changes reads every assignee's, so core sees a deal given away.
       const filter = [
         ...(after ? [["id", ">", after]] : []),
@@ -125,33 +244,56 @@ export const bitrixCrmSource = (portal: () => BitrixTransport, now: () => number
             : []
           : [["updatedTime", ">=", portalTime(since - OVERLAP_MS)]]),
       ]
-      const rows = rowsOf(
-        (await list(kind, [...TYPES[kind].select, ...defined.map(({ code }) => code)], filter)).result,
+      const rows = listedRows(
+        (await list(caller, kind, [...TYPES[kind].select, ...defined.map(({ code }) => code)], filter)).result,
       )
-      const items = rows.map((raw) => mapped(kind, raw, defined)) as CrmRecords[K][]
       const last = id(rows.at(-1)?.id)
       // An empty page ends the round, not a short one: a portal that caps pages below PAGE still lists every row.
-      if (last !== null) return { items, nextPage: `${last}@${started}` }
-      return { items, cursor: new Date(started).toISOString() }
+      const items = await completed[kind](
+        rows.map((raw) => mapped(kind, raw, defined)),
+        caller,
+        last === null,
+        context,
+      )
+      return last !== null
+        ? { items, nextPage: `${last}@${started}` }
+        : { items, cursor: new Date(started).toISOString() }
     },
     // Every id, whatever the scope: core narrows from the stored assignees, so the pass finds only real deletions.
-    async ids(kind, page): Promise<CrmIdPage> {
+    async ids(kind, page, context): Promise<CrmIdPage> {
+      const caller = metered(context)
       const after = Number(page) || 0
-      const rows = rowsOf((await list(kind, ["id"], after ? [["id", ">", after]] : [])).result)
-      const ids = rows.map((raw) => id(raw.id)).filter((one): one is string => one !== null)
-      const last = ids.at(-1)
-      return last === undefined ? { ids } : { ids, nextPage: last }
+      const rows = listedRows((await list(caller, kind, ["id"], after ? [["id", ">", after]] : [])).result)
+      const listed = rows.map((raw) => id(raw.id)).filter((one): one is string => one !== null)
+      const last = listed.at(-1)
+      if (last !== undefined) return { ids: listed, nextPage: last }
+      // The id pass marks deleted whatever this list leaves out: refused, the own companies last listed stand in (WC-DATA-7).
+      if (kind === "organization")
+        return { ids: (await ownCompanies(caller))?.map(({ externalId }) => externalId) ?? own.read() }
+      return { ids: listed }
     },
     async item(kind, externalId) {
-      const defined = await custom(kind)
+      const defined = await custom(kind, portal())
       const answer = await portal().call(`crm.${TYPES[kind].type}.get`, {
         id: Number(externalId),
         select: [...TYPES[kind].select, ...defined.map(({ code }) => code)],
       })
-      const raw = (answer.result as { item?: Raw })?.item
-      if (!raw) throw new CliError("not_found", `the portal has no ${kind} ${externalId}`)
-      return mapped(kind, raw, defined) as CrmItem
+      const raw = fieldOf(answer.result, "item")
+      if (!isRaw(raw)) throw new CliError("not_found", `the portal has no ${kind} ${externalId}`)
+      return mapped(kind, raw, defined)
     },
-    fields,
+    fields: (kind, context) => fields(kind, metered(context)),
+    async users(context) {
+      const users = await portalUsers(metered(context))
+      // user.get leaves out a field the scope does not cover, without an error (apidocs user-scope).
+      if (users.length && users.every((user) => !("email" in user)))
+        context?.gap({
+          kind: "users",
+          scope: "user_basic",
+          message: "user_basic scope missing: employees have no e-mail, so they won't join their mail identity",
+        })
+      return users
+    },
+    departments: (context) => portalDepartments(metered(context)),
   }
 }

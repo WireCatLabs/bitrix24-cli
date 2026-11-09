@@ -1,9 +1,10 @@
 import { CliError } from "@wirecat/cli-base"
+import type { CrmDepartment, CrmUser } from "@wirecat/cli-core"
 import * as v from "valibot"
-import type { BitrixTransport } from "../bitrix/transport.js"
+import type { BitrixCaller } from "../bitrix/transport.js"
 import { type Condition, rest2Filter } from "./conditions.js"
-import { fullName, id, ids, numericId, type Raw, text, yes } from "./values.js"
-import { type Window, walk } from "./walk.js"
+import { fullName, id, ids, numericId, type Raw, rawsOf, text, yes } from "./values.js"
+import { rest2Rows, type Window } from "./walk.js"
 
 /** An employee of the portal: who a record is assigned to. */
 export const userSchema = v.strictObject({
@@ -22,6 +23,7 @@ export const USER_FIELDS = {
   active: { field: "ACTIVE", kind: "text" },
 } as const
 
+/** REST 2's upper-case user fields (https://apidocs.bitrix24.com/api-reference/user/user-fields.html). */
 export const fromBitrixUser = (raw: Raw): User => ({
   id: id(raw.ID) ?? "",
   name: fullName(raw.NAME, raw.LAST_NAME),
@@ -31,7 +33,10 @@ export const fromBitrixUser = (raw: Raw): User => ({
   department_ids: ids(raw.UF_DEPARTMENT),
 })
 
-/** `user.get` filters by whole values: `=NAME_SEARCH` is its own search over the name fields (apidocs user.get). */
+/**
+ * `user.get` filters by whole values: `=NAME_SEARCH` is its own search over the name fields
+ * (https://apidocs.bitrix24.com/api-reference/user/user-get.html).
+ */
 const userFilter = (conditions: readonly Condition[]) => {
   const filter = rest2Filter(conditions)
   const renamed: Record<string, unknown> = {}
@@ -40,22 +45,42 @@ const userFilter = (conditions: readonly Condition[]) => {
   return renamed
 }
 
-export const listUsers = async (portal: BitrixTransport, conditions: readonly Condition[], window: Window) => {
-  const { items, has_more } = await walk(window, 50, async (start) => {
-    const answer = await portal.call("user.get", {
-      FILTER: userFilter(conditions),
-      sort: "ID",
-      order: "ASC",
-      start,
-    })
-    return { rows: Array.isArray(answer.result) ? (answer.result as Raw[]) : [], more: answer.next !== undefined }
-  })
+const userRows = (portal: BitrixCaller, filter: Record<string, unknown>, window?: Window) =>
+  rest2Rows(portal, "user.get", { FILTER: filter, sort: "ID", order: "ASC" }, window)
+
+export const listUsers = async (portal: BitrixCaller, conditions: readonly Condition[], window: Window) => {
+  const { items, has_more } = await userRows(portal, userFilter(conditions), window)
   return { items: items.map(fromBitrixUser), has_more }
 }
 
-export const getUser = async (portal: BitrixTransport, reference: string): Promise<User> => {
-  const answer = await portal.call("user.get", { FILTER: { ID: numericId(reference, "users show") } })
-  const found = Array.isArray(answer.result) ? (answer.result as Raw[])[0] : undefined
+export const getUser = async (portal: BitrixCaller, reference: string): Promise<User> => {
+  const answer = await portal.call("user.get", { FILTER: { ID: numericId(reference, "a user's id") } })
+  const found = rawsOf(answer.result)[0]
   if (!found) throw new CliError("not_found", `there is no user ${reference}`)
   return fromBitrixUser(found)
 }
+
+export const toCrmUser = (raw: Raw): CrmUser => {
+  const user = fromBitrixUser(raw)
+  return {
+    externalId: user.id,
+    name: user.name,
+    position: user.position,
+    active: user.active,
+    // A field the webhook's scope lacks is left out of the answer (apidocs user-scope): unknown, not empty.
+    ...("EMAIL" in raw ? { email: user.email } : {}),
+    ...(Array.isArray(raw.UF_DEPARTMENT) ? { departments: user.department_ids } : {}),
+  }
+}
+
+/** Every employee, those who left too, so core can withdraw what a departed one held. */
+export const portalUsers = async (portal: BitrixCaller): Promise<CrmUser[]> =>
+  (await userRows(portal, { USER_TYPE: "employee" })).items.map(toCrmUser).filter(({ externalId }) => externalId !== "")
+
+export const portalDepartments = async (portal: BitrixCaller): Promise<CrmDepartment[]> =>
+  (await rest2Rows(portal, "department.get", { sort: "ID", order: "ASC" })).items.flatMap((raw) => {
+    const externalId = id(raw.ID)
+    return externalId
+      ? [{ externalId, name: text(raw.NAME) ?? externalId, parent: id(raw.PARENT), head: id(raw.UF_HEAD) }]
+      : []
+  })

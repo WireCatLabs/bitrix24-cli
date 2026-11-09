@@ -1,4 +1,20 @@
 {
-  "paths": ["contracts/help.snap", "contracts/mcp-tools.json", "contracts/plan.json", "docs", "skills", "README.md"],
+  "paths": [
+    "contracts/help.snap",
+    "contracts/mcp-tools.json",
+    "contracts/plan.json",
+    "docs/commands.md",
+    "docs/configuration.md",
+    "docs/index.md",
+    "docs/installation.md",
+    "docs/meta.json",
+    "docs/roadmap.md",
+    "docs/security.md",
+    "docs/troubleshooting.md",
+    "docs/usage.md",
+    "docs/dev",
+    "skills",
+    "README.md"
+  ],
   "canaries": ["wirecatfake0secret42"]
 }

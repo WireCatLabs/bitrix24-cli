@@ -1,3 +1,6 @@
+import { existsSync, mkdtempSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import { memoryKeyring } from "@wirecat/cli-base"
 import { describe, expect, it } from "vitest"
 import { seededCrm } from "../testing/fake-crm.js"
@@ -29,12 +32,12 @@ describe("sync", () => {
     expect(portal.calls).toHaveLength(0)
   })
 
-  it("store status says how far each kind is", async () => {
+  it("store status says how far each kind is, the own company and the employee among them", async () => {
     await synced()
     const rows = items(await b24(["work", "store", "status", "--json"]))
     expect(rows.map(({ kind, state, stored }) => [kind, state, stored])).toEqual([
-      ["organization", "complete", 1],
-      ["person", "complete", 1],
+      ["organization", "complete", 2],
+      ["person", "complete", 2],
       ["deal", "complete", 2],
       ["lead", "complete", 1],
     ])
@@ -86,6 +89,18 @@ describe("sync and field definitions", () => {
 })
 
 describe("lists read the store, --offline too", () => {
+  it("under B24_READ_ONLY a read on a new machine answers empty with no sign-in and creates no store", async () => {
+    const store = join(mkdtempSync(join(tmpdir(), "new-machine-")), "wirecat.db")
+    const env = { B24_READ_ONLY: "1", MESSAGING_STORE: store }
+    const listed = await b24(["work", "deals", "list", "--json"], { env, keyring: memoryKeyring() })
+    expect(listed.code, listed.err).toBe(0)
+    expect(items(listed)).toEqual([])
+    expect(existsSync(store)).toBe(false)
+
+    expect((await b24(["work", "sync", "--json"], { env, portal: seededCrm() })).code).toBe(0)
+    expect(items(await b24(["work", "deals", "list", "--json"], { env })).length).toBeGreaterThan(0)
+  })
+
   it("deals and leads in core's shape: status, pipeline, stage, close date, a decimal amount, assignee, custom values", async () => {
     const { portal } = await synced()
     const before = portal.calls.length
@@ -99,7 +114,10 @@ describe("lists read the store, --offline too", () => {
       currency: "EUR",
       close_date: "2026-12-01",
       organization: { name: "Example Ltd" },
-      people: [{ name: "Anna Example", role: "contact" }],
+      people: [
+        { name: "Anna Example", role: "contact" },
+        { name: "Example Owner", role: "owner" },
+      ],
       assignee: "example.bitrix24.test/user/7",
       provider_metadata: { UF_CRM_SOURCE: { label: "Source", value: "Website", option_id: "41" } },
     })

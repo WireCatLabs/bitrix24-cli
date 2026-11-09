@@ -8,7 +8,11 @@ permissions. A gap in cli-core is fixed in cli-core.
 
 ## Local rules
 
-None yet.
+- **A pull request's changelog entries go in a fragment, not under `## Unreleased`.** A new file
+  `changes/<branch>.md` (lower case, `/` as `-`) with one or more of the changelog's `###` headings and the entries
+  under them, links relative to `changes/`. Every open pull request edits the same lines under `## Unreleased` and
+  conflicts at each merge. `pnpm docs:check` checks the fragments; `bin/release` collects them into the version's
+  section, so a fragment with `Added` needs a minor release.
 
 Add a rule here only when it holds for `b24` alone, and link the handbook rule it narrows.
 

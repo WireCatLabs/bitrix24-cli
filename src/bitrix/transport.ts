@@ -10,7 +10,8 @@ import {
 import { providerWaitMs, readJsonResponse } from "@wirecat/cli-base/http"
 import { apiJson, currentAttempt, type EventSink, providerEvent, providerRequest } from "@wirecat/cli-core/cli"
 import type { Pacer } from "@wirecat/cli-core/sends"
-import { type BitrixFailure, bitrixError } from "./errors.js"
+import { isRecord } from "../body.js"
+import { bitrixError } from "./errors.js"
 import { methodOf, type RestVersion } from "./methods.js"
 import { methodUrl, type Webhook } from "./webhook.js"
 
@@ -23,6 +24,11 @@ const LARGEST_ANSWER = 16 * 1024 * 1024
 const RETRY: RetryConfig = { retries: 3, baseDelayMs: 1_000, maxDelayMs: 10_000, maxRetryAfterMs: 30_000 }
 /** A pace wait longer than this ends the run instead of sitting in it, as cli-core's messenger pacing does. */
 const LONGEST_PACE_WAIT_MS = 60_000
+
+/** What a reader needs of the transport: a source call passes one that counts its requests. */
+export type BitrixCaller = Pick<BitrixTransport, "call">
+
+const isTimeout = (error: unknown) => error instanceof Error && error.name === "TimeoutError"
 
 export type FetchLike = (url: string, init: RequestInit) => Promise<Response>
 
@@ -87,9 +93,9 @@ export class BitrixTransport {
   }
 
   /**
-   * Reads are tried again on a refused rate or a lost answer. A write is sent once: whether Bitrix24 honours
-   * `Idempotency-Key` is not checked on a live portal, so a write that got no answer is `outcome_unknown` and the
-   * owner repeats it by hand.
+   * Reads are tried again on a refused rate or a lost answer. A write is sent once: on a live portal, a create repeated
+   * with the same `Idempotency-Key` made a second record, so a write that got no answer is `outcome_unknown` and the
+   * owner looks at the portal before repeating it.
    */
   async call(method: string, params: Record<string, unknown> = {}, options: CallOptions = {}): Promise<BitrixAnswer> {
     const known = methodOf(method)
@@ -193,7 +199,7 @@ export class BitrixTransport {
           status: response.status,
         })
       }
-      const answer = (body ?? {}) as BitrixAnswer & BitrixFailure
+      const answer = isRecord(body) ? body : {}
       if (!response.ok || answer.error !== undefined) {
         const refusal = bitrixError(method, response.status, answer, {
           now: this.#now(),
@@ -235,9 +241,9 @@ export class BitrixTransport {
         `${method} got no answer; Bitrix24 may or may not have carried it out${run.key ? "" : " — check before repeating it"}`,
         { operation: method, retryable: false },
       )
-    if (this.#signal?.aborted && (this.#signal.reason as { name?: string })?.name !== "TimeoutError")
+    if (this.#signal?.aborted && !isTimeout(this.#signal.reason))
       return new CliError("cancelled", `${method} was cancelled`, { operation: method })
-    const timedOut = (error as { name?: string })?.name === "TimeoutError"
+    const timedOut = isTimeout(error)
     return new CliError(
       timedOut ? "timeout" : "network_error",
       timedOut ? `${method} got no answer within ${this.#timeoutMs} ms` : `${method} could not reach Bitrix24`,
