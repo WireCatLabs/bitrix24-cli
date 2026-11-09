@@ -4,6 +4,8 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 
 ## Unreleased
 
+## 0.9.0 — 09.11.2026
+
 ### Added
 
 - `sync` stores who is who in the local store: a contact is a member of each of its companies with the role
