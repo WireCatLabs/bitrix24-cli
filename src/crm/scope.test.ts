@@ -244,12 +244,27 @@ describe("sync scope", () => {
     crm.setClock(Date.now())
     contact("Another stranger", OTHER)
     contact("New mine", OWN)
-    expect(saved(await sync(crm), "person")).toBe(1)
+    expect(saved(await sync(crm), "person")).toBe(3)
     const passes = crm.calls.filter(
       ({ method, body }) => method === "crm.deal.list" && JSON.stringify(body.select) === JSON.stringify(["id"]),
     )
     expect(passes.length).toBeGreaterThan(0)
     for (const { body } of passes) expect(body.filter).toContainEqual(["assignedById", "in", [OWN]])
+  })
+
+  it("brings the client of a deal given to the user at the next sync of changes", async () => {
+    const { crm, ids } = portal()
+    const client = crm.put("contact", { name: "Colleague's client", assignedById: OTHER })
+    crm.put("deal", { ...crm.row("deal", ids.other), contactsId: [client] })
+    expect(saved(await sync(crm), "person")).toBe(0)
+
+    crm.setClock(Date.now())
+    crm.put("deal", { ...crm.row("deal", ids.other), assignedById: OWN })
+    const item = await sync(crm)
+    expect(saved(item, "person")).toBe(1)
+    expect((item.synced as { kind: string; round: string }[]).find(({ kind }) => kind === "person")?.round).toBe(
+      "changes",
+    )
   })
 
   it("fails a kind whose list answer has no items, rather than take it for the end of the list", async () => {

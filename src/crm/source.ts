@@ -355,8 +355,8 @@ export const bitrixCrmSource = (
       const kept =
         clients && assignees && since !== null ? rows.filter((raw) => mineOnly(raw, assignees, clients)) : rows
       // An empty page ends the round, not a short one: a portal that caps pages below PAGE still lists every row.
-      if (last === null && clients && since === null)
-        return { items: await finish(kept, false), nextPage: `${LINKED}0@${started}` }
+      // Every round ends with the named clients: a deal given to the user brings a client whose row did not change.
+      if (last === null && clients) return { items: await finish(kept, false), nextPage: `${LINKED}0@${started}` }
       const items = await finish(kept, last === null)
       return last !== null
         ? { items, nextPage: `${last}@${started}` }
