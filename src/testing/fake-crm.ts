@@ -5,6 +5,7 @@ type Raw = Record<string, unknown>
 type Type = keyof typeof REST3_FIELDS
 
 const TYPES: readonly Type[] = ["deal", "lead", "contact", "company"]
+const ENTITY_TYPES: Record<number, Type> = { 1: "lead", 2: "deal", 3: "contact", 4: "company" }
 
 /** A custom field as `crm.<type>.field.list` and `crm.<type>.userfield.list` describe it; synthetic, never a portal's. */
 interface CustomField {
@@ -349,6 +350,14 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
       all.slice(start, start + 2),
       start + 2 < all.length ? { next: start + 2, total: all.length } : { total: all.length },
     )
+  // REST 2's item read, which `show` asks for the custom fields: here the row's own `UF_` fields.
+  methods["crm.item.get"] = ({ body }) => {
+    const kind = ENTITY_TYPES[Number(body.entityTypeId)]
+    const row = kind ? rows[kind].get(Number(body.id)) : undefined
+    return row
+      ? ok({ item: Object.fromEntries(Object.entries(row).filter(([key]) => key.startsWith("UF_"))) })
+      : missing()
+  }
   methods["user.get"] = ({ body }) => {
     const filter = (body.FILTER ?? {}) as Record<string, unknown>
     const all = [...users.values()]

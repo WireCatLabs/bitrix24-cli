@@ -71,6 +71,10 @@ export const fakePortal = (script: Record<string, Reply | Reply[] | ((call: Port
       text: String(init.body ?? ""),
       headers: init.headers as Record<string, string>,
     }
+    // Every contact and company read asks whether the user is an administrator first; a test that scripts no answer
+    // reads as one, and that question stays out of `calls`, which then hold only what the test scripted.
+    if (method === "user.admin" && !(method in script))
+      return new Response(JSON.stringify({ result: true }), { headers: { "content-type": "application/json" } })
     calls.push(call)
     const undocumented = DOCUMENTED[method]?.(call.body) ?? []
     if (undocumented.length) throw new Error(`fake portal: ${method} has no ${undocumented.join(", ")} in its docs`)

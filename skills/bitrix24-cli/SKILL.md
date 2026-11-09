@@ -27,14 +27,19 @@ Find your way with the tool itself, not this file:
 - `b24 work sync` first: `deals`, `leads`, `pipelines` and `stages` read the local store, offline too. `b24 work store
   status` says how far it is.
 - A sync copies only the webhook user's deals and leads, and those of the users in `crm.bitrix24:<portal>.unassigned`;
-  its answer's `scope` says so. Only the owner sets `crm.bitrix24:<portal>.scope all` to copy every one, and only a
-  Bitrix24 administrator or department head may: anyone else's sync under `all` is refused, and for them `unassigned`
+  its answer's `scope` says so. Contacts and companies are only their clients: assigned to them or named on
+  their deals and leads. Only the owner sets `crm.bitrix24:<portal>.scope all` to copy the whole CRM, and only a
+  Bitrix24 administrator may: anyone else's sync under `all` is refused, and for them `unassigned`
   counts only dismissed users and non-employees (`crm.unassigned-dropped` names the rest).
 - Lists filter with a query: `b24 work deals list status:open stage:"Quote sent" pipeline:Sales`. `b24 help deals
   list` lists the fields. A deal answers `ref` (`deal:12`), `pipeline`, `stage`, `status`, `close_date`, and `amount`
   as a decimal string in `currency`; every write and `show` takes that `ref`.
 - Leads have no pipelines in Bitrix24: they stand in one pipeline named `Leads`. Won or lost is `status`, never the
   stage's name.
+- Phones and e-mails come only with the user's own clients (assigned to them, or on their deals and leads), unless
+  the webhook user is a Bitrix24 administrator. A list leaves them out of anyone else's; `people show` or
+  `organizations show` of one gives them, at most 100 a day for the user and their agents together, so show only the
+  one the task needs. `api call` refuses contact and company reads to anyone but an administrator.
 - `people` and `organizations` read the portal: `show` takes an id or an exact name, and gives the portal's own fields
   in `provider_metadata`, by code with their label. `b24 work fields list deals` lists them with type and options,
   as the last `sync` stored them.

@@ -3,6 +3,7 @@ import type { CrmField, CrmItem, CrmKind, CrmOrganization, CrmPerson, CrmRecords
 import type { CrmCallContext, CrmChanges, CrmIdPage, CrmSource } from "@wirecat/cli-core/crm"
 import type { BitrixCaller, BitrixTransport } from "../bitrix/transport.js"
 import { type Role, roleOf } from "../whoami.js"
+import { clientsOf as namedClients } from "./clients.js"
 import { DEAL } from "./deal.js"
 import { loadFields, metadataOf } from "./fields.js"
 import type { ItemType } from "./items.js"
@@ -74,11 +75,21 @@ const listedRows = (result: unknown): Raw[] => {
  * The responsible users a `mine` scope keeps, as numbers for the portal's filter; core has checked and normalised
  * them. A Bitrix24 deal or lead always has one, the creator by default, so the portal has no unassigned items.
  */
-const assigneesOf = (kind: CrmKind, context?: CrmCallContext): number[] | null => {
+const assigneesOf = (context?: CrmCallContext): number[] | null => {
   const scope = context?.scope
-  if (scope?.mode !== "mine" || (kind !== "deal" && kind !== "lead")) return null
-  return [...new Set([scope.self, ...scope.also].map(Number))]
+  if (scope?.mode !== "mine") return null
+  // A malformed stored entry reads no deal in core; for clients it only narrows the list, never fails the round.
+  return [...new Set([scope.self, ...scope.also].map(Number))].filter(Number.isFinite)
 }
+
+type ClientKind = "person" | "organization"
+const isClient = (kind: CrmKind): kind is ClientKind => kind === "person" || kind === "organization"
+
+/**
+ * A full round of clients under `mine` reads two lists: the ones assigned to the user, by id after `<last id>`, then
+ * the clients of the user's deals and leads, `PAGE` ids at a time from `l<index>`.
+ */
+const LINKED = "l"
 
 const MAPPERS: { [K in CrmKind]: (raw: Raw, metadata?: Metadata) => CrmRecords[K] } = {
   deal: DEAL.map,
@@ -89,8 +100,9 @@ const MAPPERS: { [K in CrmKind]: (raw: Raw, metadata?: Metadata) => CrmRecords[K
 
 /** `<last id>@<when the round started>`: keyset paging by id, so a row changed mid-round never shifts the rest. */
 const pageOf = (page: string | undefined, now: number) => {
-  const [after, started] = (page ?? "").split("@")
-  return { after: Number(after) || 0, started: Number(started) || now }
+  const [at, started] = (page ?? "").split("@")
+  const linked = at?.startsWith(LINKED) ? Number(at.slice(LINKED.length)) || 0 : null
+  return { after: linked === null ? Number(at) || 0 : 0, linked, started: Number(started) || now }
 }
 
 export interface BitrixCrmSource extends CrmSource {
@@ -108,7 +120,7 @@ export const bitrixCrmSource = (
   portal: () => BitrixTransport,
   now: () => number = Date.now,
   own: OwnMemory = NO_MEMORY,
-  /** The stored `scope` setting and its key: `all` is a manager's, and a sync for anyone else is refused. */
+  /** The stored `scope` setting and its key: `all` is an administrator's, and a sync for anyone else is refused. */
   asked: () => Promise<{ mode: "mine" | "all"; setting: string }> = async () => ({ mode: "mine", setting: "scope" }),
 ): BitrixCrmSource => {
   /** The portal for one call of core's: core paid for its first request, each further one is spent from the budget. */
@@ -198,6 +210,26 @@ export const bitrixCrmSource = (
     }
     return found
   }
+  /**
+   * The clients a `mine` scope may copy besides the ones assigned to the user: the contacts and companies named on the
+   * user's deals and leads. Contacts or companies that are no one's client stay on the portal, so a copy is never the
+   * whole client base. Read once per round of a kind.
+   */
+  const rounds = new Map<string, Promise<Record<ClientKind, Set<string>>>>()
+  const clientsOf = (caller: BitrixCaller, assignees: readonly number[], started: number) => {
+    const key = `${assignees.join(",")}@${started}`
+    let found = rounds.get(key)
+    if (!found) {
+      found = namedClients(caller, assignees).then(({ contact, company }) => ({
+        person: contact,
+        organization: company,
+      }))
+      rounds.set(key, found)
+    }
+    return found
+  }
+  const mineOnly = (raw: Raw, assignees: readonly number[], linked: Set<string>) =>
+    assignees.includes(Number(raw.assignedById)) || linked.has(id(raw.id) ?? "")
   /** What a page gets beyond its rows: each lead its deal, and the last page of companies the own ones. */
   const completed: {
     [K in CrmKind]: (
@@ -226,28 +258,23 @@ export const bitrixCrmSource = (
   return {
     provider: "bitrix24",
     traits: { kinds: ["organization", "person", "deal", "lead"], removedInChanges: false },
-    // Checked on every sync, not when the setting is made: a manager who stops being one stops copying everything.
+    // Checked on every sync, not when the setting is made: an administrator who stops being one stops copying all.
     async self() {
       const self = portal().userId
       const { mode, setting } = await asked()
       if (mode !== "all") return self
-      const role = await roleNow()
-      if (role.manager) return self
+      if ((await roleNow()).as === "admin") return self
       throw new CliError(
         "configuration_error",
-        `${setting} is all, and user ${self} is neither a Bitrix24 administrator nor the head of a department` +
-          (role.missing
-            ? " (the portal refused department.get, which needs the webhook's department scope, so a head cannot be told)"
-            : "") +
-          `: only a manager copies every deal and lead. "config set ${setting} mine" copies your own and the ` +
-          "unassigned ones",
-        { setting, reason: "bitrix.scope-all-manager-only" },
+        `${setting} is all, and user ${self} is no Bitrix24 administrator: only an administrator copies the whole ` +
+          `CRM. "config set ${setting} mine" copies your own deals and leads, the unassigned ones, and their clients`,
+        { setting, reason: "bitrix.scope-all-admin-only" },
       )
     },
-    // The owner's rule: an employee counts as nobody's only a dismissed user or one who is no employee (extranet,
-    // e-mail, bot); a manager may name anyone. Asked at every sync, so someone rehired leaves the list.
+    // The owner's rule: anyone but an administrator counts as nobody's only a dismissed user or one who is no employee
+    // (extranet, e-mail, bot), so a head cannot take a colleague's clients that way. Asked at every sync.
     async unassigned(users) {
-      if ((await roleNow()).manager) return { kept: [...users] }
+      if ((await roleNow()).as === "admin") return { kept: [...users] }
       let active: Set<string>
       try {
         active = await activeEmployees(portal())
@@ -261,8 +288,8 @@ export const bitrixCrmSource = (
       return {
         kept: users.filter((user) => !active.has(user)),
         message:
-          "a working employee of the portal; only a Bitrix24 administrator or a department head may count one as " +
-          "nobody's, anyone else only a dismissed user or one who is not an employee",
+          "a working employee of the portal; only a Bitrix24 administrator may count one as nobody's, anyone " +
+          "else only a dismissed user or one who is not an employee",
       }
     },
     pipelines: (kind, context) => bitrixPipelines(metered(context), kind),
@@ -275,10 +302,30 @@ export const bitrixCrmSource = (
       const since = cursor === null ? null : Date.parse(cursor)
       if (since !== null && Number.isNaN(since)) return { reset: true }
       const caller = metered(context)
-      const { after, started } = pageOf(page, now())
-      const assignees = assigneesOf(kind, context)
+      const { after, linked, started } = pageOf(page, now())
+      const assignees = assigneesOf(context)
+      const clients = assignees && isClient(kind) ? (await clientsOf(caller, assignees, started))[kind] : null
       const defined = await custom(kind, caller)
-      // Only a full round is filtered: a round of changes reads every assignee's, so core sees a deal given away.
+      const select = [...TYPES[kind].select, ...defined.map(({ code }) => code)]
+      const finish = async (rows: Raw[], ended: boolean) =>
+        completed[kind](
+          rows.map((raw) => mapped(kind, raw, defined)),
+          caller,
+          ended,
+          context,
+        )
+      if (linked !== null && clients) {
+        const chunk = [...clients].slice(linked, linked + PAGE)
+        const rows = chunk.length
+          ? listedRows((await list(caller, kind, select, [["id", "in", chunk.map(Number)]])).result)
+          : []
+        const ended = linked + PAGE >= clients.size
+        const items = await finish(rows, ended)
+        return ended
+          ? { items, cursor: new Date(started).toISOString() }
+          : { items, nextPage: `${LINKED}${linked + PAGE}@${started}` }
+      }
+      // A round of changes reads every assignee's deals, so core sees a deal given away; clients are kept here.
       const filter = [
         ...(after ? [["id", ">", after]] : []),
         ...(since === null
@@ -287,33 +334,32 @@ export const bitrixCrmSource = (
             : []
           : [["updatedTime", ">=", portalTime(since - OVERLAP_MS)]]),
       ]
-      const rows = listedRows(
-        (await list(caller, kind, [...TYPES[kind].select, ...defined.map(({ code }) => code)], filter)).result,
-      )
+      const rows = listedRows((await list(caller, kind, select, filter)).result)
       const last = id(rows.at(-1)?.id)
+      const kept =
+        clients && assignees && since !== null ? rows.filter((raw) => mineOnly(raw, assignees, clients)) : rows
       // An empty page ends the round, not a short one: a portal that caps pages below PAGE still lists every row.
-      const items = await completed[kind](
-        rows.map((raw) => mapped(kind, raw, defined)),
-        caller,
-        last === null,
-        context,
-      )
+      // Every round ends with the named clients: a deal given to the user brings a client whose row did not change.
+      if (last === null && clients) return { items: await finish(kept, false), nextPage: `${LINKED}0@${started}` }
+      const items = await finish(kept, last === null)
       return last !== null
         ? { items, nextPage: `${last}@${started}` }
         : { items, cursor: new Date(started).toISOString() }
     },
-    // Every id, whatever the scope: core narrows from the stored assignees, so the pass finds only real deletions.
+    // Under mine only the user's own and their clients: core marks deleted what the pass leaves out of the copy.
     async ids(kind, page, context): Promise<CrmIdPage> {
       const caller = metered(context)
       const after = Number(page) || 0
-      const rows = listedRows((await list(caller, kind, ["id"], after ? [["id", ">", after]] : [])).result)
+      const assignees = assigneesOf(context)
+      const filter = [...(after ? [["id", ">", after]] : []), ...(assignees ? [["assignedById", "in", assignees]] : [])]
+      const rows = listedRows((await list(caller, kind, ["id"], filter)).result)
       const listed = rows.map((raw) => id(raw.id)).filter((one): one is string => one !== null)
       const last = listed.at(-1)
       if (last !== undefined) return { ids: listed, nextPage: last }
+      if (kind !== "organization") return { ids: listed }
+      const linked = assignees ? [...(await clientsOf(caller, assignees, now())).organization] : []
       // The id pass marks deleted whatever this list leaves out: refused, the own companies last listed stand in (WC-DATA-7).
-      if (kind === "organization")
-        return { ids: (await ownCompanies(caller))?.map(({ externalId }) => externalId) ?? own.read() }
-      return { ids: listed }
+      return { ids: [...linked, ...((await ownCompanies(caller))?.map(({ externalId }) => externalId) ?? own.read())] }
     },
     async item(kind, externalId) {
       const defined = await custom(kind, portal())

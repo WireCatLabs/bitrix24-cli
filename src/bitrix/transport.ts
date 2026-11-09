@@ -93,6 +93,11 @@ export class BitrixTransport {
     this.#random = options.random ?? Math.random
   }
 
+  /** The portal's address, without the webhook's secret. */
+  get origin(): string {
+    return this.#webhook.origin
+  }
+
   /** The employee the webhook acts as. */
   get userId(): string {
     return this.#webhook.userId

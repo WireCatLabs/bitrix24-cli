@@ -30,10 +30,12 @@ import {
   commandKeysOf,
   fieldsOf,
   normalMethod,
+  readsClients,
 } from "../api-keys.js"
 import { KNOWN_METHODS, type Method, methodOf } from "../bitrix/methods.js"
 import { type Body, parseBody } from "../body.js"
 import { permissions } from "../config.js"
+import { DAILY_FOREIGN, isAdmin } from "../crm/clients.js"
 import { IDENTITY } from "../identity.js"
 import { contextOf, withPortal } from "../portal.js"
 import { write } from "./write.js"
@@ -237,7 +239,17 @@ const callCommand = () =>
         )
       const asked = levels.find(({ level }) => level === "ask")
       if (asked) await terminalAsker(this)(asked.one, { chatId: null, kind: "read", key: asked.one })
-      const answer = await withPortal(this, (portal) => portal.call(method.name, body))
+      const answer = await withPortal(this, async (portal) => {
+        if (readsClients(method.name, body) && !(await isAdmin(portal)))
+          throw new CliError(
+            "permission_error",
+            `${method.name} reads contacts or companies, which only a Bitrix24 administrator reads through api call: ` +
+              "your clients come with sync, and another one with people show or organizations show, " +
+              `${DAILY_FOREIGN} a day`,
+            { sent: false },
+          )
+        return portal.call(method.name, body)
+      })
       renderAnswer(this, outputFor(this), itemOf(shown(answer)))
     })
 

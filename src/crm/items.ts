@@ -1,6 +1,7 @@
 import { CliError, isCliError } from "@wirecat/cli-base"
 import { foldName } from "@wirecat/cli-core"
 import type { BitrixTransport } from "../bitrix/transport.js"
+import { isClientType, spendOnForeign, withoutForeignContacts } from "./clients.js"
 import { type Condition, needsRest2, rest2Filter, rest3Filter } from "./conditions.js"
 import { type Field, loadFields, metadataOf } from "./fields.js"
 import { customFields, fieldOf, isRaw, type Metadata, type Raw } from "./values.js"
@@ -58,7 +59,8 @@ export const listItems = async <T>(
         REST3_PAGE,
         window,
       )
-  return { items: items.map((raw) => type.map(raw, metadataIn(raw, custom))), has_more }
+  const shown = isClientType(type.type) ? await withoutForeignContacts(portal, type.type, items) : items
+  return { items: shown.map((raw) => type.map(raw, metadataIn(raw, custom))), has_more }
 }
 
 const metadataIn = (raw: Raw, { codes, fields }: Custom): Metadata | undefined => {
@@ -67,10 +69,12 @@ const metadataIn = (raw: Raw, { codes, fields }: Custom): Metadata | undefined =
 }
 
 /** One item, with the portal's custom fields, which REST 3.0 returns only when each is named in `select`. */
-export const getItem = async <T>(portal: BitrixTransport, type: ItemType<T>, id: string): Promise<T> => {
+/** `quota` is the file that counts the day's contacts and companies shown that are not the user's clients. */
+export const getItem = async <T>(portal: BitrixTransport, type: ItemType<T>, id: string, quota: string): Promise<T> => {
   const answer = await portal.call(`crm.${type.type}.get`, { id: Number(id), select: type.select })
   const item = fieldOf(answer.result, "item")
   if (!isRaw(item)) throw new CliError("not_found", `there is no ${type.word} ${id}`)
+  if (isClientType(type.type)) await spendOnForeign(portal, type.type, item, quota)
   const full = await portal.call("crm.item.get", {
     entityTypeId: type.entityTypeId,
     id: Number(id),

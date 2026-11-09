@@ -18,6 +18,7 @@ import { csvColumnPaths, csvFormatOption, printCsv, refuseCsvConflict } from "@w
 import { Command } from "commander"
 import type * as v from "valibot"
 import type { BitrixTransport } from "../bitrix/transport.js"
+import { quotaFile } from "../crm/clients.js"
 import { conditionsOf, type FieldMap } from "../crm/conditions.js"
 import {
   customConditions,
@@ -56,7 +57,7 @@ interface Noun<T> {
   list: (portal: BitrixTransport, terms: Map<string, Predicate>, window: Window) => Promise<Listed<T>>
   /** Deals, leads, people and organizations: a list that names the portal's own fields in its query or `--json`. */
   custom?: (portal: BitrixTransport, ask: CustomAsk, window: Window) => Promise<Listed<T> & { fields: Field[] }>
-  show: (portal: BitrixTransport, reference: string) => Promise<T>
+  show: (portal: BitrixTransport, reference: string, quota: string) => Promise<T>
   /** The argument `show` takes, a singular noun (WC-CMD-13). */
   reference: string
   takes: string
@@ -159,7 +160,8 @@ const showCommand = <T>(noun: Noun<T>) =>
     .description(`show one of the ${noun.what} on the portal`)
     .argument(`<${noun.reference}>`, `the ${noun.reference}'s ${noun.takes}, as list prints it`)
     .action(async function (this: Command, reference: string) {
-      const item = await withPortal(this, (portal) => noun.show(portal, reference))
+      const { env } = contextOf(this)
+      const item = await withPortal(this, (portal) => noun.show(portal, reference, quotaFile(env, portal)))
       renderAnswer(this, outputFor(this), itemOf(item))
     })
 
@@ -202,7 +204,7 @@ const itemNoun = <T extends { id: string } & Record<string, unknown>>(
       })
       return { ...found, fields }
     },
-    show: async (portal, reference) => getItem(portal, type, await resolveItem(portal, type, reference)),
+    show: async (portal, reference, quota) => getItem(portal, type, await resolveItem(portal, type, reference), quota),
   }
 }
 
