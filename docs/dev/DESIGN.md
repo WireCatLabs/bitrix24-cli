@@ -70,7 +70,10 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
    true, or the head of an active department, [`department.get`](https://apidocs.bitrix24.com/api-reference/departments/department-get.html)
    filtered by `UF_HEAD`. Without the `department` scope the head check is refused and the user counts as an employee.
    Bitrix24 fills `ASSIGNED_BY_ID` with the caller by default ([crm.deal.add](https://apidocs.bitrix24.com/api-reference/crm/deals/crm-deal-add.html)),
-   so no deal is unassigned on the portal: unassigned is the owner's list `crm.bitrix24:<portal>.unassigned`.
+   so no deal is unassigned on the portal: unassigned is the owner's list `crm.bitrix24:<portal>.unassigned`. A
+   manager may list anyone; for anyone else cli-core asks `unassigned()` at every sync, which keeps only users that
+   `user.get` with `USER_TYPE: employee` and `ACTIVE: true` does not list (dismissed users, extranet, e-mail and bot
+   users), and none when the `user` scope is missing.
    Contacts and companies stay whole.
 4. **When the portal deletes something.** The local copy is marked deleted and kept, never wiped, and only after a
    full id pass has finished (WC-DATA-7).

@@ -61,7 +61,11 @@ b24 work config set crm.bitrix24:example.bitrix24.ru.scope all         # a manag
 b24 work config set crm.bitrix24:example.bitrix24.ru.scope mine        # your own and the unassigned ones
 ```
 
-`example.bitrix24.ru` stands for your portal's host. A manager is a Bitrix24 administrator or the head of a
+`example.bitrix24.ru` stands for your portal's host. A manager may name anyone as unassigned; anyone else only a
+dismissed user or one who is not an employee (an extranet, e-mail or bot user, as Bitrix24's `USER_TYPE` says). The
+sync checks the list every time: a user it may not count is left out, with the reason in `issues`
+(`crm.unassigned-dropped`), and their deals and leads leave the copy. A webhook without the `user` scope counts no one
+as unassigned for an employee. A manager is a Bitrix24 administrator or the head of a
 department; Bitrix24's REST API cannot read a user's CRM access rights, so these are what `b24` can tell. For anyone
 else a sync under `scope all` is refused, and says to set `mine`. The role is checked on every sync, so someone who
 stops being a manager stops copying every deal. Without the webhook's `department` scope a department head counts

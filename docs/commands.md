@@ -183,12 +183,12 @@ b24 deals list [query] [options]
 one deal with its pipeline, stage, status, amount and the people on it
 
 ```sh
-b24 deals show <ref>
+b24 deals show <deal>
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `ref` | required | deal:<id>, as a list shows it. |
+| `deal` | required | deal:<id>, as a list shows it. |
 
 **Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 25 more; every field: b24 commands info deals show
 
@@ -226,12 +226,12 @@ change a deal in the CRM; what is left out keeps its value; the CRM's copy is st
 **Changes something in the service.**
 
 ```sh
-b24 deals update <ref> [options]
+b24 deals update <deal> [options]
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `ref` | required | deal:<id>, as a list shows it. |
+| `deal` | required | deal:<id>, as a list shows it. |
 
 | Option | What it does |
 |---|---|
@@ -255,12 +255,12 @@ move a deal to another stage of its pipeline; a won or lost stage checks the clo
 **Changes something in the service.**
 
 ```sh
-b24 deals move <ref> <stage>
+b24 deals move <deal> <stage>
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `ref` | required | deal:<id>, as a list shows it. |
+| `deal` | required | deal:<id>, as a list shows it. |
 | `stage` | required | the stage, by the CRM's id or a name only one stage of its pipeline has; or a stage:<id>, of its pipeline or of the owner's base set, which moves it to the one stage of its pipeline mapped there and refuses several (with the candidates) or none. |
 
 **Returns:** crm write — operation_id, untrusted, deal, lead; every field: b24 commands info deals move
@@ -274,12 +274,12 @@ mark a deal won or lost, the CRM's own way
 **Changes something in the service.**
 
 ```sh
-b24 deals close <ref> <outcome> [options]
+b24 deals close <deal> <outcome> [options]
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `ref` | required | deal:<id>, as a list shows it. |
+| `deal` | required | deal:<id>, as a list shows it. |
 | `outcome` | required | how it ended. One of: `won`, `lost`. |
 
 | Option | What it does |
@@ -297,12 +297,12 @@ delete a deal in the CRM; asks first unless allowed
 **Changes something in the service.**
 
 ```sh
-b24 deals delete <ref>
+b24 deals delete <deal>
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `ref` | required | deal:<id>, as a list shows it. |
+| `deal` | required | deal:<id>, as a list shows it. |
 
 **Returns:** crm removal — operation_id, ref, removed; every field: b24 commands info deals delete
 
@@ -339,12 +339,12 @@ b24 leads list [query] [options]
 one lead with its pipeline, stage, status, amount and the people on it
 
 ```sh
-b24 leads show <ref>
+b24 leads show <lead>
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `ref` | required | lead:<id>, as a list shows it. |
+| `lead` | required | lead:<id>, as a list shows it. |
 
 **Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 25 more; every field: b24 commands info leads show
 
@@ -382,12 +382,12 @@ change a lead in the CRM; what is left out keeps its value; the CRM's copy is st
 **Changes something in the service.**
 
 ```sh
-b24 leads update <ref> [options]
+b24 leads update <lead> [options]
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `ref` | required | lead:<id>, as a list shows it. |
+| `lead` | required | lead:<id>, as a list shows it. |
 
 | Option | What it does |
 |---|---|
@@ -411,12 +411,12 @@ move a lead to another stage of its pipeline; a won or lost stage checks the clo
 **Changes something in the service.**
 
 ```sh
-b24 leads move <ref> <stage>
+b24 leads move <lead> <stage>
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `ref` | required | lead:<id>, as a list shows it. |
+| `lead` | required | lead:<id>, as a list shows it. |
 | `stage` | required | the stage, by the CRM's id or a name only one stage of its pipeline has; or a stage:<id>, of its pipeline or of the owner's base set, which moves it to the one stage of its pipeline mapped there and refuses several (with the candidates) or none. |
 
 **Returns:** crm write — operation_id, untrusted, deal, lead; every field: b24 commands info leads move
@@ -430,12 +430,12 @@ mark a lead won or lost, the CRM's own way
 **Changes something in the service.**
 
 ```sh
-b24 leads close <ref> <outcome> [options]
+b24 leads close <lead> <outcome> [options]
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `ref` | required | lead:<id>, as a list shows it. |
+| `lead` | required | lead:<id>, as a list shows it. |
 | `outcome` | required | how it ended. One of: `won`, `lost`. |
 
 | Option | What it does |
@@ -453,12 +453,12 @@ delete a lead in the CRM; asks first unless allowed
 **Changes something in the service.**
 
 ```sh
-b24 leads delete <ref>
+b24 leads delete <lead>
 ```
 
 | Argument | | What it is |
 |---|---|---|
-| `ref` | required | lead:<id>, as a list shows it. |
+| `lead` | required | lead:<id>, as a list shows it. |
 
 **Returns:** crm removal — operation_id, ref, removed; every field: b24 commands info leads delete
 
@@ -553,7 +553,7 @@ search what the local store holds
 
 ### `b24 search all`
 
-search the CRM's deals and leads by the words of their title, and messages, notes and calendar events other WireCat tools stored — best match first. Use it when you do not know where something was written
+search the CRM's deals and leads by the words of their title, and messages, notes, calendar events and meetings other WireCat tools stored — best match first. Use it when you do not know where something was written
 
 ```sh
 b24 search all <query> [options]
@@ -565,15 +565,14 @@ b24 search all <query> [options]
 
 | Option | What it does |
 |---|---|
-| `--only <resources>` | only these resources, separated by commas: crm, messages, notes, events; meetings when --source names a meeting account. |
-| `--source <accounts>` | only these accounts, separated by commas: provider:account as a hit shows it, a provider, a kind or group:<name>; each resource reads the ones of its kind, and meetings only when it names one. |
-| `--max-meetings <n>` | how many of the meeting account's meetings to look through, newest first, or all for every one (default 100). |
+| `--only <resources>` | only these resources, separated by commas: crm, messages, notes, events, meetings. |
+| `--source <accounts>` | only these accounts, separated by commas: provider:account as a hit shows it, a provider, a kind or group:<name>; each resource reads the ones of its kind. |
 | `--limit <n>` | how many. |
 | `--page <n>` | which page, starting at 1. |
 | `--exact` | bare words and quotes match their exact form only, as exact:word does. |
 | `--timezone <zone>` | the IANA timezone for calendar date boundaries. |
 
-**Returns:** hit — kind, ref, provider, account, title, timestamp, excerpt, url, and 15 more; every field: b24 commands info search all
+**Returns:** hit — kind, ref, provider, account, title, timestamp, excerpt, url, and 17 more; every field: b24 commands info search all
 
 **Example:** `b24 work search all Example LLC`, `b24 work search all website --only crm --json`
 

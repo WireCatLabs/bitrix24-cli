@@ -165,12 +165,12 @@ it("an MCP update to another stage checks deals.move, and a stage set as a custo
     try {
       const moved = await mcp.call("b24_write", {
         command: "deals update",
-        arguments: { ref: ref("deals", 102), stage: "New" },
+        arguments: { deal: ref("deals", 102), stage: "New" },
       })
       expect(JSON.stringify(moved)).toContain("permission_error")
       const aliased = await mcp.call("b24_write", {
         command: "deals update",
-        arguments: { ref: ref("deals", 102), field: ["stageId=NEW"] },
+        arguments: { deal: ref("deals", 102), field: ["stageId=NEW"] },
       })
       expect(JSON.stringify(aliased)).toContain("validation_error")
     } finally {
@@ -193,7 +193,7 @@ it.each([
     try {
       const answer = await mcp.call("b24_write", {
         command: "deals update",
-        arguments: { ref: ref("deals", 102), ...typed },
+        arguments: { deal: ref("deals", 102), ...typed },
       })
       expect(JSON.stringify(answer)).toContain("permission_error")
     } finally {

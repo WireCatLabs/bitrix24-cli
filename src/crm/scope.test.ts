@@ -141,6 +141,53 @@ describe("sync scope", () => {
     expect(await titles(crm)).toEqual(["Own"])
   })
 
+  it("lets an employee count only a dismissed user or a non-employee as unassigned, re-checked every sync", async () => {
+    const { crm } = portal()
+    crm.putDepartment({ ID: "1", NAME: "Example company", UF_HEAD: String(OTHER) })
+    crm.putUser({ ID: String(INTEGRATION), NAME: "Website form", ACTIVE: false })
+    crm.put("deal", { title: "Colleague's", categoryId: 0, stageId: "PREPARATION", assignedById: OTHER })
+    crm.putUser({ ID: String(OTHER), NAME: "Colleague" })
+    await set(SCOPE, "mine")
+    await set(UNASSIGNED, `${INTEGRATION},${OTHER}`)
+    const item = await sync(crm)
+    expect(item.scope).toEqual({ mode: "mine", self: "7", also: [String(INTEGRATION)] })
+    expect(item.issues).toContainEqual(
+      expect.objectContaining({
+        reason: "crm.unassigned-dropped",
+        message: expect.stringContaining(`names user ${OTHER}, not counted as nobody's: a working employee`),
+      }),
+    )
+    expect(await titles(crm)).toEqual(["Own", "Website form"])
+
+    crm.putUser({ ID: String(INTEGRATION), NAME: "Website form", ACTIVE: true })
+    expect((await sync(crm)).scope).toEqual({ mode: "mine", self: "7", also: [] })
+    expect(await titles(crm)).toEqual(["Own"])
+
+    crm.putUser({ ID: String(INTEGRATION), NAME: "Website form bot", USER_TYPE: "bot" })
+    await sync(crm)
+    expect(await titles(crm)).toEqual(["Own", "Website form"])
+  })
+
+  it("counts no one as unassigned for an employee whose webhook cannot read users", async () => {
+    const { crm } = portal()
+    crm.putDepartment({ ID: "1", NAME: "Example company", UF_HEAD: String(OTHER) })
+    crm.withhold("user")
+    await set(SCOPE, "mine")
+    await set(UNASSIGNED, String(INTEGRATION))
+    const item = await sync(crm)
+    expect(item.scope).toEqual({ mode: "mine", self: "7", also: [] })
+    expect(JSON.stringify(item.issues)).toContain("lacks the user scope")
+    expect(await titles(crm)).toEqual(["Own"])
+  })
+
+  it("lets a manager count a working employee as unassigned", async () => {
+    const { crm } = portal()
+    crm.putUser({ ID: String(INTEGRATION), NAME: "Shared sales account" })
+    await set(UNASSIGNED, String(INTEGRATION))
+    expect((await sync(crm)).scope).toEqual({ mode: "mine", self: "7", also: [String(INTEGRATION)] })
+    expect(await titles(crm)).toEqual(["Own", "Website form"])
+  })
+
   it("refuses an unassigned list with an entry that is not a user id when it is set", async () => {
     const ran = await b24(["work", "config", "set", UNASSIGNED, "15,bot", "--json"])
     expect(ran.code).not.toBe(0)
