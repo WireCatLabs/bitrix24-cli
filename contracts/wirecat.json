@@ -335,7 +335,7 @@
         "search",
         "all"
       ],
-      "summary": "search stored deals and leads, messages, notes and calendar events",
+      "summary": "search stored deals and leads, messages, notes, calendar events and meetings",
       "effects": {
         "remote": "none",
         "local": "read"
