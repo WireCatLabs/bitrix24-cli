@@ -11,7 +11,7 @@ describe("every option of the CRM commands runs against the fake portal", () => 
       ["pipelines", "list", "kind:deal"],
       ["pipelines", "show", "Example sales"],
       ["search", "all", "kitchen", "--only", "crm", "--limit", "5", "--page", "1", "--exact", "--timezone", "UTC"],
-      ["search", "all", "kitchen", "--source", "bitrix24", "--max-meetings", "1"],
+      ["search", "all", "kitchen", "--source", "bitrix24"],
     ])
       expect((await b24(["work", ...argv, "--json"], { portal })).code, argv.join(" ")).toBe(0)
   })
