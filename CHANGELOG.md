@@ -2,6 +2,24 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## 0.10.0 — 09.11.2026
+
+### Added
+
+- `session start` and `session status --check` answer whether the webhook's user is a `manager` (a Bitrix24
+  administrator or the head of a department), beside `admin`.
+
+### Changed — may break callers
+
+- Only a manager copies every deal and lead: a sync under `crm.bitrix24:<portal>.scope all` is refused
+  (`configuration_error`) unless the webhook's user is a Bitrix24 administrator or the head of a department, checked
+  on every sync. Anyone else copies their own deals and leads and the unassigned ones; the refusal says to set
+  `scope` to `mine`. Watch for: a webhook without the `department` scope counts a department head as an employee.
+- For anyone but a manager, `crm.bitrix24:<portal>.unassigned` counts only users the portal shows as dismissed or as
+  not employees (extranet, e-mail, bot), checked at every sync. A working employee in the list is left out with the
+  reason in the sync's `issues` (`crm.unassigned-dropped`), and their deals and leads leave the local copy. A manager
+  may still list anyone. Watch for: a webhook without the `user` scope counts no one as unassigned for an employee.
+
 ## 0.9.0 — 09.11.2026
 
 ### Added
