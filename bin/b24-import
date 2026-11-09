@@ -78,25 +78,25 @@ echo "signed in: $portal as $(printf '%s' "$signed" | json 'j.item.user.name ?? 
 
 # From the release after 0.8.0 a sync copies only the webhook user's deals and leads unless the scope is all;
 # 0.8.0 copies all of them and has no such setting.
-scope_err=$(b24 "$profile" config set "crm.bitrix24:$portal.scope" all --json 2>&1 >/dev/null) || {
-  case "$scope_err" in
-    *"no setting called"*) ;;
-    *) printf '%s\n' "$scope_err" >&2; die "could not set crm.bitrix24:$portal.scope to all" ;;
-  esac
-}
+if older "$min_version" "$version"; then
+  b24 "$profile" config set "crm.bitrix24:$portal.scope" all --json >/dev/null ||
+    die "could not set crm.bitrix24:$portal.scope to all (run this in your own terminal, not an agent's), so the sync would copy only your own deals and leads"
+fi
 
 echo "syncing every pipeline, company, contact, deal and lead; the first run goes at the portal's pace, minutes"
 round=0
 while :; do
   round=$((round + 1))
   [ "$round" -le "$max_rounds" ] || die "the sync is still not complete after $max_rounds runs; run this again to go on"
-  answer=$(b24 "$profile" sync --record --json) || die "sync failed in run $round (its reason is above)"
+  # A run that stops before the end may exit non-zero with its answer still on stdout; only a missing answer is fatal.
+  answer=$(b24 "$profile" sync --record --json) || true
+  [ -n "$(printf '%s' "$answer" | json 'j.item ? 1 : undefined')" ] || die "sync failed in run $round (its reason is above)"
   printf '%s' "$answer" | json 'j.item.synced.map((k) => `  ${k.kind}: saved ${k.saved}, ${k.state}${k.error ? `, error: ${k.error}` : ""}`).join("\n")'
   failed=$(printf '%s' "$answer" | json 'j.item.synced.filter((k) => k.error).map((k) => k.kind).join(" ")')
   [ -z "$failed" ] || die "the sync of $failed failed; the error is above"
   [ "$(printf '%s' "$answer" | json 'j.item.complete')" = true ] && break
-  saved=$(printf '%s' "$answer" | json 'j.item.progress.saved')
-  [ "${saved:-0}" != 0 ] || die "sync run $round saved nothing and is not complete: $(printf '%s' "$answer" | json 'j.item.hint ?? j.item.stopped')"
+  requests=$(printf '%s' "$answer" | json 'j.item.progress.requests')
+  [ "${requests:-0}" != 0 ] || die "sync run $round made no request and is not complete: $(printf '%s' "$answer" | json 'j.item.hint ?? j.item.stopped')"
   echo "run $round stopped ($(printf '%s' "$answer" | json 'j.item.stopped')); going on"
 done
 printf '%s' "$answer" | json 'j.item.issues.map((i) => `  issue: ${i.kind} ${i.reason}: ${i.message}`).join("\n")'
