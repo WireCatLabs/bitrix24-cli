@@ -76,15 +76,15 @@ export const bitrixError = (
       retry_after_ms: waitMs ?? operatingWaitMs(body, now),
       retryable: true,
     })
-  if (code && SCOPE.has(code))
+  if (code && SCOPE.has(code)) {
+    const scope = scopeOf(method)
+    const known = scope !== "unknown"
     return as(
       "permission_error",
-      `this webhook has no ${scopeOf(method)} scope for ${method}${named}; add it in Bitrix24`,
-      {
-        reason: "webhook.scope-missing",
-        scope: scopeOf(method),
-      },
+      `this webhook has no ${known ? `${scope} ` : ""}scope for ${method}${named}; add it in Bitrix24`,
+      { reason: "webhook.scope-missing", ...(known ? { scope } : {}) },
     )
+  }
   // A method only an installed app may call (https://apidocs.bitrix24.com/api-reference/events/events.html).
   if (code === "WRONG_AUTH_TYPE")
     return as("permission_error", `Bitrix24 lets only an installed app call ${method}, not a webhook${named}`, {

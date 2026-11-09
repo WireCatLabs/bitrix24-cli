@@ -7,7 +7,7 @@ import {
   type SleepLike,
   wallClock,
 } from "@wirecat/cli-base"
-import { providerWaitMs, readJsonResponse } from "@wirecat/cli-base/http"
+import { hostFetch, providerWaitMs, readJsonResponse } from "@wirecat/cli-base/http"
 import { apiJson, currentAttempt, type EventSink, providerEvent, providerRequest } from "@wirecat/cli-core/cli"
 import type { Pacer } from "@wirecat/cli-core/sends"
 import { isRecord } from "../body.js"
@@ -28,7 +28,8 @@ const LONGEST_PACE_WAIT_MS = 60_000
 /** What a reader needs of the transport: a source call passes one that counts its requests. */
 export type BitrixCaller = Pick<BitrixTransport, "call">
 
-const isTimeout = (error: unknown) => error instanceof Error && error.name === "TimeoutError"
+const isTimeout = (error: unknown) =>
+  (error instanceof Error && error.name === "TimeoutError") || (isCliError(error) && error.code === "timeout")
 
 export type FetchLike = (url: string, init: RequestInit) => Promise<Response>
 
@@ -77,8 +78,13 @@ export class BitrixTransport {
 
   constructor(options: BitrixTransportOptions) {
     this.#webhook = options.webhook
-    this.#fetch = options.fetch ?? fetch
     this.#timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
+    // The portal is the one host b24 reaches (identity `userHosts`); our own deadline below fires first.
+    this.#fetch = hostFetch({
+      hosts: [new URL(options.webhook.origin).hostname],
+      ...(options.fetch ? { fetch: options.fetch as typeof fetch } : {}),
+      timeoutMs: this.#timeoutMs * 2,
+    }) as FetchLike
     this.#signal = options.signal
     this.#events = options.events
     this.#pacer = options.pacer
@@ -179,16 +185,16 @@ export class BitrixTransport {
           signal,
         })
       } catch (error) {
-        const failure = this.#unanswered(method, error, run)
+        const failure = this.#unanswered(method, signal.aborted ? signal.reason : error, run)
         end({ errorCode: failure.code })
         throw failure
       }
       let body: unknown
       try {
         body = await readJsonResponse(response, { maxBytes: LARGEST_ANSWER, signal })
-      } catch (error) {
+      } catch {
         if (signal.aborted) {
-          const failure = this.#unanswered(method, error, run)
+          const failure = this.#unanswered(method, signal.reason, run)
           end({ status: response.status, errorCode: failure.code })
           throw failure
         }

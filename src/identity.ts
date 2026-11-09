@@ -24,6 +24,8 @@ export const IDENTITY: AppIdentity = {
 export const DESKTOP: ManifestIdentity = {
   ...IDENTITY,
   docs: "https://wirecat.dev/en/docs/b24",
+  hosts: [],
+  userHosts: "the Bitrix24 portal in your webhook address",
   tagline: "Bitrix24 CRM: deals, leads, contacts and companies",
   syncs: "deals, leads, contacts and companies",
   signIn: {

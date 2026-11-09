@@ -56,11 +56,11 @@ whose deals count as nobody's, such as the one a website form or an integration 
 every one:
 
 ```sh
-b24 work config set crm.bitrix24:<portal>.unassigned 15,31   # these users' deals and leads count as unassigned
-b24 work config set crm.bitrix24:<portal>.scope all          # every deal and lead; `mine` goes back
+b24 work config set crm.bitrix24:example.bitrix24.ru.unassigned 15,31  # their deals and leads count as unassigned
+b24 work config set crm.bitrix24:example.bitrix24.ru.scope all         # every deal and lead; `mine` goes back
 ```
 
-`<portal>` is the portal's host, such as `example.bitrix24.ru`. The sync answer says which `scope` it applied and the
+`example.bitrix24.ru` stands for your portal's host. The sync answer says which `scope` it applied and the
 webhook's own user (`self`). A deal given to another user leaves the local copy at the next sync. Switching to `all`
 lists deals and leads in full again; switching to `mine` marks the others deleted here, from the copy alone, without
 asking the portal. Deleted here means they leave lists and search; their earlier copy stays in the store file. If
@@ -70,8 +70,8 @@ Only you set `scope`, `self` and `unassigned`: an agent is refused.
 Contacts and companies are always copied whole.
 
 One portal's copy belongs to one user: the first sync remembers the webhook's user as `crm.bitrix24:<portal>.self`.
-A sync through a webhook of another user is refused; `b24 work config unset crm.bitrix24:<portal>.self` gives the
-copy to the next one.
+A sync through a webhook of another user is refused;
+`b24 work config unset crm.bitrix24:example.bitrix24.ru.self` gives the copy to the next one.
 
 ### Who is who
 

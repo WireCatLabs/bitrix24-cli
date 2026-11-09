@@ -36,7 +36,14 @@ B24_TOKEN=$(secret-tool lookup service bitrix24 account "$account" 2>/dev/null) 
 export B24_TOKEN
 
 sandbox=$(mktemp -d)
-trap 'rm -rf "$sandbox"' EXIT
+# The output and the run records outlive the throwaway folder, so a failed step can be read afterwards; they hold field
+# names and counts from the portal, never the webhook.
+stamp=$(date +%Y%m%dT%H%M%S)
+logs="${XDG_CACHE_HOME:-$HOME/.cache}/b24-live"
+(umask 077 && mkdir -p "$logs")
+exec > >(umask 077 && tee "$logs/$stamp.log") 2>&1
+echo "log: $logs/$stamp.log"
+trap 'cp -r "$sandbox/data/bitrix24-cli/runs" "$logs/$stamp-runs" 2>/dev/null; rm -rf "$sandbox"' EXIT
 b24() {
   HOME="$sandbox" XDG_CONFIG_HOME="$sandbox/config" XDG_DATA_HOME="$sandbox/data" XDG_STATE_HOME="$sandbox/state" \
     XDG_CACHE_HOME="$sandbox/cache" MESSAGING_STORE="$sandbox/wirecat.db" DBUS_SESSION_BUS_ADDRESS=disabled: \
@@ -57,6 +64,7 @@ value() {
 }
 
 step session status --check
+echo "the first sync copies the portal into an empty store at the portal's pace, a request a second: minutes"
 step sync --json=state,synced,issues
 # The second sync asks only for what changed, through the updatedTime filter; every kind must answer it.
 changed() {
@@ -123,7 +131,8 @@ csv() {
       const [header = [], ...rows] = records
       const even = rows.every((row) => row.length === header.length)
       const keyed = ["id", "ref"].some((name) => header.includes(name))
-      if (quoted || !keyed || !rows.length || rows.length > 3 || !even) process.exit(1)
+      // No rows is a table too: a sync copies only the deals of the webhook user, who may hold none.
+      if (quoted || !keyed || rows.length > 3 || !even) process.exit(1)
       console.log(`ok: a header of ${header.length} columns, then ${rows.length} rows of as many cells`)
     })' || fail "$1 list --format csv is not a CSV table with a header"
 }

@@ -34,6 +34,10 @@ describe("api list and show", () => {
     ["user.get", "user", "2"],
     ["department.get", "department", "2"],
     ["crm.mycompany.basic.list", "crm", "3.0"],
+    ["tasks.task.add", "task", "2"],
+    ["im.message.add", "im", "2"],
+    ["log.blogpost.add", "unknown", "2"],
+    ["made.up.method", "unknown", "2"],
   ])("show names %s's scope as its page in the API reference does", async (method, scope, rest) => {
     expect((await b24(["api", "show", method, "--json"])).json().item).toMatchObject({ scope, rest })
   })
