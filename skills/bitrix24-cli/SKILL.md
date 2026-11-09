@@ -28,7 +28,8 @@ Find your way with the tool itself, not this file:
   status` says how far it is.
 - A sync copies only the webhook user's deals and leads, and those of the users in `crm.bitrix24:<portal>.unassigned`;
   its answer's `scope` says so. Only the owner sets `crm.bitrix24:<portal>.scope all` to copy every one, and only a
-  Bitrix24 administrator or department head may: anyone else's sync under `all` is refused.
+  Bitrix24 administrator or department head may: anyone else's sync under `all` is refused, and for them `unassigned`
+  counts only dismissed users and non-employees (`crm.unassigned-dropped` names the rest).
 - Lists filter with a query: `b24 work deals list status:open stage:"Quote sent" pipeline:Sales`. `b24 help deals
   list` lists the fields. A deal answers `ref` (`deal:12`), `pipeline`, `stage`, `status`, `close_date`, and `amount`
   as a decimal string in `currency`; every write and `show` takes that `ref`.

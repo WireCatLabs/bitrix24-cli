@@ -77,6 +77,14 @@ export const toCrmUser = (raw: Raw): CrmUser => {
 export const portalUsers = async (portal: BitrixCaller): Promise<CrmUser[]> =>
   (await userRows(portal, { USER_TYPE: "employee" })).items.map(toCrmUser).filter(({ externalId }) => externalId !== "")
 
+/** The ids of the portal's working employees: `ACTIVE` leaves out the dismissed (apidocs user-get). */
+export const activeEmployees = async (portal: BitrixCaller): Promise<Set<string>> =>
+  new Set(
+    (await userRows(portal, { USER_TYPE: "employee", ACTIVE: true })).items
+      .map((raw) => id(raw.ID))
+      .filter((one): one is string => one !== null),
+  )
+
 export const portalDepartments = async (portal: BitrixCaller): Promise<CrmDepartment[]> =>
   (await rest2Rows(portal, "department.get", { sort: "ID", order: "ASC" })).items.flatMap((raw) => {
     const externalId = id(raw.ID)

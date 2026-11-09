@@ -2,7 +2,7 @@ import { CliError, isCliError } from "@wirecat/cli-base"
 import type { CrmField, CrmItem, CrmKind, CrmOrganization, CrmPerson, CrmRecords } from "@wirecat/cli-core"
 import type { CrmCallContext, CrmChanges, CrmIdPage, CrmSource } from "@wirecat/cli-core/crm"
 import type { BitrixCaller, BitrixTransport } from "../bitrix/transport.js"
-import { roleOf } from "../whoami.js"
+import { type Role, roleOf } from "../whoami.js"
 import { DEAL } from "./deal.js"
 import { loadFields, metadataOf } from "./fields.js"
 import type { ItemType } from "./items.js"
@@ -11,7 +11,7 @@ import { ORGANIZATION } from "./organization.js"
 import { NO_MEMORY, type OwnMemory } from "./own-memory.js"
 import { PERSON } from "./person.js"
 import { bitrixPipelines } from "./pipelines.js"
-import { portalDepartments, portalUsers } from "./user.js"
+import { activeEmployees, portalDepartments, portalUsers } from "./user.js"
 import {
   contacts,
   customFields,
@@ -122,6 +122,8 @@ export const bitrixCrmSource = (
       },
     }
   }
+  let role: Promise<Role> | undefined
+  const roleNow = () => (role ??= roleOf(portal(), portal().userId))
   const loaded = new Map<CrmKind, Promise<CrmField[]>>()
   const fields = (kind: CrmKind, caller: BitrixCaller = portal()) => {
     let found = loaded.get(kind)
@@ -229,7 +231,7 @@ export const bitrixCrmSource = (
       const self = portal().userId
       const { mode, setting } = await asked()
       if (mode !== "all") return self
-      const role = await roleOf(portal(), self)
+      const role = await roleNow()
       if (role.manager) return self
       throw new CliError(
         "configuration_error",
@@ -241,6 +243,27 @@ export const bitrixCrmSource = (
           "unassigned ones",
         { setting, reason: "bitrix.scope-all-manager-only" },
       )
+    },
+    // The owner's rule: an employee counts as nobody's only a dismissed user or one who is no employee (extranet,
+    // e-mail, bot); a manager may name anyone. Asked at every sync, so someone rehired leaves the list.
+    async unassigned(users) {
+      if ((await roleNow()).manager) return { kept: [...users] }
+      let active: Set<string>
+      try {
+        active = await activeEmployees(portal())
+      } catch (error) {
+        if (!isCliError(error) || error.code !== "permission_error") throw error
+        return {
+          kept: [],
+          message: "the webhook lacks the user scope, so none can be told apart from a working employee",
+        }
+      }
+      return {
+        kept: users.filter((user) => !active.has(user)),
+        message:
+          "a working employee of the portal; only a Bitrix24 administrator or a department head may count one as " +
+          "nobody's, anyone else only a dismissed user or one who is not an employee",
+      }
     },
     pipelines: (kind, context) => bitrixPipelines(metered(context), kind),
     async changes<K extends CrmKind>(
