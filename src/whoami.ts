@@ -9,7 +9,7 @@ export interface Role {
   manager: boolean
   /** Why: `admin`, `head`, or `employee`; `employee` also when the webhook may not read departments. */
   as: "admin" | "head" | "employee"
-  /** Set when the role was read without the `department` scope, so a head reads as an employee. */
+  /** Set when the portal refused `department.get`, so a head reads as an employee. */
   missing?: "department"
 }
 
@@ -23,7 +23,8 @@ export const roleOf = async (portal: BitrixCaller, userId: string): Promise<Role
     const headed = rawsOf((await portal.call("department.get", { UF_HEAD: Number(userId) })).result)
     return headed.length ? { manager: true, as: "head" } : { manager: false, as: "employee" }
   } catch (error) {
-    if (isCliError(error) && error.code === "permission_error")
+    // A sign-in or a sync must not fail over a role it only narrows: unknown is an employee, and said so.
+    if (isCliError(error) && (error.code === "permission_error" || error.code === "not_found"))
       return { manager: false, as: "employee", missing: "department" }
     throw error
   }

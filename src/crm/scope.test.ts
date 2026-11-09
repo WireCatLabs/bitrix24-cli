@@ -117,7 +117,7 @@ describe("sync scope", () => {
     crm.withhold("department")
     await set(SCOPE, "all")
     const ran = await b24(["work", "sync", "--json"], { portal: crm })
-    expect((ran.json().error as { message: string }).message).toContain("lacks the department scope")
+    expect((ran.json().error as { message: string }).message).toContain("needs the webhook's department scope")
   })
 
   it("copies every deal for a portal administrator who heads no department", async () => {

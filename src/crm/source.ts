@@ -234,7 +234,9 @@ export const bitrixCrmSource = (
       throw new CliError(
         "configuration_error",
         `${setting} is all, and user ${self} is neither a Bitrix24 administrator nor the head of a department` +
-          (role.missing ? " (the webhook lacks the department scope, so a head cannot be told)" : "") +
+          (role.missing
+            ? " (the portal refused department.get, which needs the webhook's department scope, so a head cannot be told)"
+            : "") +
           `: only a manager copies every deal and lead. "config set ${setting} mine" copies your own and the ` +
           "unassigned ones",
         { setting, reason: "bitrix.scope-all-manager-only" },

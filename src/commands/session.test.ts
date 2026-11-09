@@ -29,6 +29,25 @@ describe("session", () => {
     expect(ran.out + ran.err).not.toContain(FAKE_SECRET)
   })
 
+  it("start names a department head a manager, and anyone else not one even when departments are refused", async () => {
+    const start = async (script: Parameters<typeof fakePortal>[0]) =>
+      (
+        await b24(["work", "session", "start", "--json"], {
+          keyring: memoryKeyring(),
+          portal: fakePortal({ "user.current": ok({ ID: "7" }), "user.admin": ok(false), ...script }),
+          stdin: FAKE_HOOK,
+        })
+      ).json().item
+    expect(await start({ "department.get": ok([{ ID: "1", NAME: "Sales", UF_HEAD: "7" }]) })).toMatchObject({
+      user: { admin: false, manager: true },
+    })
+    expect(await start({ "department.get": ok([]) })).toMatchObject({ user: { manager: false } })
+    expect(await start({})).toMatchObject({ user: { manager: false } })
+    expect(await start({ "department.get": { status: 401, body: { error: "insufficient_scope" } } })).toMatchObject({
+      user: { manager: false },
+    })
+  })
+
   it("start keeps nothing when the portal refuses the webhook", async () => {
     const keyring = memoryKeyring()
     const refusing = fakePortal({ "user.current": { status: 401, body: { error: "INVALID_CREDENTIALS" } } })
