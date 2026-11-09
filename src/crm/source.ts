@@ -24,7 +24,7 @@ import {
   type Raw,
   text,
 } from "./values.js"
-import { rest3Rows, rowsOf } from "./walk.js"
+import { rest3Rows } from "./walk.js"
 
 /**
  * Re-read before the last cursor: rows the portal saved while the round ran, and this computer's clock running ahead
@@ -62,6 +62,23 @@ const toOrganization = (raw: Raw, metadata?: Metadata): CrmOrganization => ({
   ...(metadata ? { metadata } : {}),
 })
 
+/** A list answer without `items` is refused: read as an empty page, it would end the round and empty an id pass. */
+const listedRows = (result: unknown): Raw[] => {
+  const items = (result as { items?: unknown })?.items
+  if (!Array.isArray(items)) throw new CliError("invalid_response", "the portal answered a list without its items")
+  return items as Raw[]
+}
+
+/**
+ * The responsible users a `mine` scope keeps, as numbers for the portal's filter; core has checked and normalised
+ * them. A Bitrix24 deal or lead always has one, the creator by default, so the portal has no unassigned items.
+ */
+const assigneesOf = (kind: CrmKind, context?: CrmCallContext): number[] | null => {
+  const scope = context?.scope
+  if (scope?.mode !== "mine" || (kind !== "deal" && kind !== "lead")) return null
+  return [...new Set([scope.self, ...scope.also].map(Number))]
+}
+
 const MAPPERS: { [K in CrmKind]: (raw: Raw, metadata?: Metadata) => CrmRecords[K] } = {
   deal: DEAL.map,
   lead: LEAD.map,
@@ -84,7 +101,7 @@ export interface BitrixCrmSource extends CrmSource {
 
 /**
  * The portal's CRM for core's sync: REST 3.0 lists by id with `updatedTime` for changes, since a webhook gets no
- * event feed, and a list of every id to find deletions.
+ * event feed, and a list of every id to find deletions. A `mine` scope limits a full round by `assignedById`.
  */
 export const bitrixCrmSource = (
   portal: () => BitrixTransport,
@@ -204,6 +221,7 @@ export const bitrixCrmSource = (
   return {
     provider: "bitrix24",
     traits: { kinds: ["organization", "person", "deal", "lead"], removedInChanges: false },
+    self: () => portal().userId,
     pipelines: (kind, context) => bitrixPipelines(metered(context), kind),
     async changes<K extends CrmKind>(
       kind: K,
@@ -215,12 +233,18 @@ export const bitrixCrmSource = (
       if (since !== null && Number.isNaN(since)) return { reset: true }
       const caller = metered(context)
       const { after, started } = pageOf(page, now())
+      const assignees = assigneesOf(kind, context)
       const defined = await custom(kind, caller)
+      // Only a full round is filtered: a round of changes reads every assignee's, so core sees a deal given away.
       const filter = [
         ...(after ? [["id", ">", after]] : []),
-        ...(since === null ? [] : [["updatedTime", ">=", portalTime(since - OVERLAP_MS)]]),
+        ...(since === null
+          ? assignees
+            ? [["assignedById", "in", assignees]]
+            : []
+          : [["updatedTime", ">=", portalTime(since - OVERLAP_MS)]]),
       ]
-      const rows = rowsOf(
+      const rows = listedRows(
         (await list(caller, kind, [...TYPES[kind].select, ...defined.map(({ code }) => code)], filter)).result,
       )
       const last = id(rows.at(-1)?.id)
@@ -235,10 +259,11 @@ export const bitrixCrmSource = (
         ? { items, nextPage: `${last}@${started}` }
         : { items, cursor: new Date(started).toISOString() }
     },
+    // Every id, whatever the scope: core narrows from the stored assignees, so the pass finds only real deletions.
     async ids(kind, page, context): Promise<CrmIdPage> {
       const caller = metered(context)
       const after = Number(page) || 0
-      const rows = rowsOf((await list(caller, kind, ["id"], after ? [["id", ">", after]] : [])).result)
+      const rows = listedRows((await list(caller, kind, ["id"], after ? [["id", ">", after]] : [])).result)
       const listed = rows.map((raw) => id(raw.id)).filter((one): one is string => one !== null)
       const last = listed.at(-1)
       if (last !== undefined) return { ids: listed, nextPage: last }
