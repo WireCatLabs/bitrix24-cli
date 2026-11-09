@@ -575,7 +575,7 @@
         "schedule",
         "run"
       ],
-      "summary": "run a schedule now, as its timer would, and wait for it",
+      "summary": "run a schedule now, as its timer would, and wait for it; a paused one runs too",
       "effects": {
         "remote": "write",
         "local": "write"
@@ -593,6 +593,30 @@
         "local": "write"
       },
       "permission": "schedule.remove"
+    },
+    {
+      "path": [
+        "schedule",
+        "pause"
+      ],
+      "summary": "take a schedule off its timer and keep it; run runs it, resume puts it back",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "schedule.pause"
+    },
+    {
+      "path": [
+        "schedule",
+        "resume"
+      ],
+      "summary": "put a paused schedule back on its timer",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "schedule.resume"
     },
     {
       "path": [
