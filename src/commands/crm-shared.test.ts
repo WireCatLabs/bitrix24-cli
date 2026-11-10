@@ -2,6 +2,7 @@ import { existsSync, mkdtempSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { memoryKeyring } from "@wirecat/cli-base"
+import { openStore } from "@wirecat/cli-core/store"
 import { describe, expect, it } from "vitest"
 import { seededCrm } from "../testing/fake-crm.js"
 import { FAKE_SECRET } from "../testing/fake-portal.js"
@@ -23,6 +24,26 @@ describe("sync", () => {
     expect(shown.code).toBe(0)
     expect(shown.out).toContain("crm.deal.list")
     expect(ran.out + ran.err + shown.out).not.toContain(FAKE_SECRET)
+  })
+
+  it("stores the portal's account as work, and keeps the scope the owner set", async () => {
+    const portal = seededCrm()
+    expect((await b24(["work", "sync", "--json"], { portal })).code).toBe(0)
+    const store = await openStore({ path: process.env.MESSAGING_STORE as string })
+    const account = { provider: "bitrix24", account: "example.bitrix24.test" }
+    try {
+      expect((await store.accounts.storedAccount(account)).scope).toBe("work")
+      await store.accounts.setScope(account, "personal")
+    } finally {
+      await store.close()
+    }
+    expect((await b24(["work", "sync", "--json"], { portal })).code).toBe(0)
+    const after = await openStore({ path: process.env.MESSAGING_STORE as string })
+    try {
+      expect((await after.accounts.storedAccount(account)).scope).toBe("personal")
+    } finally {
+      await after.close()
+    }
   })
 
   it("refuses --offline and a profile with no sign-in before any request", async () => {
