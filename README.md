@@ -98,6 +98,8 @@ Assigning a record to another employee is denied until you allow it, a delete as
 people, publish or start the portal's automation are denied, reads too. A stage change can start the portal's own
 robots, which may write to your clients: set `permissions.deals.move` to `ask` if your portal has such robots.
 `B24_READ_ONLY=1` refuses every write.
+Whatever the levels say, only a Bitrix24 administrator's webhook deletes, sets a field to nothing or calls `batch`:
+an employee's is refused.
 
 More: [settings](docs/configuration.md#permissions), [security](docs/security.md).
 

@@ -18,6 +18,7 @@ describe("every option of the CRM commands runs against the fake portal", () => 
 
   it("deal writes take every field, and refuse --operation-id", async () => {
     const { portal, ref } = await synced()
+    portal.setAdmin(true)
     const deal = ref("deals", 102)
     for (const argv of [
       [
@@ -44,6 +45,7 @@ describe("every option of the CRM commands runs against the fake portal", () => 
 
   it("lead writes take every field a lead has", async () => {
     const { portal, ref } = await synced()
+    portal.setAdmin(true)
     const lead = ref("leads", 104)
     const run = async (...argv: string[]) => (await b24(["work", "leads", ...argv, "--json"], { portal })).code
     expect(await run("show", lead)).toBe(0)

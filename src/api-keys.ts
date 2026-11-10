@@ -129,6 +129,39 @@ export const readsClients = (method: string, body: Body): boolean => {
   return !/^(fields$|field\.|userfield\.)/.test(found.action)
 }
 
+/** Links whose 0 unlinks the record; `categoryId` 0 is the general pipeline, a value. */
+const LINKS = new Set(["companyid", "contactid", "leadid"])
+
+/** An empty value, a 0 link, or a REST 2 multi-field entry marked `DELETE: Y`, anywhere in the value. */
+const clears = (value: unknown, key = ""): boolean => {
+  if (value === null || (typeof value === "string" && value.trim() === "")) return true
+  if (Array.isArray(value)) return value.length === 0 || value.some((one) => clears(one))
+  if (isRecord(value))
+    return Object.entries(value).some(
+      ([inner, one]) => clears(one, inner) || (foldCode(inner) === "delete" && String(one).toUpperCase() === "Y"),
+    )
+  return LINKS.has(foldCode(key)) && (jsonNumber(value) ?? String(value)) === "0"
+}
+
+export type EmployeeRule = "delete" | "clear" | "batch"
+
+/**
+ * What only a Bitrix24 administrator's webhook may send, whatever the permissions say (the owner, 2026-11-10): a delete, an update
+ * that sets any field to nothing, and `batch`, whose inner calls are query strings this check cannot read safely.
+ * Whether a field held a value would cost a read per write, so an empty value in an update is refused outright.
+ */
+export const employeeRuleOf = (raw: string, body: Body): EmployeeRule | undefined => {
+  const method = normalMethod(raw)
+  if (method === "batch") return "batch"
+  if (methodOf(method).effect === "destructive") return "delete"
+  if (
+    /\.(update|set)$/.test(method) &&
+    Object.entries(body).some(([key, value]) => foldCode(key) !== "id" && clears(value, key))
+  )
+    return "clear"
+  return undefined
+}
+
 /** The CRM type and action a raw write does, whether named `crm.deal.update` or `crm.item.update` with its type id. */
 const crmWriteOf = (method: string, body: Body) => {
   const found = typeOf(method, body)

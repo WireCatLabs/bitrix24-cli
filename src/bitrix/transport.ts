@@ -10,7 +10,9 @@ import {
 import { hostFetch, providerWaitMs, readJsonResponse } from "@wirecat/cli-base/http"
 import { apiJson, currentAttempt, type EventSink, providerEvent, providerRequest } from "@wirecat/cli-core/cli"
 import type { Pacer } from "@wirecat/cli-core/sends"
+import { type EmployeeRule, employeeRuleOf } from "../api-keys.js"
 import { isRecord } from "../body.js"
+import { isAdmin } from "../crm/clients.js"
 import { bitrixError } from "./errors.js"
 import { methodOf, type RestVersion } from "./methods.js"
 import { methodUrl, type Webhook } from "./webhook.js"
@@ -24,6 +26,12 @@ const LARGEST_ANSWER = 16 * 1024 * 1024
 const RETRY: RetryConfig = { retries: 3, baseDelayMs: 1_000, maxDelayMs: 10_000, maxRetryAfterMs: 30_000 }
 /** A pace wait longer than this ends the run instead of sitting in it, as cli-core's messenger pacing does. */
 const LONGEST_PACE_WAIT_MS = 60_000
+
+const EMPLOYEE_REFUSALS: Record<EmployeeRule, (method: string) => string> = {
+  delete: (method) => `${method} deletes from the CRM`,
+  clear: (method) => `${method} sets a field to nothing (an empty value, null, [] or a 0 link)`,
+  batch: () => "batch can hold deletes and cleared fields b24 cannot see into",
+}
 
 /** What a reader needs of the transport: a source call passes one that counts its requests. */
 export type BitrixCaller = Pick<BitrixTransport, "call">
@@ -113,6 +121,7 @@ export class BitrixTransport {
     const api = known.api
     const reads = known.effect === "read"
     const key = api === 3 && !reads ? options.idempotencyKey : undefined
+    if (!reads) await this.#refuseForEmployee(method, params)
     let waited: number | undefined
     for (let attempt = 1; ; attempt++) {
       try {
@@ -129,6 +138,19 @@ export class BitrixTransport {
         waited = wait
       }
     }
+  }
+
+  /** Here, where every write passes, so neither a command nor its permission level can get round it. */
+  async #refuseForEmployee(method: string, params: Record<string, unknown>) {
+    const rule = employeeRuleOf(method, params)
+    if (rule === undefined || (await isAdmin(this))) return
+    throw new CliError(
+      "permission_error",
+      `${EMPLOYEE_REFUSALS[rule](method)}, which b24 lets only a Bitrix24 administrator do: an employee's webhook ` +
+        "deletes nothing and clears no field, whatever the permissions say. Sign in with an administrator's webhook " +
+        "(session start) to do it",
+      { reason: `employee.${rule}`, operation: method, sent: false },
+    )
   }
 
   async #turn(method: string) {

@@ -213,6 +213,7 @@ describe("writes", () => {
     expect(item(await b24(["work", "deals", "close", deal, "lost", "--json"], { portal }))).toMatchObject({
       deal: { stage: "Lost", status: "lost" },
     })
+    portal.setAdmin(true)
     const writes = portal.writes()
     expect((await b24(["work", "deals", "delete", deal], { portal })).code).toBe(7)
     expect(portal.writes()).toBe(writes)
