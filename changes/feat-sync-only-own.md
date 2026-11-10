@@ -15,3 +15,6 @@
 - A contact's name no longer carries the `null` or `null #<id>` a portal import left in its name fields
   ("Ярослав Орлов null #907" is now "Ярослав Орлов"). 101,876 of 114,165 contacts on one live portal had it. Watch
   for: a name stored before keeps the leftover until that contact is synced again.
+- **Built on cli-core 0.630.0** (was 0.623.0). The store moves to version 63 on first open. A CRM contact no longer
+  joins or renames your own person, and two contacts sharing a company's mailbox or phone stay two people. What changed
+  in between is in [cli-core's changelog](https://github.com/WireCatLabs/cli-core/blob/main/CHANGELOG.md).

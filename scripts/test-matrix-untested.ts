@@ -21,6 +21,9 @@ export const UNTESTED: { command: string; option?: string; reason: string }[] = 
       "--deliver-to",
     ].map((option) => ({ command: "schedule agent", option })),
     { command: "schedule run" },
+    ...["--no-notify", "--deliver-to"].map((option) => ({ command: "schedule run", option })),
+    { command: "schedule pause" },
+    { command: "schedule resume" },
     { command: "schedule exec" },
   ].map((one) => ({ ...one, reason: SHARED_SCHEDULE })),
   ...["--port", "--public-url", "--profiles"].map((option) => ({
