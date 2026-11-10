@@ -42,6 +42,15 @@ describe("sync", () => {
       ["lead", "complete", 1],
     ])
   })
+
+  it("store apply without --yes only counts, and asks the portal nothing", async () => {
+    const { portal } = await synced()
+    const before = portal.calls.length
+    const ran = await b24(["work", "store", "apply", "--json"])
+    expect(ran.code).toBe(0)
+    expect(item(ran)).toMatchObject({ applied: false })
+    expect(portal.calls).toHaveLength(before)
+  })
 })
 
 describe("fields list", () => {

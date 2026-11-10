@@ -98,6 +98,19 @@
     },
     {
       "path": [
+        "store",
+        "apply"
+      ],
+      "summary": "apply scope mine to the contacts already stored: remove those no deal or…",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "store.apply",
+      "entity": "crm_contacts_removed"
+    },
+    {
+      "path": [
         "deals",
         "list"
       ],

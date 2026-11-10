@@ -132,7 +132,7 @@ b24 sync [options]
 | `--rescan` | list everything again, every id too, dropping a round in progress. |
 | `--max-pages <pages>` | at most this many requests to the CRM in this run. |
 
-**Returns:** crm sync — provider, account, scope, pipelines, skipped_owner_rejected, synced, issues, complete, and 6 more; every field: b24 commands info sync
+**Returns:** crm sync — provider, account, scope, pipelines, skipped_owner_rejected, synced, issues, complete, and 7 more; every field: b24 commands info sync
 
 **Example:** `b24 work sync`, `b24 work sync --rescan`, `b24 work sync --max-pages 20`
 
@@ -151,6 +151,20 @@ b24 store status
 **Returns:** crm sync progress — kind, round, id_pass, stored, job, profile, done, total, and 6 more; every field: b24 commands info store status
 
 **Example:** `b24 work store status --json`
+
+### `b24 store apply`
+
+apply scope mine to the contacts already stored: remove those no deal or lead of the chosen users and no kept company names, and the people they leave empty; counts only unless --yes, under scope all too. A sync that narrows the scope, or sync --rescan under mine, does this itself
+
+**Changes something on this computer only.**
+
+```sh
+b24 store apply
+```
+
+**Returns:** crm contacts removed — contacts, persons, persons_kept, names, applied; every field: b24 commands info store apply
+
+**Example:** `b24 work store apply`, `b24 work store apply --yes`
 
 ## `b24 deals`
 

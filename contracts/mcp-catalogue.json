@@ -5,6 +5,7 @@
   "session list": "read",
   "sync": "read",
   "store status": "read",
+  "store apply": "write",
   "deals list": "read",
   "deals show": "read",
   "deals create": "write",
