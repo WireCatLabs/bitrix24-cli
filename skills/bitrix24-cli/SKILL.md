@@ -26,11 +26,12 @@ Find your way with the tool itself, not this file:
 
 - `b24 work sync` first: `deals`, `leads`, `pipelines` and `stages` read the local store, offline too. `b24 work store
   status` says how far it is.
-- A sync copies only the webhook user's deals and leads, and those of the users in `crm.bitrix24:<portal>.unassigned`;
-  its answer's `scope` says so. Contacts and companies are only their clients: assigned to them or named on
-  their deals and leads. No sync copies the whole CRM, an administrator's either: a stored `scope all` is refused
-  until the owner sets `mine`. `unassigned` counts only dismissed users and non-employees (`crm.unassigned-dropped`
-  names the rest). Find any other client live on the portal with `people list` or `organizations list`.
+- A sync copies only the deals and leads of the users the owner chose in `crm.bitrix24:<portal>.unassigned`, the
+  webhook's own user only if chosen; with none chosen it is refused and says how. Its answer's `scope` says whom.
+  Contacts and companies are only their clients: assigned to them or named on their deals and leads. No sync copies
+  the whole CRM, an administrator's either: a stored `scope all` is refused until the owner sets `mine`. Only the
+  owner chooses; never choose a user for them. Find any other client live on the portal with `people list` or
+  `organizations list`.
 - Lists filter with a query: `b24 work deals list status:open stage:"Quote sent" pipeline:Sales`. `b24 help deals
   list` lists the fields. A deal answers `ref` (`deal:12`), `pipeline`, `stage`, `status`, `close_date`, and `amount`
   as a decimal string in `currency`; every write and `show` takes that `ref`.

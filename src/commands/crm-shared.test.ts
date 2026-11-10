@@ -97,6 +97,8 @@ describe("lists read the store, --offline too", () => {
     expect(items(listed)).toEqual([])
     expect(existsSync(store)).toBe(false)
 
+    const chosen = ["work", "config", "set", "crm.bitrix24:example.bitrix24.test.unassigned", "7", "--json"]
+    expect((await b24(chosen, { env: { MESSAGING_STORE: store } })).code).toBe(0)
     expect((await b24(["work", "sync", "--json"], { env, portal: seededCrm() })).code).toBe(0)
     expect(items(await b24(["work", "deals", "list", "--json"], { env })).length).toBeGreaterThan(0)
   })

@@ -2,6 +2,7 @@ import { CliError, isCliError } from "@wirecat/cli-base"
 import type { CrmField, CrmItem, CrmKind, CrmOrganization, CrmPerson, CrmRecords } from "@wirecat/cli-core"
 import type { CrmCallContext, CrmChanges, CrmIdPage, CrmSource } from "@wirecat/cli-core/crm"
 import type { BitrixCaller, BitrixTransport } from "../bitrix/transport.js"
+import { type Role, roleOf } from "../whoami.js"
 import { clientsOf as namedClients } from "./clients.js"
 import { DEAL } from "./deal.js"
 import { loadFields, metadataOf } from "./fields.js"
@@ -71,15 +72,25 @@ const listedRows = (result: unknown): Raw[] => {
 }
 
 /**
- * The responsible users a `mine` scope keeps, as numbers for the portal's filter; core has checked and normalised
- * them. A Bitrix24 deal or lead always has one, the creator by default, so the portal has no unassigned items.
+ * The responsible users a `mine` scope keeps, as numbers for the portal's filter: the ones the owner chose in
+ * `unassigned`, which core has checked and normalised. The webhook's own user is one only when chosen, since a
+ * webhook is often a colleague's (NEED-2502); none chosen copies no deal or lead.
  */
 const assigneesOf = (context?: CrmCallContext): number[] | null => {
   const scope = context?.scope
   if (scope?.mode !== "mine") return null
   // A malformed stored entry reads no deal in core; for clients it only narrows the list, never fails the round.
-  return [...new Set([scope.self, ...scope.also].map(Number))].filter(Number.isFinite)
+  return [...new Set(scope.also.map(Number))].filter(Number.isFinite)
 }
+
+/** Core keeps the webhook's own user in every `mine` scope; their rows stay out unless the owner chose them. */
+const unchosen = (context: CrmCallContext | undefined, raw: Raw) => {
+  const scope = context?.scope
+  return scope?.mode === "mine" && !scope.also.includes(scope.self) && String(raw.assignedById) === scope.self
+}
+
+/** `crm.bitrix24:<portal>.unassigned`, beside the `scope` setting: the users whose deals the owner chose. */
+const chosenSetting = (scopeSetting: string) => scopeSetting.replace(/\.scope$/, ".unassigned")
 
 type ClientKind = "person" | "organization"
 const isClient = (kind: CrmKind): kind is ClientKind => kind === "person" || kind === "organization"
@@ -120,8 +131,14 @@ export const bitrixCrmSource = (
   now: () => number = Date.now,
   own: OwnMemory = NO_MEMORY,
   /** The stored `scope` setting and its key: a sync under `all` is refused. */
-  asked: () => Promise<{ mode: "mine" | "all"; setting: string }> = async () => ({ mode: "mine", setting: "scope" }),
+  asked: () => Promise<{ mode: "mine" | "all"; also: readonly string[]; setting: string }> = async () => ({
+    mode: "mine",
+    also: [],
+    setting: "scope",
+  }),
 ): BitrixCrmSource => {
+  let role: Promise<Role> | undefined
+  const roleNow = () => (role ??= roleOf(portal(), portal().userId))
   /** The portal for one call of core's: core paid for its first request, each further one is spent from the budget. */
   const metered = (context?: CrmCallContext): BitrixCaller => {
     let paid = false
@@ -259,32 +276,44 @@ export const bitrixCrmSource = (
     // client is found by a live read of the portal. A stored `all` fails the sync until the owner sets `mine`.
     async self() {
       const self = portal().userId
-      const { mode, setting } = await asked()
-      if (mode !== "all") return self
+      const { mode, also, setting } = await asked()
+      if (mode === "mine" && also.length) return self
+      if (mode === "mine")
+        throw new CliError(
+          "configuration_error",
+          `no CRM user is chosen, so no deal or lead is copied: "config set ${chosenSetting(setting)} <user ids>" ` +
+            'chooses whose, the webhook\'s own user only if you name it; "users list" names them',
+          { setting: chosenSetting(setting), reason: "bitrix.scope-users-unchosen" },
+        )
       throw new CliError(
         "configuration_error",
-        `${setting} is all, and b24 never copies the whole CRM: "config set ${setting} mine" copies your own deals ` +
-          'and leads, the unassigned ones, and their clients. Find any other client on the portal with "people list" ' +
-          'or "organizations list"',
+        `${setting} is all, and b24 never copies the whole CRM: "config set ${setting} mine" copies the deals and ` +
+          `leads of the users you choose in ${chosenSetting(setting)}, and their clients. Find any other client on ` +
+          'the portal with "people list" or "organizations list"',
         { setting, reason: "bitrix.scope-all-refused" },
       )
     },
-    // The owner's rule: only a dismissed user or one who is no employee (extranet, e-mail, bot) counts as nobody's, an
-    // administrator's sync included, so no one takes a colleague's clients that way. Asked at every sync.
+    // The owner chooses whose deals the copy holds. An administrator may choose anyone; anyone else themselves, a
+    // dismissed user or one who is no employee (extranet, e-mail, bot), so no one takes a colleague's clients that way.
+    // Asked at every sync.
     async unassigned(users) {
+      const self = portal().userId
+      if ((await roleNow()).as === "admin") return { kept: [...users] }
       let active: Set<string>
       try {
         active = await activeEmployees(portal())
       } catch (error) {
         if (!isCliError(error) || error.code !== "permission_error") throw error
         return {
-          kept: [],
-          message: "the webhook lacks the user scope, so none can be told apart from a working employee",
+          kept: users.filter((user) => Number(user) === Number(self)),
+          message: "the webhook lacks the user scope, so none can be told apart from a working colleague",
         }
       }
       return {
-        kept: users.filter((user) => !active.has(user)),
-        message: "a working employee of the portal; only a dismissed user or a non-employee counts as nobody's",
+        kept: users.filter((user) => Number(user) === Number(self) || !active.has(user)),
+        message:
+          "a working colleague; only a Bitrix24 administrator may choose one, anyone else themselves, a dismissed user " +
+          "or a non-employee",
       }
     },
     pipelines: (kind, context) => bitrixPipelines(metered(context), kind),
@@ -299,6 +328,12 @@ export const bitrixCrmSource = (
       const caller = metered(context)
       const { after, linked, started } = pageOf(page, now())
       const assignees = assigneesOf(context)
+      if (assignees?.length === 0) {
+        // Every chosen user was refused (`crm.unassigned-dropped`): nothing to read, and no `in []` to send. Every
+        // round of companies still ends with the account's own ones.
+        const items = await completed[kind]([], caller, true, context)
+        return { items, cursor: new Date(started).toISOString() }
+      }
       const clients = assignees && isClient(kind) ? (await clientsOf(caller, assignees, started))[kind] : null
       const defined = await custom(kind, caller)
       const select = [...TYPES[kind].select, ...defined.map(({ code }) => code)]
@@ -332,7 +367,9 @@ export const bitrixCrmSource = (
       const rows = listedRows((await list(caller, kind, select, filter)).result)
       const last = id(rows.at(-1)?.id)
       const kept =
-        clients && assignees && since !== null ? rows.filter((raw) => mineOnly(raw, assignees, clients)) : rows
+        clients && assignees && since !== null
+          ? rows.filter((raw) => mineOnly(raw, assignees, clients))
+          : rows.filter((raw) => !unchosen(context, raw))
       // An empty page ends the round, not a short one: a portal that caps pages below PAGE still lists every row.
       // Every round ends with the named clients: a deal given to the user brings a client whose row did not change.
       if (last === null && clients) return { items: await finish(kept, false), nextPage: `${LINKED}0@${started}` }
@@ -346,6 +383,13 @@ export const bitrixCrmSource = (
       const caller = metered(context)
       const after = Number(page) || 0
       const assignees = assigneesOf(context)
+      if (assignees?.length === 0)
+        return {
+          ids:
+            kind === "organization"
+              ? ((await ownCompanies(caller))?.map(({ externalId }) => externalId) ?? own.read())
+              : [],
+        }
       const filter = [...(after ? [["id", ">", after]] : []), ...(assignees ? [["assignedById", "in", assignees]] : [])]
       const rows = listedRows((await list(caller, kind, ["id"], filter)).result)
       const listed = rows.map((raw) => id(raw.id)).filter((one): one is string => one !== null)

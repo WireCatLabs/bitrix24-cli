@@ -63,8 +63,12 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
    by id (keyset paging, so a record changed mid-round shifts nothing), changes from `updatedTime` at the last
    round's start less ten minutes, then cli-core's daily id-only pass that finds deletions. Bitrix24 sends events only to an installed app, and a webhook cannot install one, so
    there is no change token to follow. `store status` shows where the sync stands.
-3. **Whose deals and leads.** A sync copies the webhook user's own and the unassigned ones (`scope mine`, cli-core's),
-   never the whole CRM, an administrator's sync included. The owner's ruling (2026-11-10): «не надо выгружать все
+3. **Whose deals and leads.** A sync copies the deals and leads of the users the owner chose in
+   `crm.bitrix24:<portal>.unassigned` (cli-core's `also`), never the whole CRM, an administrator's sync included. The
+   webhook's own user is one only when chosen: on the owner's portal the webhook is a colleague's (NEED-2502), and
+   no account is picked for the owner, so with none chosen a sync is refused (`configuration_error`, reason
+   `bitrix.scope-users-unchosen`). cli-core keeps the webhook's user in every `mine` scope; b24 leaves their rows
+   out of its lists unless chosen, and a deal handed to them in a round of changes leaves at the next id pass. The owner's ruling (2026-11-10): «не надо выгружать все
    вообще, в этом нет смысла, я бы в битриксе скорее искал своих клиентов». A sync under a stored `scope all` is refused
    (`configuration_error`, reason `bitrix.scope-all-refused`, was `bitrix.scope-all-admin-only`) and says to set
    `mine`; another client is found by a live read, `people list` or `organizations list`. Under `mine` contacts and
@@ -76,9 +80,10 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
    filtered by `UF_HEAD`. Without the `department` scope the head check is refused and the user counts as an employee.
    Bitrix24 fills `ASSIGNED_BY_ID` with the caller by default ([crm.deal.add](https://apidocs.bitrix24.com/api-reference/crm/deals/crm-deal-add.html)),
    so no deal is unassigned on the portal: unassigned is the owner's list `crm.bitrix24:<portal>.unassigned`. For
-   anyone, an administrator too, cli-core asks `unassigned()` at every sync, which keeps only users that
+   anyone but an administrator, who may choose anyone, cli-core asks `unassigned()` at every sync, which keeps the
+   webhook's own user and only users that
    `user.get` with `USER_TYPE: employee` and `ACTIVE: true` does not list (dismissed users, extranet, e-mail and bot
-   users), and none when the `user` scope is missing.
+   users), and only the webhook's own user when the `user` scope is missing.
    Outside the sync, phones and e-mails of a contact or company that is not the user's client are the owner's to
    ration (NEED-2487): `src/crm/clients.ts` strips them from `people` and `organizations` lists, counts each one `show`
    gives in a file under the state folder, at most 100 a UTC day, and `api call` refuses contact and company reads

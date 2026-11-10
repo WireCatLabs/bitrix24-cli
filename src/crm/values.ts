@@ -70,9 +70,12 @@ export const amountOf = (value: unknown, currency: unknown): { amount: string | 
 
 export const yes = (value: unknown): boolean => value === true || value === "Y" || value === "1" || value === 1
 
+/** A portal import can leave `null` or `null #<id>` in a name field: 101,876 contacts on one live portal. */
+const PLACEHOLDER = /(?:^|\s)null(?:\s+#\d+)?(?=\s|$)/gi
+
 export const fullName = (...parts: unknown[]): string | null =>
   parts
-    .map(text)
+    .map((part) => text(text(part)?.replace(PLACEHOLDER, "")))
     .filter((part): part is string => part !== null)
     .join(" ") || null
 

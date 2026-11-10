@@ -13,7 +13,12 @@ import { bitrixCrmWriter } from "./writer.js"
 
 const over = (crm: ReturnType<typeof fakeCrm>) => {
   const transport = new BitrixTransport({ webhook: FAKE_WEBHOOK, fetch: crm.fetch, sleep: async () => {} })
-  const source = bitrixCrmSource(() => transport)
+  const source = bitrixCrmSource(
+    () => transport,
+    Date.now,
+    undefined,
+    async () => ({ mode: "mine", also: ["7"], setting: "scope" }),
+  )
   return { source, writer: bitrixCrmWriter(() => transport, source) }
 }
 
