@@ -178,6 +178,14 @@ and `type`); field names are from the REST 3.0 field pages and the `user.get` an
      `tasks`, `task`, `user.add`, `disk.file.getexternallink`, `disk.folder.getexternallink`, `event.bind` and
      `batch`, which can hold any of them.
    - Never allowed, whatever the permissions: a bulk or filtered delete. A delete takes one id.
+   - Only a Bitrix24 administrator's webhook, whatever the permissions (the owner, 2026-11-10: employees delete
+     nothing in the CRM and blank no field): a delete (a method whose name ends in `delete`, `deletefieldvalue` or
+     `markdeleted`, so `deals delete`, `leads delete` and `api call`), an update or `.set` that sets a field to
+     nothing (`""`, `null`, `[]`, a `0` company, contact or lead link, a multi-field entry with `DELETE: Y`), and
+     `batch`, whose inner calls are query strings. The check is in the transport, where every write passes, and
+     asks `user.admin` only when a write falls under it. Whether the field held a value would cost a read per write,
+     so any empty value in an update is refused; a create may leave fields empty. These rules stop mistakes; they
+     are not a boundary, since the employee's webhook still works outside `b24`.
    - Messages to clients and employees (`im`, `imopenlines`) are not part of slice 1.
 3. **A write is sent once.** Each write gets an `operation_id`, goes through cli-core's write guard and is
    journalled (WC-OUT-10, WC-PERM-13). On REST 3.0 the `operation_id` is sent as the `Idempotency-Key` header, but

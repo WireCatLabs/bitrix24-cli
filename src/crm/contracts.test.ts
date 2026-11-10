@@ -11,7 +11,9 @@ import { FAKE_WEBHOOK } from "../testing/fake-portal.js"
 import { bitrixCrmSource } from "./source.js"
 import { bitrixCrmWriter } from "./writer.js"
 
+/** As an administrator: an employee may not delete or clear a field, which the write contract does. */
 const over = (crm: ReturnType<typeof fakeCrm>) => {
+  crm.setAdmin(true)
   const transport = new BitrixTransport({ webhook: FAKE_WEBHOOK, fetch: crm.fetch, sleep: async () => {} })
   const source = bitrixCrmSource(
     () => transport,
