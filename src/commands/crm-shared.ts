@@ -66,7 +66,8 @@ const withProfile = async (env: NodeJS.ProcessEnv, profile: string, account: Acc
   const { openB24Store } = await import("../store.js")
   const store = await openB24Store(env)
   try {
-    await store.accounts.saveAccount(account, { name: null })
+    // A CRM is the owner's work; an account already stored keeps the scope the owner gave it.
+    await store.accounts.saveAccount(account, { name: null, scope: "work" })
     await store.accounts.saveProfile(IDENTITY.command, profile, account)
     return { store, account }
   } catch (error) {
