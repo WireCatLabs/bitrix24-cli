@@ -64,6 +64,13 @@ value() {
 }
 
 step session status --check
+# A sync copies only the CRM users chosen; in the throwaway store that is the webhook's own user, whose test lead
+# and deal must be in scope.
+status=$(b24 session status --check --json 2>/dev/null)
+me=$(printf '%s' "$status" | value item.user.id)
+portal=$(printf '%s' "$status" | value item.portal)
+[ -n "$me" ] && [ -n "$portal" ] || { echo "!! session status gave no user or portal"; exit 1; }
+step config set "crm.bitrix24:$portal.unassigned" "$me"
 echo "the first sync copies the portal into an empty store at the portal's pace, a request a second: minutes"
 step sync --json=state,synced,issues
 # The second sync asks only for what changed, through the updatedTime filter; every kind must answer it.
