@@ -143,16 +143,19 @@ const clears = (value: unknown, key = ""): boolean => {
   return LINKS.has(foldCode(key)) && (jsonNumber(value) ?? String(value)) === "0"
 }
 
-export type EmployeeRule = "delete" | "clear" | "batch"
+export type EmployeeRule = "delete" | "clear" | "batch" | "unbind" | "merge"
 
 /**
  * What only a Bitrix24 administrator's webhook may send, whatever the permissions say (the owner, 2026-11-10): a delete, an update
- * that sets any field to nothing, and `batch`, whose inner calls are query strings this check cannot read safely.
+ * that sets any field to nothing, an unbind, a merge of duplicates, and `batch`, whose inner calls are query strings this check cannot read safely.
  * Whether a field held a value would cost a read per write, so an empty value in an update is refused outright.
  */
 export const employeeRuleOf = (raw: string, body: Body): EmployeeRule | undefined => {
   const method = normalMethod(raw)
   if (method === "batch") return "batch"
+  // `crm.entity.mergeBatch` keeps one record and deletes the others (apidocs crm/duplicates).
+  if (/\.merge[a-z]*$/.test(method)) return "merge"
+  if (method.endsWith(".unbind")) return "unbind"
   if (methodOf(method).effect === "destructive") return "delete"
   if (
     /\.(update|set)$/.test(method) &&

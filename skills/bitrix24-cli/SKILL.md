@@ -48,7 +48,7 @@ Find your way with the tool itself, not this file:
   `move <ref> <stage>`, `close <ref> won|lost`, `delete <ref>`; custom fields with `--field <label or code>=<value>`.
   After `outcome_unknown`, sync and `show` the record before writing it again: Bitrix24 makes a repeat a second time.
 - Unless the webhook user is a Bitrix24 administrator, `b24` refuses every delete, an update that sets a field to
-  nothing, and `api call batch`, whatever the permissions say (`permission_error`, reason `employee.*`). Do not look
+  nothing, an unbind, a merge of duplicates, and `api call batch`, whatever the permissions say (`permission_error`, reason `employee.*`). Do not look
   for another way: tell the user an administrator has to do it.
 - `sync` also stores who is who: a contact is a person, `member-of` each of its companies with role `contact` (job
   title beside it, never a role); a deal's contacts have role `contact` and its responsible employee role `owner`;

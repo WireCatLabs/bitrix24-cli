@@ -4,6 +4,7 @@ import { mcpOverStdio } from "@wirecat/cli-core/testing"
 import { afterEach, describe, expect, it } from "vitest"
 import { employeeRuleOf } from "./api-keys.js"
 import { run } from "./program.js"
+import { fakePortal, ok } from "./testing/fake-portal.js"
 import { b24, signedIn, synced } from "./testing/harness.js"
 
 const refusal = (rule: string) => ({ code: "permission_error", reason: `employee.${rule}`, details: { sent: false } })
@@ -72,6 +73,23 @@ describe("what only a Bitrix24 administrator's webhook may do", () => {
     expect(portal.writes()).toBe(writes)
   })
 
+  it("refuses an employee's unbind and merge of duplicates through api call, and lets an administrator", async () => {
+    const methods = { "crm.timeline.bindings.unbind": ok(true), "crm.entity.mergebatch": ok({ STATUS: "SUCCESS" }) }
+    allowing("api.crm.timeline.bindings.unbind", "api.crm.entity.mergebatch")
+    const call = (portal: ReturnType<typeof fakePortal>, method: string, body: string) =>
+      b24(["work", "api", "call", method, "--body", body, "--json"], { portal })
+    const unbind = '{"fields":{"OWNER_ID":1,"ENTITY_ID":102,"ENTITY_TYPE":"deal"}}'
+    const merge = '{"params":{"entityTypeId":3,"entityIds":[1,2]}}'
+    const employee = fakePortal({ "user.admin": ok(false), ...methods })
+    expect((await call(employee, "crm.timeline.bindings.unbind", unbind)).json().error).toMatchObject(refusal("unbind"))
+    expect((await call(employee, "crm.entity.mergeBatch", merge)).json().error).toMatchObject(refusal("merge"))
+    expect(employee.calls.every(({ method }) => method === "user.admin")).toBe(true)
+
+    const admin = fakePortal(methods)
+    expect((await call(admin, "crm.timeline.bindings.unbind", unbind)).code).toBe(0)
+    expect((await call(admin, "crm.entity.mergeBatch", merge)).code).toBe(0)
+  })
+
   it("refuses an employee's update that clears a field, through a command and through api call", async () => {
     const { portal, ref } = await synced()
     const writes = portal.writes()
@@ -96,6 +114,10 @@ describe("what only a Bitrix24 administrator's webhook may do", () => {
     expect(employeeRuleOf("crm.contact.update", { id: 1, fields: { PHONE: [{ ID: 5, DELETE: "Y" }] } })).toBe("clear")
     expect(employeeRuleOf("crm.contact.update", { id: 1, fields: { phone: [{ value: " " }] } })).toBe("clear")
     expect(employeeRuleOf("disk.file.markdeleted", { id: 1 })).toBe("delete")
+    expect(employeeRuleOf("crm.deal.contact.items.delete", { id: 1 })).toBe("delete")
+    expect(employeeRuleOf("event.unbind", {})).toBe("unbind")
+    expect(employeeRuleOf("CRM.Entity.MergeBatch.json", {})).toBe("merge")
+    expect(employeeRuleOf("crm.duplicate.findbycomm", {})).toBeUndefined()
     expect(employeeRuleOf("crm.deal.add", { fields: { title: "", companyId: 0 } })).toBeUndefined()
     expect(employeeRuleOf("crm.deal.update", { id: 1, fields: { categoryId: 0, opportunity: 0 } })).toBeUndefined()
   })
