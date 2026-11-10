@@ -25,6 +25,8 @@ const OWN: [reason: string, code: string, message: string][] = [
   ["employee.delete", "permission_error", "only a Bitrix24 administrator's webhook deletes in the CRM"],
   ["employee.clear", "permission_error", "only a Bitrix24 administrator's webhook sets a field to nothing"],
   ["employee.batch", "permission_error", "only a Bitrix24 administrator's webhook calls batch"],
+  ["employee.unbind", "permission_error", "only a Bitrix24 administrator's webhook unlinks records in the CRM"],
+  ["employee.merge", "permission_error", "only a Bitrix24 administrator's webhook merges duplicates"],
   ["operation.reused", "conflict", "this operation id was already used for a different request"],
   ["query.bad-value", "validation_error", "a query term takes an id or a number"],
   ["field.unknown-kind", "validation_error", "fields are listed for deals, leads, people and organizations"],

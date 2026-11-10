@@ -31,6 +31,8 @@ const EMPLOYEE_REFUSALS: Record<EmployeeRule, (method: string) => string> = {
   delete: (method) => `${method} deletes from the CRM`,
   clear: (method) => `${method} sets a field to nothing (an empty value, null, [] or a 0 link)`,
   batch: () => "batch can hold deletes and cleared fields b24 cannot see into",
+  unbind: (method) => `${method} unlinks records in the CRM`,
+  merge: (method) => `${method} merges duplicates, deleting all but one of them`,
 }
 
 /** What a reader needs of the transport: a source call passes one that counts its requests. */
@@ -147,7 +149,7 @@ export class BitrixTransport {
     throw new CliError(
       "permission_error",
       `${EMPLOYEE_REFUSALS[rule](method)}, which b24 lets only a Bitrix24 administrator do: an employee's webhook ` +
-        "deletes nothing and clears no field, whatever the permissions say. Sign in with an administrator's webhook " +
+        "deletes, unlinks and merges nothing and clears no field, whatever the permissions say. Sign in with an administrator's webhook " +
         "(session start) to do it",
       { reason: `employee.${rule}`, operation: method, sent: false },
     )
