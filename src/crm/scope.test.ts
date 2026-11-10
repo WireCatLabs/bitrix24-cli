@@ -65,14 +65,16 @@ describe("sync scope", () => {
     expect(await titles(crm)).toEqual([])
   })
 
-  it("refuses scope all to a department head, copies every deal for an administrator, and drops them under mine", async () => {
+  it("refuses scope all to an administrator too, and copies only their own once set to mine", async () => {
     const { crm } = portal()
-    await set(SCOPE, "all")
-    expect((await b24(["work", "sync", "--json"], { portal: crm })).code).not.toBe(0)
     crm.setAdmin(true)
-    expect((await sync(crm)).scope).toEqual({ mode: "all" })
-    expect(await titles(crm)).toEqual(["Other's", "Own", "Website form"])
-    expect(await titles(crm, "leads")).toEqual(["Other's lead"])
+    await set(SCOPE, "all")
+    const ran = await b24(["work", "sync", "--json"], { portal: crm })
+    expect(ran.code).not.toBe(0)
+    const error = ran.json().error as { code: string; message: string }
+    expect(error.code).toBe("configuration_error")
+    expect(error.message).toContain(`config set ${SCOPE} mine`)
+    expect(await titles(crm)).toEqual([])
 
     await set(SCOPE, "mine")
     await sync(crm)
@@ -108,32 +110,10 @@ describe("sync scope", () => {
     expect(ran.code).not.toBe(0)
     const error = ran.json().error as { code: string; message: string }
     expect(error.code).toBe("configuration_error")
-    expect(error.message).toContain("is no Bitrix24 administrator")
+    expect(error.message).toContain("never copies the whole CRM")
     expect(error.message).toContain(`config set ${SCOPE} mine`)
     expect(await titles(crm)).toEqual([])
 
-    await set(SCOPE, "mine")
-    await sync(crm)
-    expect(await titles(crm)).toEqual(["Own"])
-  })
-
-  it("copies every deal for a portal administrator who heads no department", async () => {
-    const { crm } = portal()
-    crm.putDepartment({ ID: "1", NAME: "Example company", UF_HEAD: String(OTHER) })
-    crm.setAdmin(true)
-    await set(SCOPE, "all")
-    expect((await sync(crm)).scope).toEqual({ mode: "all" })
-    expect(await titles(crm)).toEqual(["Other's", "Own", "Website form"])
-  })
-
-  it("stops an administrator who is no longer one from copying every deal", async () => {
-    const { crm } = portal()
-    crm.setAdmin(true)
-    await set(SCOPE, "all")
-    await sync(crm)
-    expect(await titles(crm)).toEqual(["Other's", "Own", "Website form"])
-    crm.setAdmin(false)
-    expect((await b24(["work", "sync", "--json"], { portal: crm })).code).not.toBe(0)
     await set(SCOPE, "mine")
     await sync(crm)
     expect(await titles(crm)).toEqual(["Own"])
@@ -178,15 +158,13 @@ describe("sync scope", () => {
     expect(await titles(crm)).toEqual(["Own"])
   })
 
-  it("lets only an administrator count a working employee as unassigned, not a department head", async () => {
+  it("counts no working employee as unassigned, not even for an administrator", async () => {
     const { crm } = portal()
+    crm.setAdmin(true)
     crm.putUser({ ID: String(INTEGRATION), NAME: "Shared sales account" })
     await set(UNASSIGNED, String(INTEGRATION))
     expect((await sync(crm)).scope).toEqual({ mode: "mine", self: "7", also: [] })
-
-    crm.setAdmin(true)
-    expect((await sync(crm)).scope).toEqual({ mode: "mine", self: "7", also: [String(INTEGRATION)] })
-    expect(await titles(crm)).toEqual(["Own", "Website form"])
+    expect(await titles(crm)).toEqual(["Own"])
   })
 
   it("refuses an unassigned list with an entry that is not a user id when it is set", async () => {

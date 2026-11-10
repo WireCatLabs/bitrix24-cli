@@ -2,7 +2,6 @@ import { CliError, isCliError } from "@wirecat/cli-base"
 import type { CrmField, CrmItem, CrmKind, CrmOrganization, CrmPerson, CrmRecords } from "@wirecat/cli-core"
 import type { CrmCallContext, CrmChanges, CrmIdPage, CrmSource } from "@wirecat/cli-core/crm"
 import type { BitrixCaller, BitrixTransport } from "../bitrix/transport.js"
-import { type Role, roleOf } from "../whoami.js"
 import { clientsOf as namedClients } from "./clients.js"
 import { DEAL } from "./deal.js"
 import { loadFields, metadataOf } from "./fields.js"
@@ -120,7 +119,7 @@ export const bitrixCrmSource = (
   portal: () => BitrixTransport,
   now: () => number = Date.now,
   own: OwnMemory = NO_MEMORY,
-  /** The stored `scope` setting and its key: `all` is an administrator's, and a sync for anyone else is refused. */
+  /** The stored `scope` setting and its key: a sync under `all` is refused. */
   asked: () => Promise<{ mode: "mine" | "all"; setting: string }> = async () => ({ mode: "mine", setting: "scope" }),
 ): BitrixCrmSource => {
   /** The portal for one call of core's: core paid for its first request, each further one is spent from the budget. */
@@ -134,8 +133,6 @@ export const bitrixCrmSource = (
       },
     }
   }
-  let role: Promise<Role> | undefined
-  const roleNow = () => (role ??= roleOf(portal(), portal().userId))
   const loaded = new Map<CrmKind, Promise<CrmField[]>>()
   const fields = (kind: CrmKind, caller: BitrixCaller = portal()) => {
     let found = loaded.get(kind)
@@ -258,23 +255,23 @@ export const bitrixCrmSource = (
   return {
     provider: "bitrix24",
     traits: { kinds: ["organization", "person", "deal", "lead"], removedInChanges: false },
-    // Checked on every sync, not when the setting is made: an administrator who stops being one stops copying all.
+    // The owner's ruling (2026-11-10): a copy is never the whole portal, an administrator's included; another
+    // client is found by a live read of the portal. A stored `all` fails the sync until the owner sets `mine`.
     async self() {
       const self = portal().userId
       const { mode, setting } = await asked()
       if (mode !== "all") return self
-      if ((await roleNow()).as === "admin") return self
       throw new CliError(
         "configuration_error",
-        `${setting} is all, and user ${self} is no Bitrix24 administrator: only an administrator copies the whole ` +
-          `CRM. "config set ${setting} mine" copies your own deals and leads, the unassigned ones, and their clients`,
-        { setting, reason: "bitrix.scope-all-admin-only" },
+        `${setting} is all, and b24 never copies the whole CRM: "config set ${setting} mine" copies your own deals ` +
+          'and leads, the unassigned ones, and their clients. Find any other client on the portal with "people list" ' +
+          'or "organizations list"',
+        { setting, reason: "bitrix.scope-all-refused" },
       )
     },
-    // The owner's rule: anyone but an administrator counts as nobody's only a dismissed user or one who is no employee
-    // (extranet, e-mail, bot), so a head cannot take a colleague's clients that way. Asked at every sync.
+    // The owner's rule: only a dismissed user or one who is no employee (extranet, e-mail, bot) counts as nobody's, an
+    // administrator's sync included, so no one takes a colleague's clients that way. Asked at every sync.
     async unassigned(users) {
-      if ((await roleNow()).as === "admin") return { kept: [...users] }
       let active: Set<string>
       try {
         active = await activeEmployees(portal())
@@ -287,9 +284,7 @@ export const bitrixCrmSource = (
       }
       return {
         kept: users.filter((user) => !active.has(user)),
-        message:
-          "a working employee of the portal; only a Bitrix24 administrator may count one as nobody's, anyone " +
-          "else only a dismissed user or one who is not an employee",
+        message: "a working employee of the portal; only a dismissed user or a non-employee counts as nobody's",
       }
     },
     pipelines: (kind, context) => bitrixPipelines(metered(context), kind),

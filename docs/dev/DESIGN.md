@@ -63,19 +63,20 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
    by id (keyset paging, so a record changed mid-round shifts nothing), changes from `updatedTime` at the last
    round's start less ten minutes, then cli-core's daily id-only pass that finds deletions. Bitrix24 sends events only to an installed app, and a webhook cannot install one, so
    there is no change token to follow. `store status` shows where the sync stands.
-3. **Whose deals and leads.** A sync copies the webhook user's own and the unassigned ones (`scope mine`, cli-core's);
-   `scope all`, the whole CRM, is an administrator's, and a sync under it for anyone else is refused
-   (`configuration_error`, reason `bitrix.scope-all-admin-only`), checked on every sync. Under `mine` contacts and
+3. **Whose deals and leads.** A sync copies the webhook user's own and the unassigned ones (`scope mine`, cli-core's),
+   never the whole CRM, an administrator's sync included. The owner's ruling (2026-11-10): «не надо выгружать все
+   вообще, в этом нет смысла, я бы в битриксе скорее искал своих клиентов». A sync under a stored `scope all` is refused
+   (`configuration_error`, reason `bitrix.scope-all-refused`, was `bitrix.scope-all-admin-only`) and says to set
+   `mine`; another client is found by a live read, `people list` or `organizations list`. Under `mine` contacts and
    companies are only those assigned to the same users, or named (`contactId`, `contactsId`, `companyId`) on their deals
    and leads: a full round lists the assigned ones, then the named ones by id; a round of changes keeps only those; the
-   id passes list only those too. A department head may copy no more than an employee: the owner's rule is that no one
-   but an administrator takes the client base home. REST has no method that reads a user's CRM access
+   id passes list only those too. REST has no method that reads a user's CRM access
    level, so a manager is who the portal names: [`user.admin`](https://apidocs.bitrix24.com/api-reference/common/users/user-admin.html)
    true, or the head of an active department, [`department.get`](https://apidocs.bitrix24.com/api-reference/departments/department-get.html)
    filtered by `UF_HEAD`. Without the `department` scope the head check is refused and the user counts as an employee.
    Bitrix24 fills `ASSIGNED_BY_ID` with the caller by default ([crm.deal.add](https://apidocs.bitrix24.com/api-reference/crm/deals/crm-deal-add.html)),
-   so no deal is unassigned on the portal: unassigned is the owner's list `crm.bitrix24:<portal>.unassigned`. A
-   administrator may list anyone; for anyone else, a department head too, cli-core asks `unassigned()` at every sync, which keeps only users that
+   so no deal is unassigned on the portal: unassigned is the owner's list `crm.bitrix24:<portal>.unassigned`. For
+   anyone, an administrator too, cli-core asks `unassigned()` at every sync, which keeps only users that
    `user.get` with `USER_TYPE: employee` and `ACTIVE: true` does not list (dismissed users, extranet, e-mail and bot
    users), and none when the `user` scope is missing.
    Outside the sync, phones and e-mails of a contact or company that is not the user's client are the owner's to
