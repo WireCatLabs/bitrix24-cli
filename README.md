@@ -67,7 +67,8 @@ More: [agents](docs/usage.md#agents).
 ## Main features
 
 - **Sync.** `sync` copies pipelines, stages, deals, leads, companies, contacts, employees, departments and your own
-  companies; the next `sync` reads only what changed. `schedule` runs it on a timer.
+  companies; the next `sync` reads only what changed. `schedule` runs it on a timer. It copies your own deals, leads
+  and clients; only a Bitrix24 administrator copies the whole CRM.
 - **Who is who.** A contact belongs to its companies, a deal names its contacts and the employee responsible, and
   employees report to their department's head. See [Who is who](docs/usage.md#who-is-who).
 - **Reads.** `deals`, `leads`, `pipelines`, `stages` and `fields` read the store; `people`, `organizations`,
