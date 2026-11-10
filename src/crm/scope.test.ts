@@ -39,17 +39,21 @@ const set = async (setting: string, value: string) =>
   expect((await b24(["work", "config", "set", setting, value, "--json"])).code).toBe(0)
 
 describe("sync scope", () => {
-  it("copies the webhook user's deals and leads by default, and the unassigned users' once set", async () => {
+  it("copies no deal or lead until the owner chooses whose, says how, and then copies only theirs", async () => {
     const { crm } = portal()
-    expect((await sync(crm)).scope).toEqual({ mode: "mine", self: "7", also: [] })
-    expect(await titles(crm)).toEqual(["Own"])
+    expect((await b24(["work", "config", "unset", UNASSIGNED, "--json"])).code).toBe(0)
+    const ran = await b24(["work", "sync", "--json"], { portal: crm })
+    expect(ran.json().error).toMatchObject({ code: "configuration_error" })
+    expect(String((ran.json().error as { message: string }).message)).toContain(`config set ${UNASSIGNED} <user ids>`)
+    expect(await titles(crm)).toEqual([])
+    expect(crm.calls.filter(({ method }) => method === "crm.deal.list")).toEqual([])
+
+    await set(UNASSIGNED, `${OWN},${INTEGRATION}`)
+    expect((await sync(crm)).scope).toEqual({ mode: "mine", self: "7", also: [String(OWN), String(INTEGRATION)] })
+    expect(await titles(crm)).toEqual(["Own", "Website form"])
     expect(await titles(crm, "leads")).toEqual([])
     const listed = crm.calls.filter(({ method }) => method === "crm.deal.list")
-    expect(listed[0]?.body.filter).toContainEqual(["assignedById", "in", [OWN]])
-
-    await set(UNASSIGNED, String(INTEGRATION))
-    expect((await sync(crm)).scope).toEqual({ mode: "mine", self: "7", also: [String(INTEGRATION)] })
-    expect(await titles(crm)).toEqual(["Own", "Website form"])
+    expect(listed[0]?.body.filter).toContainEqual(["assignedById", "in", [OWN, INTEGRATION]])
   })
 
   it("drops a deal given to another user at the next sync", async () => {
@@ -65,14 +69,16 @@ describe("sync scope", () => {
     expect(await titles(crm)).toEqual([])
   })
 
-  it("refuses scope all to a department head, copies every deal for an administrator, and drops them under mine", async () => {
+  it("refuses scope all to an administrator too, and copies only their own once set to mine", async () => {
     const { crm } = portal()
-    await set(SCOPE, "all")
-    expect((await b24(["work", "sync", "--json"], { portal: crm })).code).not.toBe(0)
     crm.setAdmin(true)
-    expect((await sync(crm)).scope).toEqual({ mode: "all" })
-    expect(await titles(crm)).toEqual(["Other's", "Own", "Website form"])
-    expect(await titles(crm, "leads")).toEqual(["Other's lead"])
+    await set(SCOPE, "all")
+    const ran = await b24(["work", "sync", "--json"], { portal: crm })
+    expect(ran.code).not.toBe(0)
+    const error = ran.json().error as { code: string; message: string }
+    expect(error.code).toBe("configuration_error")
+    expect(error.message).toContain(`config set ${SCOPE} mine`)
+    expect(await titles(crm)).toEqual([])
 
     await set(SCOPE, "mine")
     await sync(crm)
@@ -108,7 +114,7 @@ describe("sync scope", () => {
     expect(ran.code).not.toBe(0)
     const error = ran.json().error as { code: string; message: string }
     expect(error.code).toBe("configuration_error")
-    expect(error.message).toContain("is no Bitrix24 administrator")
+    expect(error.message).toContain("never copies the whole CRM")
     expect(error.message).toContain(`config set ${SCOPE} mine`)
     expect(await titles(crm)).toEqual([])
 
@@ -117,48 +123,26 @@ describe("sync scope", () => {
     expect(await titles(crm)).toEqual(["Own"])
   })
 
-  it("copies every deal for a portal administrator who heads no department", async () => {
-    const { crm } = portal()
-    crm.putDepartment({ ID: "1", NAME: "Example company", UF_HEAD: String(OTHER) })
-    crm.setAdmin(true)
-    await set(SCOPE, "all")
-    expect((await sync(crm)).scope).toEqual({ mode: "all" })
-    expect(await titles(crm)).toEqual(["Other's", "Own", "Website form"])
-  })
-
-  it("stops an administrator who is no longer one from copying every deal", async () => {
-    const { crm } = portal()
-    crm.setAdmin(true)
-    await set(SCOPE, "all")
-    await sync(crm)
-    expect(await titles(crm)).toEqual(["Other's", "Own", "Website form"])
-    crm.setAdmin(false)
-    expect((await b24(["work", "sync", "--json"], { portal: crm })).code).not.toBe(0)
-    await set(SCOPE, "mine")
-    await sync(crm)
-    expect(await titles(crm)).toEqual(["Own"])
-  })
-
-  it("lets an employee count only a dismissed user or a non-employee as unassigned, re-checked every sync", async () => {
+  it("lets an employee choose only themselves, a dismissed user or a non-employee, re-checked every sync", async () => {
     const { crm } = portal()
     crm.putDepartment({ ID: "1", NAME: "Example company", UF_HEAD: String(OTHER) })
     crm.putUser({ ID: String(INTEGRATION), NAME: "Website form", ACTIVE: false })
     crm.put("deal", { title: "Colleague's", categoryId: 0, stageId: "PREPARATION", assignedById: OTHER })
     crm.putUser({ ID: String(OTHER), NAME: "Colleague" })
     await set(SCOPE, "mine")
-    await set(UNASSIGNED, `${INTEGRATION},${OTHER}`)
+    await set(UNASSIGNED, `${OWN},${INTEGRATION},${OTHER}`)
     const item = await sync(crm)
-    expect(item.scope).toEqual({ mode: "mine", self: "7", also: [String(INTEGRATION)] })
+    expect(item.scope).toEqual({ mode: "mine", self: "7", also: [String(OWN), String(INTEGRATION)] })
     expect(item.issues).toContainEqual(
       expect.objectContaining({
         reason: "crm.unassigned-dropped",
-        message: expect.stringContaining(`names user ${OTHER}, not counted as nobody's: a working employee`),
+        message: expect.stringContaining(`names user ${OTHER}, not counted as nobody's: a working colleague`),
       }),
     )
     expect(await titles(crm)).toEqual(["Own", "Website form"])
 
     crm.putUser({ ID: String(INTEGRATION), NAME: "Website form", ACTIVE: true })
-    expect((await sync(crm)).scope).toEqual({ mode: "mine", self: "7", also: [] })
+    expect((await sync(crm)).scope).toEqual({ mode: "mine", self: "7", also: [String(OWN)] })
     expect(await titles(crm)).toEqual(["Own"])
 
     crm.putUser({ ID: String(INTEGRATION), NAME: "Website form bot", USER_TYPE: "bot" })
@@ -166,27 +150,36 @@ describe("sync scope", () => {
     expect(await titles(crm)).toEqual(["Own", "Website form"])
   })
 
-  it("counts no one as unassigned for an employee whose webhook cannot read users", async () => {
+  it("keeps only the employee themselves when their webhook cannot read users", async () => {
     const { crm } = portal()
     crm.putDepartment({ ID: "1", NAME: "Example company", UF_HEAD: String(OTHER) })
     crm.withhold("user")
     await set(SCOPE, "mine")
-    await set(UNASSIGNED, String(INTEGRATION))
+    await set(UNASSIGNED, `${OWN},${INTEGRATION}`)
     const item = await sync(crm)
-    expect(item.scope).toEqual({ mode: "mine", self: "7", also: [] })
+    expect(item.scope).toEqual({ mode: "mine", self: "7", also: [String(OWN)] })
     expect(JSON.stringify(item.issues)).toContain("lacks the user scope")
     expect(await titles(crm)).toEqual(["Own"])
   })
 
-  it("lets only an administrator count a working employee as unassigned, not a department head", async () => {
+  it("lets an administrator choose a working colleague, and leaves out their own deals unless chosen", async () => {
     const { crm } = portal()
+    crm.setAdmin(true)
     crm.putUser({ ID: String(INTEGRATION), NAME: "Shared sales account" })
     await set(UNASSIGNED, String(INTEGRATION))
-    expect((await sync(crm)).scope).toEqual({ mode: "mine", self: "7", also: [] })
-
-    crm.setAdmin(true)
     expect((await sync(crm)).scope).toEqual({ mode: "mine", self: "7", also: [String(INTEGRATION)] })
-    expect(await titles(crm)).toEqual(["Own", "Website form"])
+    expect(await titles(crm)).toEqual(["Website form"])
+  })
+
+  it("leaves out a deal given to the webhook's own user in a round of changes unless chosen", async () => {
+    const { crm, ids } = portal()
+    crm.setAdmin(true)
+    await set(UNASSIGNED, String(INTEGRATION))
+    await sync(crm)
+    crm.setClock(Date.now())
+    crm.put("deal", { ...crm.row("deal", ids.other), title: "Given to the webhook's user", assignedById: OWN })
+    await sync(crm)
+    expect(await titles(crm)).toEqual(["Website form"])
   })
 
   it("refuses an unassigned list with an entry that is not a user id when it is set", async () => {
@@ -201,7 +194,7 @@ describe("sync scope", () => {
     await set(SCOPE, "mine")
     const database = await openCache(String(process.env.MESSAGING_STORE))
     database
-      .prepare("INSERT INTO store_settings (key, value, at) VALUES (?, ?, 1)")
+      .prepare("INSERT OR REPLACE INTO store_settings (key, value, at) VALUES (?, ?, 1)")
       .run(UNASSIGNED, JSON.stringify(["bot"]))
     database.close()
     const ran = await b24(["work", "sync", "--json"], { portal: crm })
@@ -215,7 +208,11 @@ describe("sync scope", () => {
     const { crm } = portal()
     const keyring = memoryKeyring({ "bitrix24-cli:token:work": FAKE_HOOK.replace("/rest/7/", "/rest/07/") })
     const ran = await b24(["work", "sync", "--json"], { portal: crm, keyring })
-    expect((ran.json() as { item: Record<string, unknown> }).item.scope).toEqual({ mode: "mine", self: "7", also: [] })
+    expect((ran.json() as { item: Record<string, unknown> }).item.scope).toEqual({
+      mode: "mine",
+      self: "7",
+      also: [String(OWN)],
+    })
     expect(crm.calls.find(({ method }) => method === "crm.deal.list")?.body.filter).toContainEqual([
       "assignedById",
       "in",

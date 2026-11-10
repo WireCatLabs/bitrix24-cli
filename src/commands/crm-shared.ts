@@ -93,7 +93,8 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
   let source: ReturnType<typeof bitrixCrmSource> | undefined
   const asked = async () => {
     const { crmSettingKey } = await import("@wirecat/cli-core/store")
-    return { mode: (await store.crm.scope(account)).mode, setting: crmSettingKey(account, "scope") }
+    const scope = await store.crm.scope(account)
+    return { mode: scope.mode, also: scope.mode === "mine" ? scope.also : [], setting: crmSettingKey(account, "scope") }
   }
   const crm = () => (source ??= bitrixCrmSource(portal, Date.now, ownMemoryAt(ownMemoryFile(env, profile)), asked))
   return {

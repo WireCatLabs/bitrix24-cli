@@ -8,7 +8,7 @@ import type { FetchLike } from "./bitrix/transport.js"
 import { definition } from "./program.js"
 import { seededCrm } from "./testing/fake-crm.js"
 import { FAKE_HOOK, ok } from "./testing/fake-portal.js"
-import { signedIn, synced } from "./testing/harness.js"
+import { b24, signedIn, synced } from "./testing/harness.js"
 
 const PRODUCT = { ID: "11", NAME: "Chair", PRICE: "99.90", CURRENCY_ID: "EUR", ACTIVE: "Y", SECTION_ID: "2" }
 const USER = { ID: "7", NAME: "Anna", LAST_NAME: "Admin", EMAIL: "anna@example.test" }
@@ -30,6 +30,7 @@ const REFS = { deals: "deal:1", leads: "lead:1" }
 beforeAll(async () => {
   seeded = join(mkdtempSync(join(tmpdir(), "run-scope-seed-")), "store.db")
   process.env.MESSAGING_STORE = seeded
+  await b24(["work", "config", "set", "crm.bitrix24:example.bitrix24.test.unassigned", "7", "--json"])
   const { ref } = await synced(portal())
   expect([ref("deals", 102), ref("leads", 104)]).toEqual([REFS.deals, REFS.leads])
 })

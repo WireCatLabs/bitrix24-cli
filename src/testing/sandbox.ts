@@ -19,10 +19,19 @@ delete process.env.CLAUDECODE
 
 // The portal's pace is kept in the state folder on the real clock, and a sync's cursor in the store: a test of one
 // file would otherwise use up the pace, or read only what changed since another test's sync.
-beforeEach(() => {
+// A sync copies only the users the owner chose, and none by default; the fake portal's rows are user 7's.
+beforeEach(async () => {
   const own = mkdtempSync(join(tmpdir(), "test-"))
   process.env.B24_STATE_DIR = join(own, "state")
   process.env.MESSAGING_STORE = join(own, "store.db")
+  const { openB24Store } = await import("../store.js")
+  const { openCache } = await import("@wirecat/cli-core/store")
+  await (await openB24Store(process.env)).close()
+  const database = await openCache(process.env.MESSAGING_STORE)
+  database
+    .prepare("INSERT INTO store_settings (key, value, at) VALUES (?, ?, 1)")
+    .run("crm.bitrix24:example.bitrix24.test.unassigned", JSON.stringify(["7"]))
+  database.close()
 })
 
 afterAll(() => {

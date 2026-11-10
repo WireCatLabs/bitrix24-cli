@@ -5,10 +5,13 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { seededCrm } from "../testing/fake-crm.js"
 import { b24 } from "../testing/harness.js"
 
+const CHOSEN = "crm.bitrix24:example.bitrix24.test.unassigned"
+
 const storedUnder = async (tz: string) => {
   vi.stubEnv("TZ", tz)
   vi.stubEnv("MESSAGING_STORE", join(mkdtempSync(join(tmpdir(), "zone-")), "store.db"))
   const portal = seededCrm()
+  expect((await b24(["work", "config", "set", CHOSEN, "7", "--json"])).code).toBe(0)
   expect((await b24(["work", "sync", "--json"], { portal })).code).toBe(0)
   const items = async (kind: string) =>
     ((await b24(["work", kind, "list", "--offline", "--json"], { portal })).json() as { items: unknown[] }).items
