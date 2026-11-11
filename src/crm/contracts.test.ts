@@ -128,6 +128,19 @@ describe("the Bitrix24 adapter", () => {
     expect(partner).toMatchObject({ pipeline: "1", stage: "C1:NEW", amount: null, currency: null })
   })
 
+  it("maps a lead with nobody linked with its own person and company, an empty name part left out", async () => {
+    const { source } = over(seededCrm())
+    const page = await source.changes("lead", null)
+    if ("reset" in page) throw new Error("reset")
+    expect(page.items[0]).toMatchObject({
+      title: "Example website form",
+      organization: null,
+      people: [],
+      contactName: "Ivan Example",
+      companyName: "Example Ltd",
+    })
+  })
+
   it("reads changes from the last cursor with an overlap, by id, past the portal's page size", async () => {
     const crm = fakeCrm()
     for (let at = 0; at < 60; at += 1) crm.put("company", { title: `Example ${at}` })

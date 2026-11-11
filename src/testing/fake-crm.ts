@@ -482,6 +482,15 @@ export const seededCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
     opportunity: 0,
     currencyId: "RUB",
   })
-  crm.put("lead", { title: "Example website form", stageId: "IN_PROCESS", opportunity: 300, currencyId: "USD" })
+  crm.put("lead", {
+    title: "Example website form",
+    stageId: "IN_PROCESS",
+    opportunity: 300,
+    currencyId: "USD",
+    name: "Ivan",
+    secondName: "",
+    lastName: "Example",
+    companyTitle: "Example Ltd",
+  })
   return crm
 }
