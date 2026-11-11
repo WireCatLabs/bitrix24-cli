@@ -20,6 +20,7 @@
   "files": [
     "dist",
     "skills",
+    "scenarios",
     "contracts/wirecat.json",
     "/README.md",
     "CHANGELOG.md",
