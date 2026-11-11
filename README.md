@@ -52,12 +52,13 @@ Every write answers an `operation_id` and can be previewed with `--dry-run`. Mor
 - **An MCP client**: `b24 work mcp serve`, or `b24 work mcp add claude-code`. `mcp serve --permission deals=deny`
   tightens the levels for one server; an agent can never loosen them.
 - **ChatGPT or Claude in a browser**: `b24 work mcp serve --http` behind your own tunnel.
+- **A common task, step by step**: `b24 guide` lists scenarios, such as `b24 guide safe-agent-writes`.
 
 Text from the portal is marked `untrusted` in MCP answers: it is data for the agent, never instructions. `api call`
 and `session start`/`end` are never offered over MCP. With `--json`, every command prints one JSON value, and an error
 comes as JSON with a code to branch on.
 
-More: [agents](docs/usage.md#agents).
+More: [MCP](docs/mcp.md), [permissions](docs/permissions.md), [agents](docs/usage.md#agents).
 
 ## Why b24
 
@@ -101,15 +102,18 @@ More: [sign in](docs/usage.md#sign-in), [profiles](docs/usage.md#the-profile-com
 
 Each profile has a permission level for every command and every REST method: `allow`, `ask`, `readonly` or `deny`.
 Assigning a record to another employee is denied until you allow it, a delete asks first in the terminal, and methods
-that message people, publish or start the portal's automation are denied, reads too. Over MCP no one is there to
-answer, so `ask` lets the command run: before you give an agent an administrator's webhook, set
-`permissions.deals.delete` and `permissions.leads.delete` to `readonly`. A stage change can start the portal's own
-robots, which may write to your clients: set `permissions.deals.move` to `ask` if your portal has such robots.
+that message people, publish or start the portal's automation are denied, reads too.
+
+**Over MCP `ask` does not ask: the write goes ahead**, since no one is there to answer. A stage change can start the
+portal's own robots, which may write to your clients, so `deals.move=ask` stops an agent only at a terminal. Before an
+agent gets the profile over MCP, set `permissions.deals.move`, `permissions.leads.move`, `permissions.deals.delete` and
+`permissions.leads.delete` to `readonly` or `deny`, or turn on approval in the agent's client.
 `B24_READ_ONLY=1` refuses every write.
 Whatever the levels say, only a Bitrix24 administrator's webhook deletes, sets a field to nothing or calls `batch`:
 an employee's is refused.
 
-More: [settings](docs/configuration.md#permissions), [security](docs/security.md).
+More: [permissions](docs/permissions.md), [MCP](docs/mcp.md), [settings](docs/configuration.md),
+[security](docs/security.md).
 
 ## Limits
 
@@ -135,8 +139,9 @@ Start with `b24 doctor`, then [troubleshooting](docs/troubleshooting.md).
 
 ## Documentation
 
-- [Install](docs/installation.md) · [Use it](docs/usage.md) · [Settings](docs/configuration.md) ·
-  [Security](docs/security.md) · [Commands](docs/commands.md) · [Troubleshooting](docs/troubleshooting.md)
+- [Install](docs/installation.md) · [Use it](docs/usage.md) · [MCP](docs/mcp.md) ·
+  [Permissions](docs/permissions.md) · [Settings](docs/configuration.md) · [Security](docs/security.md) ·
+  [Commands](docs/commands.md) · [Troubleshooting](docs/troubleshooting.md)
 - The design: [docs/dev/DESIGN.md](docs/dev/DESIGN.md).
 
 ## Part of WireCat
