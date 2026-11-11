@@ -9,7 +9,10 @@ export const FAKE_CODE = "wirecatfake0code"
  * oauth.bitrix.info and the portal behind it, shaped as apidocs settings/oauth shows: a GET that exchanges a code
  * or a refresh token, which rotates, and a portal that answers `expired_token` to anything but the current token.
  */
-export const fakeApp = (portal: { fetch: FetchLike } = fakePortal()) => {
+export const fakeApp = (
+  portal: { fetch: FetchLike } = fakePortal(),
+  endpoint = "https://example.bitrix24.test/rest/",
+) => {
   let issued = 0
   let access = ""
   let refresh = ""
@@ -23,7 +26,7 @@ export const fakeApp = (portal: { fetch: FetchLike } = fakePortal()) => {
     refresh = `wirecatfake0refresh${issued}`
     return json(200, {
       access_token: access,
-      client_endpoint: "https://example.bitrix24.test/rest/",
+      client_endpoint: endpoint,
       domain: "oauth.bitrix.info",
       expires_in: 3600,
       member_id: "a223c6b3710f85df22e9377d6c4f7553",

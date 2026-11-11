@@ -46,11 +46,11 @@ const startWithApp = async (command: Command, args: StartArgs, storage: "keyring
   if (!clientId)
     throw new CliError(
       "validation_error",
-      "--portal needs --client-id: the application code Bitrix24 shows once the local application is saved",
+      "--portal needs --client-id: the Application ID (client_id) Bitrix24 shows once the local application is saved",
     )
   const clientSecret =
     env[`${IDENTITY.envPrefix}_BITRIX24_CLIENT_SECRET`]?.trim() ||
-    (await readSecret("Bitrix24 application key (client_secret): ", secretInputOf(command))).trim()
+    (await readSecret("Bitrix24 Application key (client_secret): ", secretInputOf(command))).trim()
   if (!clientSecret) throw new CliError("validation_error", "no application key was given")
   const flags = command.optsWithGlobals<GlobalFlags & { input?: boolean }>()
   const machine = flags.json === true || flags.jsonl === true
@@ -151,7 +151,7 @@ const startCommand = () =>
     .option("--portal <host>", "sign in through a local application on this portal, such as example.bitrix24.ru")
     .option(
       "--client-id <code>",
-      `the local application's code (client_id), or ${IDENTITY.envPrefix}_BITRIX24_CLIENT_ID; the key comes from ` +
+      `the local application's Application ID (client_id), or ${IDENTITY.envPrefix}_BITRIX24_CLIENT_ID; its key comes from ` +
         `${IDENTITY.envPrefix}_BITRIX24_CLIENT_SECRET, a hidden prompt or stdin`,
     )
     .action(async function (this: Command, args: StartArgs) {

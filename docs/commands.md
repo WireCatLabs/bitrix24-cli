@@ -71,7 +71,7 @@ b24 session start [options]
 |---|---|
 | `--credential-storage <storage>` | where the sign-in is kept: keyring (the default, which falls back to a private file by itself when no keyring works), or file, not recommended. Default: `keyring`. |
 | `--portal <host>` | sign in through a local application on this portal, such as example.bitrix24.ru. |
-| `--client-id <code>` | the local application's code (client_id), or B24_BITRIX24_CLIENT_ID; the key comes from B24_BITRIX24_CLIENT_SECRET, a hidden prompt or stdin. |
+| `--client-id <code>` | the local application's Application ID (client_id), or B24_BITRIX24_CLIENT_ID; its key comes from B24_BITRIX24_CLIENT_SECRET, a hidden prompt or stdin. |
 
 **Returns:** sign in with a Bitrix24 incoming webhook, or with a local application
 

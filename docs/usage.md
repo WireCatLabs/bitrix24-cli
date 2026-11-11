@@ -41,7 +41,7 @@ last only an hour, renewed by `b24`. A Bitrix24 administrator, or an employee al
 2. Choose **Server** mode. Set **Your handler path** to `https://wirecat.dev/b24-callback`. Leave **Initial
    installation path** and the menu item texts empty.
 3. Tick the access permissions `crm`, `user_basic` (or `user`) and `department`, and save.
-4. Copy the **Application code** (`client_id`) and the **Application key** (`client_secret`) Bitrix24 shows.
+4. Copy the **Application ID (client_id)** and the **Application key (client_secret)** Bitrix24 shows.
 
 Then sign in:
 

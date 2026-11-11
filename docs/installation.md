@@ -26,5 +26,5 @@ With a local application, `b24` acts with the rights of the employee who signs i
 webhook. Create it once in the portal (Developer resources → Common use cases → Other → Local application), in
 **Server** mode, with **Your handler path** `https://wirecat.dev/b24-callback`, an empty **Initial installation
 path**, no menu item text, and the access permissions `crm`, `user_basic` and `department`. Then run
-`b24 work session start --portal example.bitrix24.ru --client-id <application code>` and give it the application key
+`b24 work session start --portal example.bitrix24.ru --client-id <Application ID>` and give it the Application key
 when it asks. The steps are in [with a local application](usage.md#with-a-local-application).

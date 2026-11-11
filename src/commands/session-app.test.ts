@@ -100,6 +100,16 @@ describe("session start with a local application", () => {
     expect(keyring.get(...ENTRY)).toBeNull()
   })
 
+  it("keeps nothing when Bitrix24 names another portal's REST address than the one signed in to", async () => {
+    const keyring = memoryKeyring()
+    const browser = pasting()
+    const app = fakeApp(people(), "https://elsewhere.example.test/rest/")
+    const ran = await b24(START, { keyring, portal: app, stdin: FAKE_CLIENT_SECRET, ...browser })
+    expect(ran.code).toBe(4)
+    expect(JSON.parse(ran.err.trim().split("\n").at(-1) ?? "").error).toMatchObject({ reason: "oauth.mismatch" })
+    expect(keyring.get(...ENTRY)).toBeNull()
+  })
+
   it("refuses --client-id without --portal, --portal without a code, and an address that is no portal", async () => {
     const ran = (argv: string[]) => b24(["work", "session", "start", ...argv], { stdin: FAKE_CLIENT_SECRET })
     expect((await ran(["--client-id", FAKE_CLIENT_ID])).code).toBe(2)
@@ -133,7 +143,7 @@ describe("a profile signed in with a local application", () => {
     const status = await b24(["work", "session", "status", "--json"], { keyring })
     expect(status.json().item).toMatchObject({ kind: "app", token_from: "keyring", portal: "example.bitrix24.test" })
     const listed = await b24(["session", "list", "--json"], { keyring })
-    expect(listed.json().items).toEqual(expect.arrayContaining([expect.objectContaining({ profile: "work" })]))
+    expect(listed.json().items).toContainEqual({ profile: "work", signed_in: true, token_from: "keyring" })
     expect((await b24(["work", "session", "end", "--json"], { keyring })).code).toBe(0)
     expect(keyring.get(...ENTRY)).toBeNull()
     const ended = await b24(["work", "session", "status", "--json"], { keyring })

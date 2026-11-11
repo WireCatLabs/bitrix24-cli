@@ -135,8 +135,9 @@ export class BitrixTransport {
         return await this.#once(method, params, { api, reads, key, attempt, waited, refresh: renew })
       } catch (error) {
         // A refused token did nothing, so even a write is sent again, once, with a refreshed one (apidocs auto-renewal).
+        // REST 2 names it `expired_token`; REST 3.0 documents no code for it, so any 401 counts.
         if (refresh === undefined && "accessToken" in this.#auth && isCliError(error)) {
-          if (error.details.provider_error === "EXPIRED_TOKEN") {
+          if (error.details.provider_error === "EXPIRED_TOKEN" || error.details.status === 401) {
             refresh = true
             continue
           }

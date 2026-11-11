@@ -116,6 +116,31 @@ describe("BitrixTransport", () => {
     expect(portal.calls[1]?.headers["Idempotency-Key"]).toBeUndefined()
   })
 
+  it("sends an application's write once more with a refreshed token after a 401, and only once", async () => {
+    const accessToken = vi.fn(async (refresh: boolean) => (refresh ? "wirecatfake0new" : "wirecatfake0old"))
+    const auth = { origin: "https://example.bitrix24.test", userId: "7", accessToken }
+    const refused = { status: 401, body: { error: { code: "WIRECATFAKE_UNDOCUMENTED", message: "" } } }
+    const portal = fakePortal({ "crm.contact.add": [refused, ok({ id: 5 })] })
+    const { transport } = transportOf(portal, { auth })
+    const answer = await transport.call(
+      "crm.contact.add",
+      { fields: { name: "WireCat test" } },
+      { idempotencyKey: "op-1" },
+    )
+    expect(answer.result).toEqual({ id: 5 })
+    expect(accessToken.mock.calls).toEqual([[false], [true]])
+    expect(portal.calls.map((call) => [call.url, call.headers["Idempotency-Key"], JSON.parse(call.text).auth])).toEqual(
+      [
+        ["https://example.bitrix24.test/rest/api/crm.contact.add", "op-1", "wirecatfake0old"],
+        ["https://example.bitrix24.test/rest/api/crm.contact.add", "op-1", "wirecatfake0new"],
+      ],
+    )
+    const twice = fakePortal({ "crm.contact.add": [refused, refused, ok({ id: 6 })] })
+    const again = transportOf(twice, { auth }).transport.call("crm.contact.add", { fields: { name: "WireCat test" } })
+    expect((await failureOf(again)).code).toBe("authentication_error")
+    expect(twice.calls).toHaveLength(2)
+  })
+
   it("waits out the portal's 503 rate refusal on a read, then goes on", async () => {
     const portal = fakePortal({
       "crm.deal.get": [
