@@ -230,19 +230,23 @@ export const bitrixCrmSource = (
   /**
    * The clients a `mine` scope may copy besides the ones assigned to the user: the contacts and companies named on the
    * user's deals and leads. Contacts or companies that are no one's client stay on the portal, so a copy is never the
-   * whole client base. Read once per round of a kind.
+   * whole client base. With `since`, only those on the deals and leads changed since then.
+   *
+   * Reading them lists every deal and lead of the users: a hundred requests on a large portal. The rounds of contacts
+   * and companies start minutes apart, so the second reuses the first's list; a deal given to the user in between
+   * still brings its client, as a changed deal, at the next sync.
    */
-  const rounds = new Map<string, Promise<Record<ClientKind, Set<string>>>>()
-  const clientsOf = (caller: BitrixCaller, assignees: readonly number[], started: number) => {
-    const key = `${assignees.join(",")}@${started}`
-    let found = rounds.get(key)
-    if (!found) {
-      found = namedClients(caller, assignees).then(({ contact, company }) => ({
-        person: contact,
-        organization: company,
-      }))
-      rounds.set(key, found)
-    }
+  const lists = new Map<string, { at: number; found: Promise<Record<ClientKind, Set<string>>> }>()
+  const clientsOf = (caller: BitrixCaller, assignees: readonly number[], started: number, since?: number) => {
+    const key = since === undefined ? assignees.join(",") : `${assignees.join(",")}>${since}`
+    const kept = lists.get(key)
+    if (kept && Math.abs(started - kept.at) < OVERLAP_MS) return kept.found
+    const found = namedClients(
+      caller,
+      assignees,
+      since === undefined ? undefined : portalTime(since - OVERLAP_MS),
+    ).then(({ contact, company }) => ({ person: contact, organization: company }))
+    lists.set(key, { at: started, found })
     return found
   }
   const mineOnly = (raw: Raw, assignees: readonly number[], linked: Set<string>) =>
@@ -338,6 +342,11 @@ export const bitrixCrmSource = (
         return { items, cursor: new Date(started).toISOString() }
       }
       const clients = assignees && isClient(kind) ? (await clientsOf(caller, assignees, started))[kind] : null
+      // A client whose row did not change is already in the copy unless a changed deal or lead now names it.
+      const named =
+        assignees && isClient(kind) && since !== null
+          ? (await clientsOf(caller, assignees, started, since))[kind]
+          : clients
       const defined = await custom(kind, caller)
       const select = [...TYPES[kind].select, ...defined.map(({ code }) => code)]
       const finish = async (rows: Raw[], ended: boolean) =>
@@ -347,12 +356,12 @@ export const bitrixCrmSource = (
           ended,
           context,
         )
-      if (linked !== null && clients) {
-        const chunk = [...clients].slice(linked, linked + PAGE)
+      if (linked !== null && named) {
+        const chunk = [...named].slice(linked, linked + PAGE)
         const rows = chunk.length
           ? listedRows((await list(caller, kind, select, [["id", "in", chunk.map(Number)]])).result)
           : []
-        const ended = linked + PAGE >= clients.size
+        const ended = linked + PAGE >= named.size
         const items = await finish(rows, ended)
         return ended
           ? { items, cursor: new Date(started).toISOString() }
