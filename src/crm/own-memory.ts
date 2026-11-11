@@ -1,6 +1,6 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
-import { dirname, join } from "node:path"
-import { resolvePaths } from "@wirecat/cli-base"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+import { resolvePaths, writeSecurely } from "@wirecat/cli-base"
 import { IDENTITY } from "../identity.js"
 
 /** The own companies' ids the portal last listed, so a sync it refuses them to never takes them for deleted. */
@@ -27,8 +27,7 @@ export const ownMemoryAt = (file: string): OwnMemory => ({
     }
   },
   write: (ids) => {
-    mkdirSync(dirname(file), { recursive: true, mode: 0o700 })
-    writeFileSync(file, JSON.stringify(ids), { mode: 0o600 })
+    writeSecurely(file, JSON.stringify(ids), 0o600)
   },
 })
 

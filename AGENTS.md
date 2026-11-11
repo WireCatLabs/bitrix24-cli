@@ -16,9 +16,9 @@ and the domain, the store and its commands from the reference CLI.
 <!-- cli-template:reference-cli:start -->
 ## Reference CLI
 
-No CRM CLI exists yet. `b24` learns from gcal-cli (a provider API, `api`, permissions, the write guard),
-beeline-cli (a token sign-in) and tg-cli's Bot API transport (a secret in the URL path); see
-[DESIGN.md](docs/dev/DESIGN.md).
+`b24` is the first CRM CLI, and the shared CRM commands, store and sync it uses live in cli-core. It learned from
+gcal-cli (a provider API, `api`, permissions, the write guard, help sections), beeline-cli (a token sign-in) and
+tg-cli's Bot API transport (a secret in the URL path); see [DESIGN.md](docs/dev/DESIGN.md).
 <!-- cli-template:reference-cli:end -->
 
 ## The sample: what to keep, what to replace

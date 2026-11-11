@@ -30,6 +30,20 @@ it("lists the required root commands and config", async () => {
   )
 })
 
+it("lists a CRM kind's reads under Read and its writes under Write", async () => {
+  const { code, out } = await ran(["commands"])
+  expect(code).toBe(0)
+  const section = (line: string) =>
+    out
+      .slice(0, out.indexOf(line))
+      .match(/^(Read|Write|Automate|Set up|Other)$/gm)
+      ?.at(-1)
+  expect(section("b24 deals list")).toBe("Read")
+  expect(section("b24 deals move")).toBe("Write")
+  expect(section("b24 sync")).toBe("Automate")
+  expect(out).not.toMatch(/^Other$/m)
+})
+
 it("doctor answers without a config file", async () => {
   const { code, out } = await ran(["doctor", "--json"])
   expect(code).toBe(0)

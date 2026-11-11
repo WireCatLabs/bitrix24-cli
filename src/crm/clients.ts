@@ -1,6 +1,6 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
-import { dirname, join } from "node:path"
-import { CliError, resolvePaths } from "@wirecat/cli-base"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+import { CliError, resolvePaths, writeSecurely } from "@wirecat/cli-base"
 import type { BitrixCaller, BitrixTransport } from "../bitrix/transport.js"
 import { IDENTITY } from "../identity.js"
 import { id, ids, type Raw } from "./values.js"
@@ -117,6 +117,5 @@ export const spendOnForeign = async (
         "your own clients are not counted, and a Bitrix24 administrator has no limit",
       { limit: DAILY_FOREIGN },
     )
-  mkdirSync(dirname(file), { recursive: true, mode: 0o700 })
-  writeFileSync(file, JSON.stringify({ ...shown, seen: [...shown.seen, key] }), { mode: 0o600 })
+  writeSecurely(file, JSON.stringify({ ...shown, seen: [...shown.seen, key] }), 0o600)
 }
