@@ -244,12 +244,46 @@ describe("sync scope", () => {
     crm.setClock(Date.now())
     contact("Another stranger", OTHER)
     contact("New mine", OWN)
-    expect(saved(await sync(crm), "person")).toBe(3)
+    expect(saved(await sync(crm), "person")).toBe(1)
     const passes = crm.calls.filter(
       ({ method, body }) => method === "crm.deal.list" && JSON.stringify(body.select) === JSON.stringify(["id"]),
     )
     expect(passes.length).toBeGreaterThan(0)
     for (const { body } of passes) expect(body.filter).toContainEqual(["assignedById", "in", [OWN]])
+  })
+
+  it("reads no unchanged client again at a sync of changes, and lists the deals for clients once a sync", async () => {
+    const { crm, ids } = portal()
+    const client = crm.put("contact", { name: "On my deal", assignedById: OTHER })
+    crm.put("deal", {
+      ...crm.row("deal", ids.own),
+      contactsId: [client],
+      companyId: crm.put("company", { title: "Co" }),
+    })
+    await sync(crm)
+    const filterOf = (body: { filter?: unknown }) => (body.filter ?? []) as unknown[][]
+    const forClients = () =>
+      crm.calls.filter(
+        ({ method, body }) =>
+          method === "crm.deal.list" &&
+          JSON.stringify(body.select) === JSON.stringify(["id", "companyId", "contactId", "contactsId"]),
+      )
+    const byId = () =>
+      crm.calls.filter(
+        ({ method, body }) =>
+          (method === "crm.contact.list" || method === "crm.company.list") &&
+          filterOf(body).some(([field, op]) => field === "id" && op === "in"),
+      )
+    expect(forClients().filter(({ body }) => filterOf(body).length === 1)).toHaveLength(1)
+
+    crm.setClock(Date.now())
+    const [listed, read] = [forClients().length, byId().length]
+    const quiet = await sync(crm)
+    expect(saved(quiet, "person")).toBe(0)
+    expect(byId().length).toBe(read)
+    const lists = forClients().slice(listed)
+    expect(lists.filter(({ body }) => filterOf(body).length === 1)).toHaveLength(1)
+    expect(lists.filter(({ body }) => filterOf(body).some(([field]) => field === "updatedTime"))).toHaveLength(2)
   })
 
   it("brings the client of a deal given to the user at the next sync of changes", async () => {

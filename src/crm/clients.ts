@@ -16,8 +16,8 @@ const CONTACT_DATA = ["phone", "email", "fm"]
 export type ClientType = "contact" | "company"
 export const isClientType = (type: string): type is ClientType => type === "contact" || type === "company"
 
-/** The contacts and companies named on the deals and leads of these users. */
-export const clientsOf = async (caller: BitrixCaller, assignees: readonly number[]) => {
+/** The contacts and companies named on the deals and leads of these users; with `since`, only on those changed since. */
+export const clientsOf = async (caller: BitrixCaller, assignees: readonly number[], since?: string) => {
   const clients = { contact: new Set<string>(), company: new Set<string>() }
   for (const type of ["deal", "lead"]) {
     const { items } = await rest3Rows(
@@ -25,7 +25,7 @@ export const clientsOf = async (caller: BitrixCaller, assignees: readonly number
       `crm.${type}.list`,
       {
         select: ["id", "companyId", "contactId", "contactsId"],
-        filter: [["assignedById", "in", assignees]],
+        filter: [["assignedById", "in", assignees], ...(since ? [["updatedTime", ">=", since]] : [])],
         order: { id: "ASC" },
       },
       PAGE,
