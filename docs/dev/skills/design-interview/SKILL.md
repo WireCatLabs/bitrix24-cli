@@ -24,8 +24,10 @@ go to the further questions.
    links that carry a secret · the full content, keep only metadata · other; several allowed. A run record keeps
    the words typed on the command line: an argument or option that carries such a value is marked with
    `secretInput()` from `@wirecat/cli-core/cli`.
-7. **What untrusted input arrives?** messages from other people · files and attachments · links · names and titles set
-   by others · none · other; several allowed.
+7. **What untrusted input arrives?** files and attachments · links · names and titles set by others · none · other;
+   several allowed. A messenger or mail also offers messages from other people, a CRM deals, contacts and comments
+   others entered, a calendar invitations and event descriptions from others, meetings what other attendees said or
+   wrote.
 
 Then read the reference CLI and ask the [further questions](../../design-questions.md) it does not answer.
 

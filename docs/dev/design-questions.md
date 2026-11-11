@@ -6,7 +6,9 @@ Ask these only when the reference CLI does not already answer them, after the se
 ## Storing, indexing, syncing and deleting
 
 1. Which of the service's records are kept locally, and which core entity does each become (people, events,
-   documents, files, messages, meetings)? (WC-DATA-1, WC-DATA-2)
+   documents, files, messages, meetings, deals and contacts, or a structured record such as an invoice)? Each goes
+   through cli-core, never through SQL of the CLI's own: see "What the store keeps" in
+   [Reference CLIs](reference-clis.md#what-the-store-keeps). (WC-DATA-1, WC-DATA-2)
 2. How does it sync: everything each time, from a cursor, or by change token? On demand, on a schedule, or kept
    running?
 3. When the service deletes something, what happens here? Proposed: mark it deleted, keep it, never wipe. (WC-DATA-7)
