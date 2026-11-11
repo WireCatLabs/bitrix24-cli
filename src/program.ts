@@ -25,6 +25,7 @@ import { addWrites } from "./commands/crm-writes.js"
 import { scheduleCommand } from "./commands/schedule.js"
 import { sessionCommand } from "./commands/session.js"
 import { configuration } from "./config.js"
+import { placeInSections } from "./help-sections.js"
 import { IDENTITY, PACKAGE, SKILL } from "./identity.js"
 
 const update = appUpdate({
@@ -59,6 +60,7 @@ const mcpCommand = () =>
 
 export const definition = (): ProgramDefinition => ({
   app: IDENTITY,
+  configure: placeInSections,
   // The whole object: cli-core refuses a command by its key only when it gets the permission table too.
   configuration,
   firstScreen: {

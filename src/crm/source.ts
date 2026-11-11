@@ -89,9 +89,6 @@ const unchosen = (context: CrmCallContext | undefined, raw: Raw) => {
   return scope?.mode === "mine" && !scope.also.includes(scope.self) && String(raw.assignedById) === scope.self
 }
 
-/** `crm.bitrix24:<portal>.unassigned`, beside the `scope` setting: the users whose deals the owner chose. */
-const chosenSetting = (scopeSetting: string) => scopeSetting.replace(/\.scope$/, ".unassigned")
-
 type ClientKind = "person" | "organization"
 const isClient = (kind: CrmKind): kind is ClientKind => kind === "person" || kind === "organization"
 
@@ -130,11 +127,17 @@ export const bitrixCrmSource = (
   portal: () => BitrixTransport,
   now: () => number = Date.now,
   own: OwnMemory = NO_MEMORY,
-  /** The stored `scope` setting and its key: a sync under `all` is refused. */
-  asked: () => Promise<{ mode: "mine" | "all"; also: readonly string[]; setting: string }> = async () => ({
+  /** The stored `scope` setting, its key and the chosen users' key: a sync under `all` is refused. */
+  asked: () => Promise<{
+    mode: "mine" | "all"
+    also: readonly string[]
+    setting: string
+    chosen: string
+  }> = async () => ({
     mode: "mine",
     also: [],
     setting: "scope",
+    chosen: "unassigned",
   }),
 ): BitrixCrmSource => {
   let role: Promise<Role> | undefined
@@ -276,19 +279,19 @@ export const bitrixCrmSource = (
     // client is found by a live read of the portal. A stored `all` fails the sync until the owner sets `mine`.
     async self() {
       const self = portal().userId
-      const { mode, also, setting } = await asked()
+      const { mode, also, setting, chosen } = await asked()
       if (mode === "mine" && also.length) return self
       if (mode === "mine")
         throw new CliError(
           "configuration_error",
-          `no CRM user is chosen, so no deal or lead is copied: "config set ${chosenSetting(setting)} <user ids>" ` +
+          `no CRM user is chosen, so no deal or lead is copied: "config set ${chosen} <user ids>" ` +
             'chooses whose, the webhook\'s own user only if you name it; "users list" names them',
-          { setting: chosenSetting(setting), reason: "bitrix.scope-users-unchosen" },
+          { setting: chosen, reason: "bitrix.scope-users-unchosen" },
         )
       throw new CliError(
         "configuration_error",
         `${setting} is all, and b24 never copies the whole CRM: "config set ${setting} mine" copies the deals and ` +
-          `leads of the users you choose in ${chosenSetting(setting)}, and their clients. Find any other client on ` +
+          `leads of the users you choose in ${chosen}, and their clients. Find any other client on ` +
           'the portal with "people list" or "organizations list"',
         { setting, reason: "bitrix.scope-all-refused" },
       )
