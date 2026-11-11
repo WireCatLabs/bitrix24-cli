@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**186 ✅ · 40 ⛔ · 0 ❌** — 74 commands, 152 options.
+**187 ✅ · 40 ⛔ · 0 ❌** — 74 commands, 153 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -15,12 +15,14 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `commands info` |  | ✅ |  |
 | `session start` |  | ✅ |  |
 | `session start` | `--credential-storage` | ✅ |  |
-| `session start` | `--portal` | ✅ |  |
-| `session start` | `--client-id` | ✅ |  |
 | `session status` |  | ✅ |  |
 | `session status` | `--check` | ✅ |  |
 | `session end` |  | ✅ |  |
 | `session list` |  | ✅ |  |
+| `account remove` |  | ✅ |  |
+| `account remove` | `--keep-data` | ✅ |  |
+| `account remove` | `--delete-data` | ✅ |  |
+| `account remove` | `--dry-run` | ✅ |  |
 | `sync` |  | ✅ |  |
 | `sync` | `--rescan` | ✅ |  |
 | `sync` | `--max-pages` | ✅ |  |

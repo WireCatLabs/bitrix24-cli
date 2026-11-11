@@ -19,6 +19,8 @@ const OWN: [reason: string, code: string, message: string][] = [
   ["webhook.malformed", "validation_error", "that is not a Bitrix24 incoming webhook address"],
   ["webhook.refused", "authentication_error", "Bitrix24 refused this webhook or application sign-in"],
   ["webhook.scope-missing", "permission_error", "the webhook has no scope for this method"],
+  ["session.duplicate", "conflict", "another profile here already uses this webhook"],
+  ["account-remove.portal-shared", "conflict", "another profile reads the same portal, whose copy the store shares"],
   ["bitrix.access-denied", "permission_error", "the webhook's user may not do this"],
   ["webhook.app-only", "permission_error", "Bitrix24 lets only an installed app call this method, not a webhook"],
   ["method.unknown", "not_found", "Bitrix24 does not know this method, or the webhook has no scope for it"],
