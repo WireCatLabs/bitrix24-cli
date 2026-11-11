@@ -156,7 +156,7 @@ and `type`); field names are from the REST 3.0 field pages and the `user.get` an
    `session status --check` says whose rights those are: user id, name and whether that user is an admin.
    **A local application** is the second sign-in (owner, 2026-11-11): the owner creates it in their own portal, so
    there is no WireCat app to default to (a WC-SECR-25 exception) and `doctor` reports none. `session start --portal
-   <host> --client-id <code>` reads the key hidden, from stdin or from `B24_BITRIX24_CLIENT_SECRET`, signs in through
+   <host> --client-id <id>` reads the key hidden, from stdin or from `B24_BITRIX24_CLIENT_SECRET`, signs in through
    cli-core's oauth module with the relay page `https://wirecat.dev/b24-callback` (the application's "Your handler
    path") and the paste fallback, and exchanges and refreshes at `oauth.bitrix.info` by GET in its own `exchange`
    hook. The entry is `bitrix24-cli` / `oauth:bitrix24:<profile>`: tokens, the code and the key (every refresh needs

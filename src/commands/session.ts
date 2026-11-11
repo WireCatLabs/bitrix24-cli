@@ -150,7 +150,7 @@ const startCommand = () =>
     )
     .option("--portal <host>", "sign in through a local application on this portal, such as example.bitrix24.ru")
     .option(
-      "--client-id <code>",
+      "--client-id <id>",
       `the local application's Application ID (client_id), or ${IDENTITY.envPrefix}_BITRIX24_CLIENT_ID; its key comes from ` +
         `${IDENTITY.envPrefix}_BITRIX24_CLIENT_SECRET, a hidden prompt or stdin`,
     )
