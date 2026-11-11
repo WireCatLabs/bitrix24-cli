@@ -15,9 +15,15 @@ incoming webhooks and acts with the rights of the employee who made it. Deals an
 npm install -g @wirecat/bitrix24-cli
 b24 skill install                 # the agent skill, for Claude Code, Codex, Gemini CLI and OpenClaw
 b24 work session start            # paste the webhook address; it is kept in the keyring
-b24 work sync                     # copies the CRM and who is who into the local store
+b24 work users list               # find your own user id, and any colleague's
+b24 work config set crm.bitrix24:example.bitrix24.ru.unassigned 1   # whose deals and leads to copy
+b24 work sync                     # copies their deals, leads and clients into the local store
 b24 work deals list status:open
 ```
+
+`example.bitrix24.ru` is your portal's host, and `1` the ids you chose, comma-separated. Until you choose, a sync
+copies nothing and says so: a webhook is often a colleague's, so `b24` never picks whose deals you copy. An
+administrator's webhook may choose anyone; an employee's may choose only themselves.
 
 `work` is a profile: a name you choose for one portal. It is the first word of every command that uses an account,
 and none is ever assumed. Make the webhook in Bitrix24 under Developer resources → Other → Incoming webhook, with the
@@ -67,8 +73,8 @@ More: [agents](docs/usage.md#agents).
 ## Main features
 
 - **Sync.** `sync` copies pipelines, stages, deals, leads, companies, contacts, employees, departments and your own
-  companies; the next `sync` reads only what changed. `schedule` runs it on a timer. It copies your own deals, leads
-  and clients; only a Bitrix24 administrator copies the whole CRM.
+  companies; the next `sync` reads only what changed. `schedule` runs it on a timer. It copies the deals and leads of the users
+  you choose, and their clients; no sync copies the whole CRM, an administrator's either.
 - **Who is who.** A contact belongs to its companies, a deal names its contacts and the employee responsible, and
   employees report to their department's head. See [Who is who](docs/usage.md#who-is-who).
 - **Reads.** `deals`, `leads`, `pipelines`, `stages` and `fields` read the store; `people`, `organizations`,
@@ -94,8 +100,10 @@ More: [sign in](docs/usage.md#sign-in), [profiles](docs/usage.md#the-profile-com
 ## Settings and permissions
 
 Each profile has a permission level for every command and every REST method: `allow`, `ask`, `readonly` or `deny`.
-Assigning a record to another employee is denied until you allow it, a delete asks first, and methods that message
-people, publish or start the portal's automation are denied, reads too. A stage change can start the portal's own
+Assigning a record to another employee is denied until you allow it, a delete asks first in the terminal, and methods
+that message people, publish or start the portal's automation are denied, reads too. Over MCP no one is there to
+answer, so `ask` lets the command run: before you give an agent an administrator's webhook, set
+`permissions.deals.delete` and `permissions.leads.delete` to `readonly`. A stage change can start the portal's own
 robots, which may write to your clients: set `permissions.deals.move` to `ask` if your portal has such robots.
 `B24_READ_ONLY=1` refuses every write.
 Whatever the levels say, only a Bitrix24 administrator's webhook deletes, sets a field to nothing or calls `batch`:
@@ -105,7 +113,12 @@ More: [settings](docs/configuration.md#permissions), [security](docs/security.md
 
 ## Limits
 
+- Tested on cloud Bitrix24. A self-hosted (on-premise) portal is not tested; `b24` uses REST 3.0 for the CRM.
 - The portal allows about 2 requests a second for all its apps together; `b24` keeps to that pace.
+- Before 1.0, a minor version may change commands, `--json` fields and MCP tools; the changelog lists each such
+  change under "may break callers".
+- Another npm package, `b24-cli`, also installs a command named `b24`. If yours runs the wrong tool, call `wcat-b24`,
+  which is the same program.
 - `people`, `organizations`, `products` and `users` still ask the portal on every read and refuse `--offline`.
 - Bitrix24 does a repeated write again: on a live portal, a create repeated with the same `Idempotency-Key` made a
   second record. After an `outcome_unknown`, look at the record before you write it again.

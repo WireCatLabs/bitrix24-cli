@@ -10,6 +10,7 @@ support request.
 | "name a profile" | Put the profile first, as in `b24 personal config show`, or set `B24_PROFILE`. |
 | The settings file does not read | `doctor` lists every problem in the file under `config.issues`. Run the `config unset` each one gives, or fix the file by hand. |
 | `doctor` lists `files.problems` | Other users of the computer can read `config.json` or enter its folder. Run each `chmod` that `doctor` prints after "to make it private:". `doctor` never changes a file mode itself. |
+| "no CRM user is chosen" | A sync copies the deals and leads of the users you choose. Find ids with `users list`, then `config set crm.bitrix24:<portal>.unassigned <ids>`; see [whose deals and leads](usage.md#whose-deals-and-leads). |
 | "not signed in" | Run `session start` with your profile, such as `b24 work session start`, and paste the webhook address. |
 | Bitrix24 refused this webhook | The webhook was deleted or edited in Bitrix24, which changes its address. Make a new one and run `session start` again. |
 | no scope for a method, or `ERROR_METHOD_NOT_FOUND` | Add the scope (`crm`, `user_basic`, `department`) to the webhook in Bitrix24. |
