@@ -1,4 +1,5 @@
 import { join } from "node:path"
+import { fileURLToPath } from "node:url"
 import { resolvePaths } from "@wirecat/cli-base"
 import {
   appDoctorCommand,
@@ -6,6 +7,7 @@ import {
   commandsCommand,
   configCommand,
   createProgram as createSharedProgram,
+  guideCommand,
   outputFor,
   ProfileTokenStore,
   type ProgramDefinition,
@@ -72,7 +74,7 @@ export const definition = (): ProgramDefinition => ({
       },
       { command: "deals list status:open", does: "open deals with stage, amount and owner, from the store, offline" },
       { command: 'search all "kitchen"', does: "stored deals and leads beside your other WireCat tools' data" },
-      { command: "deals move <ref> <stage>", does: "move a deal; deals.move=ask stops robots that write to clients" },
+      { command: "deals move <ref> <stage>", does: "move a deal; deals.move=readonly stops agents moving one" },
       { command: "api call <method> --dry-run", does: "any REST method, with every permission it checks" },
       { command: "mcp serve --permission deals=deny", does: "the CRM in any agent, with the levels you set" },
     ],
@@ -87,6 +89,7 @@ export const definition = (): ProgramDefinition => ({
     scheduleCommand(),
     appDoctorCommand(IDENTITY, configuration, { packageName: PACKAGE }),
     skillCommand(IDENTITY, SKILL),
+    guideCommand(IDENTITY, { directory: fileURLToPath(new URL("../scenarios", import.meta.url)) }),
     mcpCommand(),
     upgradeCommand(IDENTITY, PACKAGE, (command) => ({
       ...outputFor(command),

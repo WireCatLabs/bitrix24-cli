@@ -1,8 +1,9 @@
 import { chmodSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
+import { checkGuide } from "@wirecat/cli-core/cli"
 import { expect, it } from "vitest"
 import { IDENTITY } from "./identity.js"
-import { run } from "./program.js"
+import { createProgram, run } from "./program.js"
 
 const ran = async (argv: string[]) => {
   const out: string[] = []
@@ -123,6 +124,16 @@ it("skill show prints the packaged skill", async () => {
   expect(out).toContain(
     readFileSync(new URL("../skills/bitrix24-cli/SKILL.md", import.meta.url), "utf8").split("\n")[0],
   )
+})
+
+it("guide lists the scenarios, and every step is a command b24 has", async () => {
+  const { code, out } = await ran(["work", "guide", "--json"])
+  expect(code).toBe(0)
+  expect(JSON.parse(out).items.map((one: { name: string }) => one.name)).toEqual(
+    expect.arrayContaining(["first-sync", "keep-in-sync", "safe-agent-writes"]),
+  )
+  expect((await ran(["work", "guide", "safe-agent-writes"])).out).toContain("permissions.deals.move readonly")
+  expect(await checkGuide(createProgram, { packageRoot: process.cwd() })).toEqual([])
 })
 
 it("mcp serve without a profile stops and says so", async () => {

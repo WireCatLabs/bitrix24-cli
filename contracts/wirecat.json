@@ -688,6 +688,16 @@
     },
     {
       "path": [
+        "guide"
+      ],
+      "summary": "scenarios: the commands for a common task, in order, and why each",
+      "effects": {
+        "remote": "none",
+        "local": "none"
+      }
+    },
+    {
+      "path": [
         "mcp",
         "serve"
       ],

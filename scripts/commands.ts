@@ -19,7 +19,7 @@ const page = commandsPage({
     intro: `Every command, option and exit code, generated from the program itself. For the same list as JSON, run
 \`${IDENTITY.command} commands --json\`.
 
-**The first word is the profile**, a name you choose: \`${IDENTITY.command} personal config show\`. \`${IDENTITY.envPrefix}_PROFILE\`
+**The first word is the profile**, a name you choose: \`${IDENTITY.command} work config show\`. \`${IDENTITY.envPrefix}_PROFILE\`
 does the same for a whole shell session. No profile is assumed: a command that uses an account stops without one and
 lists the profiles on this computer.`,
     globalHeading: "Options for every command",

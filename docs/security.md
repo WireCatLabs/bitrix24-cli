@@ -27,8 +27,9 @@ Bitrix24's own access rights do that.
 
 Every write is checked against the permissions and kept in the send journal. `B24_READ_ONLY=1` refuses every write.
 Assigning a record to another employee is refused until you allow it. A stage change can still start the portal's own
-robots, which may write to your clients: set `permissions.deals.move` and `permissions.leads.move` to `ask` or `deny`
-if your portal has such robots. Every write that sets a stage checks them; a won or lost stage, and `close`, check
+robots, which may write to your clients: if your portal has such robots, set `permissions.deals.move` and
+`permissions.leads.move` to `readonly` or `deny` before an agent gets the profile over MCP, where `ask` does not ask
+([permissions](permissions.md#stage-changes-start-the-portals-robots)). Every write that sets a stage checks them; a won or lost stage, and `close`, check
 `deals.close` or `leads.close` too, and `api call` with a `stageId` checks both. A deal or lead `--field` that names a
 stage, a pipeline or an owner is refused. Deleting a deal or a lead asks first. `api.crm.deal.update: deny` also stops
 `deals update`, `move` and `close`, and at `ask` they ask too.
@@ -59,15 +60,15 @@ webhook's address. Each run checks the permissions again. `B24_READ_ONLY` refuse
 A write that got no answer is not sent again: it is `outcome_unknown` with its `operation_id`. Check the portal, and
 write it again only if it is not there: Bitrix24 would make a repeat a second time.
 
-`b24 personal mcp serve --http` listens on `127.0.0.1` only, for browser apps that reach it through your own
+`b24 work mcp serve --http` listens on `127.0.0.1` only, for browser apps that reach it through your own
 tunnel. Each app logs in with a one-time code, and the server keeps a hash of each login it gives, in the state
-folder, readable by you only. `b24 personal mcp revoke` forgets every one of them.
+folder, readable by you only. `b24 work mcp revoke` forgets every one of them.
 
 A run record keeps the command line as you typed it, so `b24 runs show` tells you what was run. A secret is still
 stored as `[redacted]`: an option named like a token or password, a password in a link, a long opaque string. A
 phone number is replaced by `[redacted]` inside the word you typed, message text included: one written with its "+" and
 country code, or 11 to 15 digits in a row, so a long id of that length is hidden as well. To keep none of the words
-you type, run `b24 personal config set record_input false`.
+you type, run `b24 work config set record_input false`.
 
 A secret is also found by what it looks like, in a run record and in a kept error message: a token in a known
 format (GitHub, OpenAI, Slack, AWS, Stripe, npm and the like), a `Bearer` credential, a random-looking string of 20 or

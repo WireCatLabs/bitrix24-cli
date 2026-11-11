@@ -4,9 +4,9 @@ Settings live in one file, `config.json`, in the folder `b24 doctor` shows. Each
 and `defaults` apply to every profile. This page lists how to see and change them.
 
 ```sh
-b24 personal config show
-b24 personal config set limit 50
-b24 personal config unset limit
+b24 work config show
+b24 work config set limit 50
+b24 work config unset limit
 ```
 
 `config show` lists each setting and where it came from: the file, a variable or the default.
@@ -14,8 +14,8 @@ b24 personal config unset limit
 ## Permissions
 
 `permissions` decides what a command may do for this profile: `allow`, `ask`, `readonly` or `deny`, per permission
-key. Over MCP there is no one to ask, so `ask` lets the command run. `B24_READ_ONLY=1` refuses every write, whatever
-the permissions say.
+key. Over MCP `ask` does not ask: the write goes ahead. The keys, their built-in levels and how to keep an agent's
+writes yours are on [Permissions](permissions.md).
 
 ## CRM relationships
 

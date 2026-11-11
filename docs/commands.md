@@ -5,7 +5,7 @@
 Every command, option and exit code, generated from the program itself. For the same list as JSON, run
 `b24 commands --json`.
 
-**The first word is the profile**, a name you choose: `b24 personal config show`. `B24_PROFILE`
+**The first word is the profile**, a name you choose: `b24 work config show`. `B24_PROFILE`
 does the same for a whole shell session. No profile is assumed: a command that uses an account stops without one and
 lists the profiles on this computer.
 
@@ -868,7 +868,7 @@ b24 api list [query]
 
 **Returns:** api method — name, rest, effect, scope, permission, default_level, also_checks; every field: b24 commands info api list
 
-**Example:** `b24 personal api list`, `b24 personal api list scope:crm effect:write`
+**Example:** `b24 work api list`, `b24 work api list scope:crm effect:write`
 
 ### `b24 api show`
 
@@ -884,7 +884,7 @@ b24 api show <method>
 
 **Returns:** show a method's REST version and permissions; calls nothing
 
-**Example:** `b24 personal api show crm.deal.update --json`
+**Example:** `b24 work api show crm.deal.update --json`
 
 ### `b24 api call`
 
@@ -1147,6 +1147,22 @@ b24 skill status
 **Returns:** whether the installed instructions for AI agents match this version
 
 **Example:** `b24 skill status`, `b24 skill status --json`
+
+## `b24 guide`
+
+scenarios: the commands for a common task, in order, and why each
+
+```sh
+b24 guide [name]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `name` | optional | one scenario; without it, the list. |
+
+**Returns:** scenarios: the commands for a common task, in order, and why each
+
+**Example:** `b24 guide`, `b24 guide first-sync --json`
 
 ## `b24 mcp`
 

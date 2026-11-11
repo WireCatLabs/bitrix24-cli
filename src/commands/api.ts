@@ -85,7 +85,7 @@ const listCommand = () =>
     answerEntity(
       annotate(new Command("list"), {
         effects: NO_EFFECTS,
-        examples: [`${B24} api list`, `${B24} api list scope:crm effect:write`],
+        examples: [`${B24} work api list`, `${B24} work api list scope:crm effect:write`],
       })
         .summary("list the Bitrix24 methods b24 calls, with their permissions")
         .description("list the Bitrix24 methods b24's own commands call, with the REST version and permission of each"),
@@ -116,7 +116,7 @@ const listCommand = () =>
   })
 
 const showCommand = () =>
-  annotate(new Command("show"), { effects: NO_EFFECTS, examples: [`${B24} api show crm.deal.update --json`] })
+  annotate(new Command("show"), { effects: NO_EFFECTS, examples: [`${B24} work api show crm.deal.update --json`] })
     .summary("show a method's REST version and permissions; calls nothing")
     .description("show which REST version a method goes to, what it does and the permissions it checks; calls nothing")
     .argument("<method>", "the Bitrix24 method, such as crm.deal.list")
