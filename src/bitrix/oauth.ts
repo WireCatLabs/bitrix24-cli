@@ -27,7 +27,7 @@ import { IDENTITY } from "../identity.js"
 
 export const OAUTH_HOST = "oauth.bitrix.info"
 /** The local application's "Your handler path": Bitrix24 sends the browser there, not to the `redirect_uri` asked. */
-export const RELAY_URL = "https://wirecat.dev/b24-callback"
+export const RELAY_URL = "https://wirecat.dev/webhooks/apps/b24-callback"
 const TOKEN_URL = `https://${OAUTH_HOST}/oauth/token/`
 const PROVIDER = "bitrix24"
 const REQUEST_MS = 30_000
