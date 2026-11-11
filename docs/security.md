@@ -4,13 +4,22 @@ What WireCat CLIs share — the keyring, permissions, MCP and what never reaches
 [shared security page](https://wirecat.dev/en/docs/security). This page keeps only what is particular to `b24`.
 
 `b24` keeps its settings in `config.json` and its state in the folders `b24 doctor` shows. It talks only to the
-portal of the profile's webhook, over HTTPS, and never follows a redirect.
+portal of the profile's webhook or local application, and to `oauth.bitrix.info` for an application's tokens, over
+HTTPS, and never follows a redirect.
 
 The webhook's address carries its secret in its path, so the whole address is the password. `b24` keeps it in the
 system keyring (service `bitrix24-cli`, account `token:<profile>`), or in a private file with
 `--credential-storage file`, and never writes it to the output, an error, a log or a run record: a run keeps the
 method and `/rest/:user/:token/<method>`, never the address. An error keeps Bitrix24's error code and the names of
 the fields it refused, never Bitrix24's description, which can quote what was typed.
+
+A local application's sign-in is kept in the same place (account `oauth:bitrix24:<profile>`): the application's
+code and key, the access token, which lasts an hour, and the refresh token, which lasts 180 days and changes at each
+renewal. The key goes only to `oauth.bitrix.info`, as Bitrix24 asks, never to the portal; the token goes to the
+portal in the body of each call, never in its address. None of them reaches the output, an error, a log or a run
+record. The sign-in returns through the page `https://wirecat.dev/b24-callback`, which passes the one-time code to
+`b24` on this computer in your browser; the code works for 30 seconds and only with the key. Bitrix24 has no call
+that revokes a token: `session end` forgets the sign-in here, and deleting the application in the portal stops it.
 
 The webhook acts with the rights of the employee who made it. A webhook made by an admin lets an agent read and
 change everything in the CRM. `session status --check` says whose rights it carries; make the webhook with an

@@ -55,11 +55,11 @@ b24 commands info [path]
 
 ## `b24 session`
 
-keep this profile's Bitrix24 webhook in the OS keyring
+keep this profile's Bitrix24 webhook or local application sign-in in the OS keyring
 
 ### `b24 session start`
 
-sign this profile in: the incoming webhook's address (Bitrix24 → Developer resources → Other → Incoming webhook) is asked hidden or read from stdin, checked against the portal, and only then kept in the keyring, or in a private file when the keyring fails; the webhook acts with the rights of the employee who made it
+sign this profile in: the incoming webhook's address (Bitrix24 → Developer resources → Other → Incoming webhook) is asked hidden or read from stdin, checked against the portal, and only then kept in the keyring, or in a private file when the keyring fails; the webhook acts with the rights of the employee who made it. With --portal and --client-id it signs in through a local application in the browser instead: its key is asked hidden or read from stdin, and its tokens act with the rights of the employee who signs in
 
 **Changes something on this computer only.**
 
@@ -69,15 +69,17 @@ b24 session start [options]
 
 | Option | What it does |
 |---|---|
-| `--credential-storage <storage>` | where the address is kept: keyring (the default, which falls back to a private file by itself when no keyring works), or file, not recommended. Default: `keyring`. |
+| `--credential-storage <storage>` | where the sign-in is kept: keyring (the default, which falls back to a private file by itself when no keyring works), or file, not recommended. Default: `keyring`. |
+| `--portal <host>` | sign in through a local application on this portal, such as example.bitrix24.ru. |
+| `--client-id <code>` | the local application's code (client_id), or B24_BITRIX24_CLIENT_ID; the key comes from B24_BITRIX24_CLIENT_SECRET, a hidden prompt or stdin. |
 
-**Returns:** sign in with a Bitrix24 incoming webhook
+**Returns:** sign in with a Bitrix24 incoming webhook, or with a local application
 
-**Example:** `b24 work session start`, `b24 work session start --json`
+**Example:** `b24 work session start`, `b24 work session start --json`, `b24 work session start --portal example.bitrix24.ru --client-id local.0123abcd.45678901`
 
 ### `b24 session status`
 
-show where this profile's webhook address comes from, B24_TOKEN, the keyring or a file, but never the address
+show how this profile signs in, with a webhook or a local application, and where that comes from: B24_TOKEN, the keyring or a file; never the address, the key or a token
 
 ```sh
 b24 session status [options]
@@ -85,15 +87,15 @@ b24 session status [options]
 
 | Option | What it does |
 |---|---|
-| `--check` | ask the portal whether the webhook still works and whose it is: the user's id, name and admin rights. |
+| `--check` | ask the portal whether the sign-in still works and whose it is: the user's id, name and admin rights. |
 
-**Returns:** show where the webhook comes from, and with --check as whom it acts
+**Returns:** show how this profile signs in, and with --check as whom it acts
 
 **Example:** `b24 work session status`, `b24 work session status --check --json`
 
 ### `b24 session end`
 
-forget this profile's webhook address on this computer; the webhook itself stays in Bitrix24
+forget this profile's webhook address, or its local application's key and tokens, on this computer; the webhook and the application stay in Bitrix24, which has no call that revokes a token: delete them there to stop them
 
 **Changes something on this computer only.**
 
@@ -101,13 +103,13 @@ forget this profile's webhook address on this computer; the webhook itself stays
 b24 session end
 ```
 
-**Returns:** forget this profile's webhook address on this computer
+**Returns:** forget this profile's webhook address or application sign-in on this computer
 
 **Example:** `b24 work session end`
 
 ### `b24 session list`
 
-list the profiles on this computer and whether each has a webhook; picks none
+list the profiles on this computer and whether each has a webhook or an application sign-in; picks none
 
 ```sh
 b24 session list

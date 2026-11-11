@@ -271,7 +271,7 @@ describe("relationships from the portal", () => {
     const { bitrixCrmSource } = await import("./source.js")
     const { ownMemoryAt, ownMemoryFile } = await import("./own-memory.js")
     const source = bitrixCrmSource(
-      () => new BitrixTransport({ webhook: FAKE_WEBHOOK, fetch: crm.fetch, sleep: async () => {} }),
+      () => new BitrixTransport({ auth: FAKE_WEBHOOK, fetch: crm.fetch, sleep: async () => {} }),
       Date.now,
       ownMemoryAt(ownMemoryFile(process.env, "work")),
     )
@@ -300,7 +300,7 @@ describe("relationships from the portal", () => {
     const { FAKE_WEBHOOK } = await import("../testing/fake-portal.js")
     const { bitrixCrmSource } = await import("./source.js")
     const source = bitrixCrmSource(
-      () => new BitrixTransport({ webhook: FAKE_WEBHOOK, fetch: crm.fetch, sleep: async () => {} }),
+      () => new BitrixTransport({ auth: FAKE_WEBHOOK, fetch: crm.fetch, sleep: async () => {} }),
     )
     let spent = 0
     const context = {

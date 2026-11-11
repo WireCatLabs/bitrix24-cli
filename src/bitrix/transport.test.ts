@@ -17,7 +17,7 @@ const transportOf = (
 ) => {
   const waits: number[] = []
   const transport = new BitrixTransport({
-    webhook: FAKE_WEBHOOK,
+    auth: FAKE_WEBHOOK,
     fetch: portal.fetch,
     sleep: async (ms) => {
       waits.push(ms)
@@ -229,7 +229,7 @@ describe("BitrixTransport", () => {
         )
       }
       const failure = failureOf(
-        new BitrixTransport({ webhook: FAKE_WEBHOOK, fetch, sleep: async () => {} }).call("user.current"),
+        new BitrixTransport({ auth: FAKE_WEBHOOK, fetch, sleep: async () => {} }).call("user.current"),
       )
       await vi.advanceTimersByTimeAsync(60_000)
       expect((await failure).code).toBe("timeout")
@@ -250,7 +250,7 @@ describe("BitrixTransport", () => {
           init.signal?.addEventListener("abort", () => reject(init.signal?.reason)),
         )
       }
-      const answer = new BitrixTransport({ webhook: FAKE_WEBHOOK, fetch, sleep: async () => {} }).call("user.current")
+      const answer = new BitrixTransport({ auth: FAKE_WEBHOOK, fetch, sleep: async () => {} }).call("user.current")
       await vi.advanceTimersByTimeAsync(15_000)
       expect((await answer).result).toEqual({ ID: "7" })
       expect(calls).toBe(2)

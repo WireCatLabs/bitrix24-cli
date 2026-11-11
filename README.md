@@ -96,7 +96,11 @@ in the system keyring; `--credential-storage file` keeps it in a private file in
 the employee the webhook acts as, `session end` forgets the address on this computer, and `session list` lists the
 profiles.
 
-More: [sign in](docs/usage.md#sign-in), [profiles](docs/usage.md#the-profile-comes-first).
+With a local application you create in the portal, `b24 work session start --portal example.bitrix24.ru --client-id
+<code>` signs in through the browser instead, and `b24` acts with the rights of the employee who signs in.
+
+More: [sign in](docs/usage.md#sign-in), [with a local application](docs/usage.md#with-a-local-application),
+[profiles](docs/usage.md#the-profile-comes-first).
 
 ## Settings and permissions
 

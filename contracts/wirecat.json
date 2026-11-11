@@ -32,7 +32,7 @@
         "session",
         "start"
       ],
-      "summary": "sign in with a Bitrix24 incoming webhook",
+      "summary": "sign in with a Bitrix24 incoming webhook, or with a local application",
       "effects": {
         "remote": "read",
         "local": "write"
@@ -43,7 +43,7 @@
         "session",
         "status"
       ],
-      "summary": "show where the webhook comes from, and with --check as whom it acts",
+      "summary": "show how this profile signs in, and with --check as whom it acts",
       "effects": {
         "remote": "read",
         "local": "read"
@@ -54,7 +54,7 @@
         "session",
         "end"
       ],
-      "summary": "forget this profile's webhook address on this computer",
+      "summary": "forget this profile's webhook address or application sign-in on this computer",
       "effects": {
         "remote": "none",
         "local": "write"
@@ -1019,8 +1019,10 @@
     }
   },
   "network": {
-    "hosts": [],
-    "user_hosts": "the Bitrix24 portal in your webhook address"
+    "hosts": [
+      "oauth.bitrix.info"
+    ],
+    "user_hosts": "the Bitrix24 portal in your webhook address, or the one you sign in to with a local application"
   },
   "desktop": {
     "tagline": "Bitrix24 CRM: deals, leads, contacts and companies",
@@ -1066,8 +1068,8 @@
       "start"
     ],
     "signIn": {
-      "gives": "Lets your agent read and change the portal's CRM with the rights of the employee who made the webhook.",
-      "asks": "An incoming webhook address, from Developer resources → Other → Incoming webhook, with the crm, user_basic and department scopes."
+      "gives": "Lets your agent read and change the portal's CRM with the rights of the employee who made the webhook, or who signed in through a local application.",
+      "asks": "An incoming webhook address, from Developer resources → Other → Incoming webhook, with the crm, user_basic and department scopes; or a local application's code and key."
     },
     "skill": {
       "status": [

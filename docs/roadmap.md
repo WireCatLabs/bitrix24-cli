@@ -6,7 +6,8 @@ feature: it may already be on the way. The order is approximate and can change. 
 
 ## What works today
 
-`b24` signs in to a Bitrix24 portal with an incoming webhook. It reads and changes deals, leads, contacts (`people`)
+`b24` signs in to a Bitrix24 portal with an incoming webhook, or through a local application you create in the
+portal. It reads and changes deals, leads, contacts (`people`)
 and companies (`organizations`), moves and closes deals and leads, and reads pipelines, stages, products and
 employees (`users`). `fields list` shows the portal's own fields with their options. `sync` copies pipelines,
 companies, contacts, deals and leads into the local WireCat store, so `deals`, `leads`, `pipelines` and `stages` work
@@ -26,8 +27,7 @@ the [command reference](commands.md).
 
 ## Later
 
-- **Sign-in with a local app.** An OAuth sign-in instead of a webhook, and a queue of portal events, so `b24` learns
-  what changed without a full pass.
+- **Portal events.** A queue of the portal's events, so `b24` learns what changed without a full pass.
 - **Activities, to-dos and timeline comments** on deals, leads, contacts and companies.
 - **Quotes, smart invoices and smart processes.**
 - **A duplicate check before create.** `b24` warns when a contact, company or lead like the new one already exists.

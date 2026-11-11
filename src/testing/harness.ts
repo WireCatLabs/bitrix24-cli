@@ -24,12 +24,14 @@ export const b24 = async (
     stdin,
     env,
     answer,
+    openBrowser,
   }: {
-    portal?: ReturnType<typeof fakePortal>
+    portal?: { fetch: ReturnType<typeof fakePortal>["fetch"] }
     keyring?: KeyringStore
     stdin?: string
     env?: NodeJS.ProcessEnv
-    answer?: (question: string) => string | null
+    answer?: (question: string) => Promise<string | null> | string | null
+    openBrowser?: (url: string) => Promise<void>
   } = {},
 ): Promise<Ran> => {
   const out: string[] = []
@@ -42,6 +44,7 @@ export const b24 = async (
     sleep: async () => {},
     ...(env ? { env: { ...process.env, ...env } } : {}),
     ...(answer ? { answer } : {}),
+    ...(openBrowser ? { openBrowser } : {}),
     ...(stdin === undefined ? {} : { stdin: Object.assign(Readable.from([stdin]), { isTTY: false }) }),
   } as Parameters<typeof run>[1])
   const text = { out: out.join(""), err: err.join("") }

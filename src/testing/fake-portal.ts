@@ -8,6 +8,7 @@ export const FAKE_WEBHOOK: Webhook = parseWebhook(FAKE_HOOK)
 export interface PortalCall {
   api: 2 | 3
   method: string
+  /** Without `auth`, the application's token, which is no method parameter. */
   body: Record<string, unknown>
   /** The body as sent, for numbers `JSON.parse` would round. */
   text: string
@@ -63,11 +64,12 @@ export const fakePortal = (script: Record<string, Reply | Reply[] | ((call: Port
     const path = new URL(url).pathname
     const api = path.startsWith("/rest/api/") ? 3 : 2
     const method = path.slice(path.lastIndexOf("/") + 1)
+    const { auth: _, ...body } = JSON.parse(String(init.body ?? "{}")) as Record<string, unknown>
     const call: PortalCall = {
       api,
       method,
       url,
-      body: JSON.parse(String(init.body ?? "{}")) as Record<string, unknown>,
+      body,
       text: String(init.body ?? ""),
       headers: init.headers as Record<string, string>,
     }

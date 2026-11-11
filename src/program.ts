@@ -20,6 +20,7 @@ import {
 } from "@wirecat/cli-core/cli"
 import { appUpdate } from "@wirecat/cli-core/update"
 import type { Command } from "commander"
+import { appSourceOf } from "./bitrix/oauth.js"
 import { apiCommand } from "./commands/api.js"
 import { crmCommands } from "./commands/crm.js"
 import { crmSharedCommands } from "./commands/crm-shared.js"
@@ -56,8 +57,14 @@ const mcpCommand = () =>
     ],
     permissionExample: "deals.delete=deny",
     skill: SKILL,
-    signedIn: (profile, env, keyring) =>
-      new ProfileTokenStore({ app: IDENTITY, env, ...(keyring ? { keyring } : {}) }).signedIn(profile),
+    signedIn: (profile, env, keyring) => {
+      if (new ProfileTokenStore({ app: IDENTITY, env, ...(keyring ? { keyring } : {}) }).signedIn(profile)) return true
+      try {
+        return appSourceOf(env, profile, keyring) !== undefined
+      } catch {
+        return false
+      }
+    },
   })
 
 export const definition = (): ProgramDefinition => ({

@@ -96,7 +96,7 @@ export const bitrixError = (
   if ((code && SIGN_IN.has(code)) || status === 401)
     return as(
       "authentication_error",
-      `Bitrix24 refused this webhook${named}; set a working one with \`b24 <profile> session start\``,
+      `Bitrix24 refused this webhook or application sign-in${named}; sign in again with \`b24 <profile> session start\``,
       { reason: "webhook.refused" },
     )
   if (code === "ERROR_METHOD_NOT_FOUND" || code === "BITRIX_REST_V3_EXCEPTION_METHODNOTFOUNDEXCEPTION")
