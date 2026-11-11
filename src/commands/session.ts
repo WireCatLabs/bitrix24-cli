@@ -272,7 +272,7 @@ const listCommand = () =>
 
 export const sessionCommand = (): Command =>
   annotate(new Command("session"), { effects: LOCAL_READ })
-    .description("keep this profile's Bitrix24 webhook or local application sign-in in the OS keyring")
+    .description("keep this profile's Bitrix24 webhook or app sign-in in the OS keyring")
     .addCommand(startCommand())
     .addCommand(statusCommand())
     .addCommand(endCommand())
