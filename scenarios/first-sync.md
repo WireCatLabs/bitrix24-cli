@@ -9,7 +9,7 @@ steps:
   - run: b24 users list
     why: your own user id and the ids of the colleagues whose deals you want
   - run: b24 config set crm.bitrix24:example.bitrix24.ru.unassigned 1
-    why: whose deals and leads to copy, by user id, comma-separated; until you choose, a sync copies nothing
+    why: whose deals and leads to copy, by user id, comma-separated, with your portal's host in place of example.bitrix24.ru; until you choose, a sync copies nothing
   - run: b24 sync
     why: copies the chosen users' deals and leads and their clients; the next sync takes only the changes
   - run: b24 pipelines show Sales

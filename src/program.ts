@@ -8,7 +8,6 @@ import {
   configCommand,
   createProgram as createSharedProgram,
   guideCommand,
-  MEMO_SCENARIOS,
   outputFor,
   ProfileTokenStore,
   type ProgramDefinition,
@@ -90,10 +89,7 @@ export const definition = (): ProgramDefinition => ({
     scheduleCommand(),
     appDoctorCommand(IDENTITY, configuration, { packageName: PACKAGE }),
     skillCommand(IDENTITY, SKILL),
-    guideCommand(IDENTITY, {
-      directory: fileURLToPath(new URL("../scenarios", import.meta.url)),
-      worksWith: [MEMO_SCENARIOS.personBrief],
-    }),
+    guideCommand(IDENTITY, { directory: fileURLToPath(new URL("../scenarios", import.meta.url)) }),
     mcpCommand(),
     upgradeCommand(IDENTITY, PACKAGE, (command) => ({
       ...outputFor(command),

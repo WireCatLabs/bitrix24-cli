@@ -10,7 +10,7 @@ touches (`WC-<AREA>-<n>`) in the commit message and the pull request. The rules 
 
 [docs/dev/DESIGN.md](docs/dev/DESIGN.md) holds the owner's answers to the
 [design interview](docs/dev/skills/design-interview/SKILL.md) and the decisions made since. Read it before changing
-what a command does, and write a new decision there. Learn how a command reaches a service from the sample below,
+what a command does, and write a new decision there. Learn how a command reaches the portal from the section below,
 and the domain, the store and its commands from the reference CLI.
 
 <!-- cli-template:reference-cli:start -->
