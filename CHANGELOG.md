@@ -2,6 +2,26 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## 0.13.0 — 11.11.2026
+
+### Changed — may break callers
+
+- **Only a Bitrix24 administrator's webhook deletes or clears in the CRM.** For any other webhook, `b24` refuses
+  `deals delete`, `leads delete`, an `api call` to a method that deletes (its name ends in `.delete`,
+  `.deletefieldvalue` or `.markdeleted`), an update or `.set` that sets a field to nothing (an empty value, `null`,
+  `[]`, a `0` company, contact or lead link, or a phone or e-mail marked `DELETE: Y`), and `batch`. The refusal is a
+  `permission_error` with reason `employee.delete`, `employee.clear` or `employee.batch`, and no permission level
+  lifts it. A create may still leave fields empty.
+- **Only a Bitrix24 administrator's webhook unlinks records or merges duplicates.** For any other webhook, `api call`
+  refuses a method whose name ends in `.unbind`, such as `crm.timeline.bindings.unbind`, with reason
+  `employee.unbind`, and a merge of duplicates, `crm.entity.mergeBatch`, which deletes all but one of the records,
+  with reason `employee.merge`. No permission level lifts it, as for deletes. `crm.deal.contact.delete` and
+  `crm.deal.contact.items.delete` already counted as deletes.
+- **A portal's account is stored as work.** The first `sync`, write or read of a profile stores a new portal's account
+  with scope `work`, so work views and meeting preparation read its copy and personal reads leave it out. A portal
+  already in the store keeps the scope it has, which is `personal` in every store so far: switch it once with
+  `memo groups update bitrix24:<portal> --scope work` (memo 0.131.81 or later). A sync never changes a scope back.
+
 ## 0.12.0 — 10.11.2026
 
 ### Added
