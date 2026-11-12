@@ -10,7 +10,7 @@
 
 ### Changed — may break callers
 
-- **On cli-core 0.643.0.** A CRM list page answers `hasMore` and `nextCursor`, cli-core's one list shape.
+- **On cli-core 0.644.0.** A CRM list page answers `hasMore` and `nextCursor`, cli-core's one list shape.
 - **`session start` refuses a webhook another profile already uses.** The same portal and the same employee as a
   profile already signed in on this computer is a `conflict` with reason `session.duplicate`, which names that
   profile and says how to sign it in again or remove it. Nothing is asked of the portal. Signing the same profile in
