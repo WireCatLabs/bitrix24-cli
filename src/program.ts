@@ -2,6 +2,7 @@ import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { resolvePaths } from "@wirecat/cli-base"
 import {
+  appCompleteCommand,
   appDoctorCommand,
   appMcpCommand,
   commandsCommand,
@@ -70,6 +71,7 @@ const mcpCommand = () =>
 
 export const definition = (): ProgramDefinition => ({
   app: IDENTITY,
+  update,
   configure: placeInSections,
   // The whole object: cli-core refuses a command by its key only when it gets the permission table too.
   configuration,
@@ -107,6 +109,7 @@ export const definition = (): ProgramDefinition => ({
       install: (argv) => update.runUpdate(argv, {}),
     })),
     configCommand(IDENTITY, configuration),
+    appCompleteCommand(IDENTITY, configuration),
     runsCommand(IDENTITY),
   ],
 })
