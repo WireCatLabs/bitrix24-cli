@@ -88,6 +88,43 @@ changed() {
 }
 changed
 step store status
+# Activities and tasks, off until the owner turns them on: here in the throwaway store only. Counts are printed,
+# never a subject or a body.
+portal=$(b24 session status --json 2>/dev/null | value item.portal)
+printf '\n== b24 live activities\n'
+if [ -z "$portal" ]; then fail "session status gave no portal"; else
+  b24 config set "crm.bitrix24:$portal.activities" on >/dev/null || fail "config set activities: exit $?"
+  b24 sync --json 2>/dev/null | node -e '
+    let s = ""
+    process.stdin.on("data", (d) => (s += d)).on("end", () => {
+      let item
+      try { item = JSON.parse(s).item } catch {}
+      const read = item?.activities
+      const failed = (item?.issues ?? []).filter((one) => one.reason === "crm.activities-failed")
+      if (!read || read.state !== "complete" || failed.length) {
+        console.log(`activities not read: ${JSON.stringify(read ?? null)}, ${failed.length} failure(s)`)
+        process.exit(1)
+      }
+      console.log(`ok: ${read.saved} activities and tasks kept, ${read.out_of_scope} on deals outside the copy`)
+    })' || fail "the sync did not read the activities"
+  shown=$(b24 deals list --limit 1 --json=ref 2>/dev/null | node -e '
+    let s = ""
+    process.stdin.on("data", (d) => (s += d)).on("end", () => {
+      try { console.log(JSON.parse(s).items?.[0]?.ref ?? "") } catch { console.log("") }
+    })')
+  if [ -n "$shown" ]; then
+    b24 deals show "$shown" --json 2>/dev/null | node -e '
+      let s = ""
+      process.stdin.on("data", (d) => (s += d)).on("end", () => {
+        let item
+        try { item = JSON.parse(s).item } catch {}
+        if (!Array.isArray(item?.activities)) process.exit(1)
+        console.log(`ok: deals show lists ${item.activities.length} activities`)
+      })' || fail "deals show has no activities list with the setting on"
+  else
+    echo "no deal in the copy — deals show with activities skipped"
+  fi
+fi
 step pipelines list --json=ref,name,kind
 step stages list --json=pipeline_name,name,outcome,external_id,open
 step deals list status:open --limit 3 --json=ref,title,pipeline_name,stage,status,amount,currency,close_date
