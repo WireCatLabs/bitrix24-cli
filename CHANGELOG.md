@@ -13,6 +13,16 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   the same answer as the other WireCat tools, so WireCat Desktop removes a Bitrix24 account the same way. The webhook
   itself stays in Bitrix24. `--delete-data` refuses (reason `account-remove.portal-shared`) while another profile
   here reads the same portal, since the store keeps one copy of it.
+- **A task when a deal or lead enters a stage.** The setting `crm.bitrix24:<portal>.stage-tasks` names stages, and
+  each `sync` opens a local task for every deal or lead that moved into one of them since the last sync, once per
+  move. Only you set it; moves made before it was first set open none. See
+  [a task when a deal enters a stage](docs/usage.md#a-task-when-a-deal-enters-a-stage).
+- **Shell completion:** `b24 complete zsh` prints the script to source; bash, fish and PowerShell too.
+- **The shared store's file commands and problem reports.** `b24 store backup`, `check`, `repair`, `restore` and the
+  rest look after the one store file every WireCat tool shares, and `b24 doctor reports create` writes a report to
+  send with a problem. An agent over MCP sees them too, each with its permission like any write.
+- **`b24` tells you when a newer version is out**, after a command that succeeded, on stderr. `update_check: false`
+  or `B24_NO_UPDATE_CHECK=1` turns it off.
 
 ### Changed — may break callers
 
@@ -34,6 +44,12 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   was run in a terminal. A chosen list works as before, see [whose deals and leads](docs/usage.md#whose-deals-and-leads).
 - **A stored `scope all` names its reason.** The refusal carries `bitrix.scope-all-refused`, where it showed the
   general `config.invalid`.
+- **A lead keeps its own person and company.** A lead often has no contact or company linked; its name and company
+  were in the lead's own fields, and `sync` dropped them, so «Иван Петров, ООО Ромашка» was found only by the lead's
+  title. `b24` now reads `name`, `secondName`, `lastName` and `companyTitle` and gives them to the store as the lead's
+  contact and company name. With a cli-core that keeps them, `leads show` answers `contact_name` and `company_name`
+  and `search all` finds the lead by them. They are given to everyone; only the phones and e-mails of other people's
+  clients stay hidden.
 
 ## 0.14.0 — 12.11.2026
 
