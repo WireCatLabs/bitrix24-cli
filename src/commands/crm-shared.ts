@@ -96,7 +96,6 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
     const scope = await store.crm.scope(account)
     return {
       mode: scope.mode,
-      also: scope.mode === "mine" ? scope.also : [],
       setting: crmSettingKey(account, "scope"),
       chosen: crmSettingKey(account, "unassigned"),
     }
