@@ -14,7 +14,7 @@ import { bitrixCrmWriter } from "./writer.js"
 /** As an administrator: an employee may not delete or clear a field, which the write contract does. */
 const over = (crm: ReturnType<typeof fakeCrm>) => {
   crm.setAdmin(true)
-  const transport = new BitrixTransport({ webhook: FAKE_WEBHOOK, fetch: crm.fetch, sleep: async () => {} })
+  const transport = new BitrixTransport({ auth: FAKE_WEBHOOK, fetch: crm.fetch, sleep: async () => {} })
   const source = bitrixCrmSource(
     () => transport,
     Date.now,
@@ -73,7 +73,7 @@ for (const kind of ["deal", "lead"] as const)
 describe("the Bitrix24 adapter", () => {
   it("runs against a fake that refuses a name REST 3.0 does not document, as the portal does", async () => {
     const crm = fakeCrm()
-    const transport = new BitrixTransport({ webhook: FAKE_WEBHOOK, fetch: crm.fetch, sleep: async () => {} })
+    const transport = new BitrixTransport({ auth: FAKE_WEBHOOK, fetch: crm.fetch, sleep: async () => {} })
     for (const params of [{ select: ["id", "closedate"] }, { select: ["id"], filter: [["companyIds", "=", 1]] }])
       await expect(transport.call("crm.deal.list", params)).rejects.toMatchObject({
         code: "validation_error",
@@ -86,7 +86,7 @@ describe("the Bitrix24 adapter", () => {
 
   it("runs against a fake that makes a repeated create a second record, as the live portal did", async () => {
     const crm = fakeCrm()
-    const transport = new BitrixTransport({ webhook: FAKE_WEBHOOK, fetch: crm.fetch, sleep: async () => {} })
+    const transport = new BitrixTransport({ auth: FAKE_WEBHOOK, fetch: crm.fetch, sleep: async () => {} })
     const create = () =>
       transport.call("crm.lead.add", { fields: { title: "Example" } }, { idempotencyKey: "op-repeat" })
     const first = await create()

@@ -122,6 +122,10 @@ Gemini CLI and OpenClaw look; `--for hermes` adds Hermes Agent too.
    checks it against the portal. `work` is the profile, a name the owner picks for this portal. Then
    `b24 work session status --check --json` says whose rights the webhook carries and whether they are an
    administrator. `b24 session list` lists the profiles on this computer.
+   Instead of a webhook, a portal may have a local application (Server mode, handler path
+   `https://wirecat.dev/webhooks/apps/b24-callback`). The owner then runs
+   `b24 work session start --portal <portal> --client-id <id>` and allows it in the browser. It acts as the employee
+   who signed in, and every rule below that names the webhook's user applies to them. `b24` renews its tokens.
 4. **Choose whose deals to copy.** A sync copies only the deals and leads of the users chosen in
    `crm.bitrix24:<portal>.unassigned`, and the clients on them. Nobody is chosen by default, not even the webhook's own
    user: a webhook is often a colleague's. `b24 work users list` shows the ids; the owner runs

@@ -32,6 +32,31 @@ the webhook's employee can.
 `b24 work session end` forgets the address on this computer; the webhook itself stays in Bitrix24 until you delete
 it there. `b24 session list` lists the profiles on this computer.
 
+### With a local application
+
+A webhook acts as the employee who made it. A local application acts as the employee who signs in, and its tokens
+last only an hour, renewed by `b24`. A Bitrix24 administrator, or an employee allowed to, creates it once:
+
+1. Developer resources → Common use cases → Other → Local application.
+2. Choose **Server** mode. Set **Your handler path** to `https://wirecat.dev/webhooks/apps/b24-callback`. Leave
+   **Initial installation path** and the menu item texts empty, and **Application completes the installation itself**
+   off, so the portal installs it on save.
+3. Tick the access permissions `crm`, `user_basic` (or `user`) and `department`, and save.
+4. Copy the **Application ID (client_id)** and the **Application key (client_secret)** Bitrix24 shows.
+
+Then sign in:
+
+```sh
+b24 work session start --portal example.bitrix24.ru --client-id local.0123abcd.45678901
+```
+
+`b24` asks for the key without showing it, or reads it from stdin or `B24_BITRIX24_CLIENT_SECRET`, and opens the
+portal's sign-in in the browser. After you allow the application, the page at `wirecat.dev/webhooks/apps/b24-callback`
+passes the answer back to `b24` on this computer. If the browser cannot reach `b24`, for example over SSH, paste the
+address the browser ended on into the terminal. `session status` then shows `kind: app`. Setting a webhook again with
+`session start` forgets the application's sign-in, and the other way round. `session end` forgets the tokens on this
+computer; Bitrix24 has no way to revoke them, so delete the application in the portal to stop them.
+
 ## Sync
 
 Deals, leads, pipelines and stages are read from the local WireCat store, the one every WireCat tool searches. `sync`

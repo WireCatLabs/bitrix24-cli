@@ -17,6 +17,19 @@ keywords = ["/rest/"]
 [[rules.allowlists]]
 regexes = ['''^wirecatfake''']
 
+# A local application's key and its tokens (apidocs settings/oauth): the key goes to oauth.bitrix.info in the query,
+# a token to the portal as `auth` in the body, and all three into the keyring entry. The tests' fakes start with
+# wirecatfake.
+[[rules]]
+id = "bitrix24-oauth"
+description = "Bitrix24 local application key or OAuth token"
+regex = '''(?i)(?:client_secret|clientSecret|access_token|accessToken|refresh_token|refreshToken|"auth")["'\s:=]{1,5}([A-Za-z0-9]{20,})'''
+secretGroup = 1
+keywords = ["client_secret", "clientsecret", "access_token", "accesstoken", "refresh_token", "refreshtoken", "\"auth\""]
+
+[[rules.allowlists]]
+regexes = ['''^wirecatfake''']
+
 # A CRM holds its clients' phone numbers and e-mail addresses; neither may reach a fixture, a doc or a capture.
 [[rules]]
 id = "phone-number-e164"

@@ -15,6 +15,7 @@ import { isRecord } from "../body.js"
 import { isAdmin } from "../crm/clients.js"
 import { bitrixError } from "./errors.js"
 import { methodOf, type RestVersion } from "./methods.js"
+import type { AppAuth } from "./oauth.js"
 import { methodUrl, type Webhook } from "./webhook.js"
 
 /**
@@ -44,7 +45,7 @@ const isTimeout = (error: unknown) =>
 export type FetchLike = (url: string, init: RequestInit) => Promise<Response>
 
 export interface BitrixTransportOptions {
-  webhook: Webhook
+  auth: Webhook | AppAuth
   fetch?: FetchLike
   timeoutMs?: number
   signal?: AbortSignal
@@ -76,7 +77,7 @@ export interface BitrixAnswer {
  * whose text may hold it. Modelled on tg-cli's Bot API transport, which has the same problem.
  */
 export class BitrixTransport {
-  readonly #webhook: Webhook
+  readonly #auth: Webhook | AppAuth
   readonly #fetch: FetchLike
   readonly #timeoutMs: number
   readonly #signal: AbortSignal | undefined
@@ -87,11 +88,11 @@ export class BitrixTransport {
   readonly #random: () => number
 
   constructor(options: BitrixTransportOptions) {
-    this.#webhook = options.webhook
+    this.#auth = options.auth
     this.#timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS
     // The portal is the one host b24 reaches (identity `userHosts`); our own deadline below fires first.
     this.#fetch = hostFetch({
-      hosts: [new URL(options.webhook.origin).hostname],
+      hosts: [new URL(options.auth.origin).hostname],
       ...(options.fetch ? { fetch: options.fetch as typeof fetch } : {}),
       timeoutMs: this.#timeoutMs * 2,
     }) as FetchLike
@@ -105,12 +106,12 @@ export class BitrixTransport {
 
   /** The portal's address, without the webhook's secret. */
   get origin(): string {
-    return this.#webhook.origin
+    return this.#auth.origin
   }
 
-  /** The employee the webhook acts as. */
+  /** The employee the webhook or the application's sign-in acts as. */
   get userId(): string {
-    return this.#webhook.userId
+    return this.#auth.userId
   }
 
   /**
@@ -125,11 +126,22 @@ export class BitrixTransport {
     const key = api === 3 && !reads ? options.idempotencyKey : undefined
     if (!reads) await this.#refuseForEmployee(method, params)
     let waited: number | undefined
+    let refresh: boolean | undefined
     for (let attempt = 1; ; attempt++) {
       try {
         await this.#turn(method)
-        return await this.#once(method, params, { api, reads, key, attempt, waited })
+        const renew = refresh === true
+        if (renew) refresh = false
+        return await this.#once(method, params, { api, reads, key, attempt, waited, refresh: renew })
       } catch (error) {
+        // A refused token did nothing, so even a write is sent again, once, with a refreshed one (apidocs auto-renewal).
+        // REST 2 names it `expired_token`; REST 3.0 documents no code for it, so any 401 counts.
+        if (refresh === undefined && "accessToken" in this.#auth && isCliError(error)) {
+          if (error.details.provider_error === "EXPIRED_TOKEN" || error.details.status === 401) {
+            refresh = true
+            continue
+          }
+        }
         if (!isCliError(error) || !reads) throw error
         const asked = error.details.retry_after_ms
         const wait = typeof asked === "number" ? asked : backoffMs(attempt, RETRY, this.#random)
@@ -180,8 +192,19 @@ export class BitrixTransport {
   async #once(
     method: string,
     params: Record<string, unknown>,
-    run: { api: RestVersion; reads: boolean; key: string | undefined; attempt: number; waited: number | undefined },
+    run: {
+      api: RestVersion
+      reads: boolean
+      key: string | undefined
+      attempt: number
+      waited: number | undefined
+      refresh: boolean
+    },
   ): Promise<BitrixAnswer> {
+    const auth = this.#auth
+    const app = "accessToken" in auth
+    const token = app ? await auth.accessToken(run.refresh) : undefined
+    const path = `/rest/${run.api === 3 ? "api/" : ""}`
     // Not AbortSignal.timeout: its timer holds the run's async context until the deadline (tg-cli, 2026-11-05).
     const deadline = new AbortController()
     const timer = setTimeout(
@@ -191,7 +214,7 @@ export class BitrixTransport {
     timer.unref()
     const end = providerRequest(method, this.#events ?? providerEvent, {
       method: "POST",
-      endpointTemplate: `/rest/${run.api === 3 ? "api/" : ""}:user/:token/${method}`,
+      endpointTemplate: `${path}${app ? "" : ":user/:token/"}${method}`,
       transport: "http",
       ...(currentAttempt()
         ? {}
@@ -201,14 +224,15 @@ export class BitrixTransport {
     try {
       let response: Response
       try {
-        response = await this.#fetch(methodUrl(this.#webhook, run.api, method), {
+        response = await this.#fetch(app ? `${auth.origin}${path}${method}` : methodUrl(auth, run.api, method), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Accept: "application/json",
             ...(run.key ? { "Idempotency-Key": run.key } : {}),
           },
-          body: apiJson(params),
+          // In the body, never the address: apidocs how-to-call-rest-api/authorization and rest-v3.
+          body: apiJson(token === undefined ? params : { ...params, auth: token }),
           // A redirect would carry the secret path to another host.
           redirect: "error",
           signal,
