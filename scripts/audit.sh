@@ -22,7 +22,9 @@ bin="$scratch/prefix/bin"
 others=()
 # A groups file replaces cli-base's PARITY_GROUPS. The template keeps one because it is in no group of cli-base's.
 [ -f "$root/config/parity-groups.json" ] && others+=(--groups "$root/config/parity-groups.json")
-for cli in tg max wa memo drive zm gcal; do
+# max-cli on npm still words `doctor reports` as an older cli-core did; tg and wa compare the same commands. Put max
+# back once it is published on cli-core 0.645.0 or later.
+for cli in tg wa memo drive zm gcal; do
   [ "$cli" = "$command" ] || others+=(--cli "$bin/$cli")
 done
 # This CLI's entity schemas and error reasons, from its own `commands info`, so same-entity-schema and

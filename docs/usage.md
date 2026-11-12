@@ -191,6 +191,24 @@ b24 work schedule list                           # the schedule and how its last
 b24 work schedule remove crm
 ```
 
+### A task when a deal enters a stage
+
+`stage-tasks` names stages, and each deal or lead that moves into one of them opens a task on this computer, beside
+your other WireCat tasks. The sync that brings the move opens it, once per move: a task you dismiss does not come
+back, and the next entry into the same stage opens a new one. A lead's stage is written `lead:<stage id>`;
+`b24 work stages list` shows the ids.
+
+```sh
+b24 work config set crm.bitrix24:example.bitrix24.ru.stage-tasks \
+  '{"C1:WON":{"title":"Send the closing papers","due_days":2},"lead:CONVERTED":{"title":"Call back","due_days":0}}'
+b24 work sync          # moves since the last sync open their tasks
+```
+
+Moves made before the setting was first set open none, and neither does a deal's first copy. The task names the
+deal, its stage and pipeline, and is due `due_days` days after the sync. Only you set it: an agent is refused. To
+stop, `b24 work config unset crm.bitrix24:example.bitrix24.ru.stage-tasks`. In the portal itself, Bitrix24's robot
+"Create task" does the same for a portal task.
+
 ### Ask memo about a client
 
 The relationships the sync stores are what `memo` answers from. These commands need a `memo` version that has them,

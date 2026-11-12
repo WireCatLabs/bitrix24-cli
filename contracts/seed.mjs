@@ -46,7 +46,11 @@ const listed = (rows, params) => {
 }
 
 const answers = {
+  "user.admin": () => ({ result: true }),
   "crm.deal.list": (params) => listed([deal], params),
+  "crm.company.list": (params) => listed([], params),
+  "crm.contact.list": (params) => listed([], params),
+  "crm.lead.list": (params) => listed([], params),
   "crm.category.list": () => ({ result: { categories: [{ id: 0, name: "Synthetic pipeline" }] } }),
   "crm.status.list": (params) =>
     params.filter.ENTITY_ID === "DEAL_STAGE"
@@ -54,15 +58,35 @@ const answers = {
       : { result: [] },
 }
 
-const portal = { call: async (method, params) => answers[method]?.(params) ?? { result: [] } }
+const portal = { userId: "1", call: async (method, params) => answers[method]?.(params) ?? { result: [] } }
+
+// Since 0.11.0 a sync copies only the deals of the users the owner chose; the canary deal is user 1's.
+const coreFile = (path) =>
+  import(pathToFileURL(join(dirname(fromPrevious.resolve("@wirecat/cli-core/store")), path)).href)
 
 const store = await openB24Store(process.env)
 try {
   const key = { provider: PROVIDER.name, account }
+  const [{ openCache }, { storePath }, { saveCrmSetting, crmSettingKey }] = await Promise.all([
+    coreFile("open.js"),
+    coreFile("path.js"),
+    coreFile("sqlite/crm-settings.js"),
+  ])
+  const database = await openCache(storePath(process.env))
+  try {
+    saveCrmSetting(database, crmSettingKey(key, "unassigned"), ["1"], now)
+  } finally {
+    database.close()
+  }
   await store.accounts.saveAccount(key, { name: null })
   await store.accounts.saveProfile(IDENTITY.command, "contract", key)
   const report = await syncCrm(
-    bitrixCrmSource(() => portal),
+    bitrixCrmSource(
+      () => portal,
+      undefined,
+      undefined,
+      async () => ({ mode: "mine", also: ["1"], setting: "scope", chosen: "unassigned" }),
+    ),
     store,
     key,
     { now },

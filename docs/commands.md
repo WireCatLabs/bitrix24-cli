@@ -164,7 +164,7 @@ b24 sync [options]
 
 ## `b24 store`
 
-the local copy of the CRM
+the local copy of the CRM, and the shared store file it lives in
 
 ### `b24 store status`
 
@@ -191,6 +191,217 @@ b24 store apply
 **Returns:** crm contacts removed — contacts, persons, persons_kept, names, applied; every field: b24 commands info store apply
 
 **Example:** `b24 work store apply`, `b24 work store apply --yes`
+
+### `b24 store info`
+
+the store file: where it is, its size, its schema against the one this tool speaks, which tools used it and how many rows it holds, by provider, chat kind, account, year (UTC) and attachment kind, over every account; changes nothing
+
+```sh
+b24 store info
+```
+
+**Returns:** store info — path, exists, schema, opens, error, bytes, journal_mode, pages, and 12 more; every field: b24 commands info store info
+
+**Example:** `b24 work store info`
+
+### `b24 store check`
+
+whether the store is healthy — integrity, search indexes, disk
+
+```sh
+b24 store check
+```
+
+**Returns:** store check — path, exists, ok, opens, error, checks, schema, integrity, and 11 more; every field: b24 commands info store check
+
+**Example:** `b24 work store check`
+
+### `b24 store migrate`
+
+bring the store up to this build's schema, then normalize, index and stem the messages and notes stored before it
+
+**Changes something on this computer only.**
+
+```sh
+b24 store migrate
+```
+
+**Returns:** store migration — path, exists, from, to, normalized, indexed, terms, stemmed, and 1 more; every field: b24 commands info store migrate
+
+**Example:** `b24 work store migrate`
+
+### `b24 store rebuild`
+
+rebuild the word index, its typo vocabulary, the stems, the files' word index, the notes' indexes and who took part in what, from what is stored, and drop the vectors no stored text uses; loses nothing
+
+**Changes something on this computer only.**
+
+```sh
+b24 store rebuild
+```
+
+**Returns:** store reindex — path, exists, normalized, indexed, terms, stemmed, notes_indexed, file_texts, and 2 more; every field: b24 commands info store rebuild
+
+**Example:** `b24 work store rebuild`
+
+### `b24 store backup`
+
+copy the store into a new file, while it is in use; never overwrites a file
+
+**Changes something on this computer only.**
+
+```sh
+b24 store backup <file> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `file` | required | the new file. |
+
+| Option | What it does |
+|---|---|
+| `--encrypt` | compress and encrypt with a password, typed at a hidden prompt or piped on stdin; it is never kept — lose it and the file cannot be opened. |
+
+**Returns:** store backup — path, from, bytes, schema, rows, encrypted; every field: b24 commands info store backup
+
+**Example:** `b24 work store backup ./backup.db`
+
+### `b24 store restore`
+
+put a backup in place of the store; the store it replaces is kept beside it, never deleted. Given a rollback copy (backups/<store>-rollback-schema-<version>-<time>.db, kept for a day before an upgrade older tools cannot open), put its tables back in the store and return it to that version instead
+
+**Changes something on this computer only.**
+
+```sh
+b24 store restore <file>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `file` | required | a file `store backup` wrote, or a rollback copy; one written with --encrypt asks for its password. |
+
+**Returns:** store restore — path, restored_from, kept_at, schema, rolled_back, was, tables, rebuilt, and 1 more; every field: b24 commands info store restore
+
+**Example:** `b24 work store restore ./backup.db`
+
+### `b24 store decrypt`
+
+open a file written with --encrypt into a new file; asks for its password
+
+**Changes something on this computer only.**
+
+```sh
+b24 store decrypt <file> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `file` | required | a file `store backup --encrypt` or `store export --encrypt` wrote. |
+
+| Option | What it does |
+|---|---|
+| `--output <file>` | the new file, readable only by you. |
+
+**Returns:** store decrypt — path, from, bytes; every field: b24 commands info store decrypt
+
+**Example:** `b24 work store decrypt ./backup.enc --output ./restored.db`
+
+### `b24 store repair`
+
+bring every table to this build's shape, deleting nothing: a table of the wrong shape is kept as a copy beside a new one
+
+**Changes something on this computer only.**
+
+```sh
+b24 store repair [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--dry-run` | say what it would do, and change nothing. |
+
+**Returns:** store repair — path, exists, dry_run, repaired, indexes_created, triggers_created, mismatches, foreign_key_violations, and 1 more; every field: b24 commands info store repair
+
+**Example:** `b24 work store repair --dry-run`
+
+### `b24 store reset`
+
+back the store up beside itself, then delete it and start an empty one at this build's schema; asks first, or --yes
+
+**Changes something on this computer only.**
+
+```sh
+b24 store reset [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--no-backup` | delete the store without backing it up first. |
+| `--dry-run` | list every table it would empty, with its rows, and delete nothing. |
+
+**Returns:** store reset — path, exists, reset, dry_run, files, bytes, schema, tables, and 4 more; every field: b24 commands info store reset
+
+**Example:** `b24 work store reset`
+
+### `b24 store copies`
+
+the tables `store repair` kept as copies
+
+#### `b24 store copies delete`
+
+delete one copy `store repair` kept, named exactly; refuses any other table
+
+**Changes something on this computer only.**
+
+```sh
+b24 store copies delete <name>
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `name` | required | the copy's name, as `store repair` printed it. |
+
+**Returns:** store copy removal — path, deleted; every field: b24 commands info store copies delete
+
+**Example:** `b24 work store copies delete messages_copy_1`
+
+### `b24 store tables`
+
+the tables of the local store
+
+#### `b24 store tables list`
+
+every table of the local archive: its kind (data, search index, part of a search index, internal) and its rows, a search index's rows not counted; --full adds each table's size on disk, which reads the whole file (about ten seconds for 3 GB); changes nothing
+
+```sh
+b24 store tables list [query]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+**Returns:** store table — name, kind, rows, bytes; every field: b24 commands info store tables list
+
+**Example:** `b24 personal store tables list`, `b24 personal store tables list kind:data`, `b24 personal store tables list --full --json`
+
+### `b24 store recover`
+
+check every page and search index of the store, say what is damaged, what it means and the commands that recover it; changes nothing
+
+#### `b24 store recover run`
+
+copy every readable row into a new file with the sqlite3 program, rebuild the search indexes, mentions and vector index, check it, and put it in place of the store; the damaged file is kept beside it. Refuses while a WireCat timer or process has the store
+
+**Changes something on this computer only.**
+
+```sh
+b24 store recover run
+```
+
+**Returns:** rebuild a damaged store from every row it can read
+
+**Example:** `b24 personal store recover run`
 
 ## `b24 deals`
 
@@ -1142,9 +1353,40 @@ b24 doctor [options]
 |---|---|
 | `--online` | also connect once and read the account; sends nothing. |
 
-**Returns:** the state this installation is in, without connecting unless --online
+### `b24 doctor reports`
 
-**Example:** `b24 doctor`, `b24 doctor --json`
+problem reports
+
+#### `b24 doctor reports show`
+
+what a problem report holds; writes nothing
+
+```sh
+b24 doctor reports show
+```
+
+**Returns:** what a problem report holds; writes nothing
+
+**Example:** `b24 doctor reports show`
+
+#### `b24 doctor reports create`
+
+write a problem report to a file, and say where to send it
+
+**Changes something on this computer only.**
+
+```sh
+b24 doctor reports create [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--run <id>` | the run the report is about; the newest failed one if not given. |
+| `--output <file>` | where to write it; a new file in this directory if not given. |
+
+**Returns:** write a problem report to a file, and say where to send it
+
+**Example:** `b24 doctor reports create --output ./problem-report.json`
 
 ## `b24 skill`
 
@@ -1481,6 +1723,22 @@ b24 config repair [options]
 **Returns:** fix the settings file's JSON syntax, keeping every value
 
 **Example:** `b24 config repair`, `b24 config repair --dry-run`
+
+## `b24 complete`
+
+shell completion: `b24 complete zsh` prints the script to source
+
+```sh
+b24 complete [words]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `words` | optional | zsh for the shell script, or command words to complete. |
+
+**Returns:** shell completion: `b24 complete zsh` prints the script to source
+
+**Example:** `b24 complete zsh`
 
 ## `b24 runs`
 
