@@ -25,6 +25,7 @@ export const UNTESTED: { command: string; option?: string; reason: string }[] = 
     { command: "schedule pause" },
     { command: "schedule resume" },
     { command: "schedule exec" },
+    { command: "schedule agents list" },
   ].map((one) => ({ ...one, reason: SHARED_SCHEDULE })),
   ...["--port", "--public-url", "--profiles"].map((option) => ({
     command: "mcp serve",
