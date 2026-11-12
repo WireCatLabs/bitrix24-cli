@@ -71,6 +71,38 @@ describe("Bitrix24 activities and tasks", () => {
     })
   })
 
+  it("reads only the activities on the given deals and leads, fifty at a time, then the tasks", async () => {
+    const fake = portal({
+      "crm.activity.list": ({ filter }) => ({
+        result: (filter as Record<string, number>)[">ID"] === 0 ? [ACTIVITY] : [],
+      }),
+    })
+    const deals = Array.from({ length: 51 }, (_, at) => String(at + 1))
+    const owners = async () => ({ deal: deals, lead: ["9"] })
+    const read = (page?: string) => readActivities(fake, NOW, SINCE, page, undefined, owners)
+
+    expect(await read(undefined)).toMatchObject({ nextCursor: "activity:0:41" })
+    expect(fake.calls[0]?.params.filter).toMatchObject({ OWNER_TYPE_ID: 2, "@OWNER_ID": deals.slice(0, 50) })
+    expect(await read("activity:0:41")).toMatchObject({ items: [], nextCursor: "activity:1:0" })
+    expect(await read("activity:1:0")).toMatchObject({ nextCursor: "activity:1:41" })
+    expect(fake.calls[2]?.params.filter).toMatchObject({ OWNER_TYPE_ID: 2, "@OWNER_ID": ["51"] })
+    await read("activity:1:41")
+    expect(await read("activity:2:0")).toMatchObject({ nextCursor: "activity:2:41" })
+    expect(fake.calls[4]?.params.filter).toMatchObject({ OWNER_TYPE_ID: 1, "@OWNER_ID": ["9"] })
+    expect(await read("activity:2:41")).toMatchObject({ nextCursor: "task:0" })
+  })
+
+  it("goes straight to the tasks when the user has no deal or lead", async () => {
+    const fake = portal({})
+    const none = async () => ({ deal: [], lead: [] })
+    expect(await readActivities(fake, NOW, SINCE, undefined, undefined, none)).toEqual({
+      items: [],
+      hasMore: true,
+      nextCursor: "task:0",
+    })
+    expect(fake.calls).toEqual([])
+  })
+
   it("keeps the tasks bound to a deal or lead, and gives the read's start as the next cursor", async () => {
     const fake = portal({
       "tasks.task.list": ({ filter }) => ({

@@ -215,7 +215,8 @@ stop, `b24 work config unset crm.bitrix24:example.bitrix24.ru.stage-tasks`. In t
 
 With `activities` on, each sync also reads the calls, e-mails, meetings and to-dos on the deals and leads it keeps,
 and the Bitrix24 tasks bound to them. `deals show` and `leads show` list them, open ones first, with their text: an
-e-mail's body, a task's description. The first sync reads the last 90 days, each later one what changed since.
+e-mail's body, a task's description. The first sync reads the last 90 days, each later one what changed since. Only
+the activities on the deals and leads the copy keeps are read.
 
 ```sh
 b24 work config set crm.bitrix24:example.bitrix24.ru.activities on

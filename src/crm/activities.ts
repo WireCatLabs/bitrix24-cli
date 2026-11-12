@@ -3,6 +3,7 @@ import type { CrmActivity, CrmActivityKind } from "@wirecat/cli-core"
 import type { CrmCallContext, CrmPage } from "@wirecat/cli-core/crm"
 import type { BitrixCaller } from "../bitrix/transport.js"
 import { epoch, fieldOf, id, isRaw, portalTime, type Raw, rawsOf, text, yes } from "./values.js"
+import { rest3Rows } from "./walk.js"
 
 /** A change made while the last read ran is read again rather than missed: the portal's clock is not ours. */
 const OVERLAP_MS = 10 * 60_000
@@ -116,10 +117,40 @@ const taskOf = (raw: Raw): CrmActivity | null => {
 const refused = (error: unknown) =>
   isCliError(error) && (error.code === "permission_error" || error.code === "not_found")
 
+/** The deals and leads whose activities are read, by owner type; absent, those on every deal and lead. */
+export interface ActivityOwners {
+  deal: readonly string[]
+  lead: readonly string[]
+}
+
+/** The deals and leads assigned to these users: the ones a `mine` copy keeps. */
+export const ownersOf = async (caller: BitrixCaller, assignees: readonly number[]): Promise<ActivityOwners> => {
+  const listed = async (type: string) => {
+    const params = { select: ["id"], filter: [["assignedById", "in", assignees]], order: { id: "ASC" } }
+    const { items } = await rest3Rows(caller, `crm.${type}.list`, params, 500)
+    return items.map((raw) => id(raw.id)).filter((one): one is string => one !== null)
+  }
+  return { deal: await listed("deal"), lead: await listed("lead") }
+}
+
+/** Ids per `@OWNER_ID` filter: one list of activities per this many deals or leads. */
+const OWNERS_PER_READ = 50
+
+const groupsOf = (owners: ActivityOwners) =>
+  (["deal", "lead"] as const).flatMap((kind) => {
+    const all = [...owners[kind]]
+    return Array.from({ length: Math.ceil(all.length / OWNERS_PER_READ) }, (_, at) => ({
+      type: kind === "deal" ? 2 : 1,
+      ids: all.slice(at * OWNERS_PER_READ, (at + 1) * OWNERS_PER_READ),
+    }))
+  })
+
 /**
  * The activities on deals and leads, then the tasks bound to them, changed since `since`: REST 2 lists, paged by id
- * (`activity:<last id>`, then `task:<last id>`) so a row changed mid-read never shifts the rest. A webhook without the
- * `task` scope still reads the activities; the tasks are a gap.
+ * (`activity:<last id>`, then `task:<last id>`) so a row changed mid-read never shifts the rest. With `owners`, only
+ * the activities on those, `OWNERS_PER_READ` at a time (`activity:<group>:<last id>`): a first read of a large portal
+ * otherwise lists every activity of 90 days to keep a few (PERF-106). A webhook without the `task` scope still reads
+ * the activities; the tasks are a gap.
  */
 export const readActivities = async (
   caller: BitrixCaller,
@@ -127,25 +158,40 @@ export const readActivities = async (
   since: number,
   page: string | undefined,
   context?: CrmCallContext,
+  owners?: () => Promise<ActivityOwners>,
 ): Promise<CrmPage<CrmActivity>> => {
   const after = portalTime(since - OVERLAP_MS)
-  const [list, last] = (page ?? "activity:0").split(":")
-  const from = Number(last) || 0
+  const parts = (page ?? "activity").split(":")
+  const list = parts[0]
   const cursor = String(started)
   if (list === "activity") {
+    const groups = owners ? groupsOf(await owners()) : null
+    const group = groups && parts.length === 3 ? Number(parts[1]) || 0 : 0
+    const from = groups && parts.length !== 3 ? 0 : Number(parts.at(-1)) || 0
+    const at = groups?.[group]
+    if (groups && !at) return { items: [], hasMore: true, nextCursor: "task:0" }
     const answer = await caller.call("crm.activity.list", {
       order: { ID: "ASC" },
-      filter: { ">ID": from, "@OWNER_TYPE_ID": [1, 2], ">=LAST_UPDATED": after },
+      filter: {
+        ">ID": from,
+        ...(at ? { OWNER_TYPE_ID: at.type, "@OWNER_ID": at.ids } : { "@OWNER_TYPE_ID": [1, 2] }),
+        ">=LAST_UPDATED": after,
+      },
       select: ACTIVITY_SELECT,
       start: 0,
     })
     const rows = rawsOf(answer.result)
     const items = rows.map(activityOf).filter((one): one is CrmActivity => one !== null)
     const lastId = id(rows.at(-1)?.ID)
-    return lastId
-      ? { items, hasMore: true, nextCursor: `activity:${lastId}` }
-      : { items, hasMore: true, nextCursor: "task:0" }
+    if (!groups) return { items, hasMore: true, nextCursor: lastId ? `activity:${lastId}` : "task:0" }
+    const next = lastId
+      ? `activity:${group}:${lastId}`
+      : group + 1 < groups.length
+        ? `activity:${group + 1}:0`
+        : "task:0"
+    return { items, hasMore: true, nextCursor: next }
   }
+  const from = Number(parts[1]) || 0
   let answer: Awaited<ReturnType<BitrixCaller["call"]>>
   try {
     answer = await caller.call("tasks.task.list", {
