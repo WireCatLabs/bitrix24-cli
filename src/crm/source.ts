@@ -72,21 +72,24 @@ const listedRows = (result: unknown): Raw[] => {
 }
 
 /**
- * The responsible users a `mine` scope keeps, as numbers for the portal's filter: the ones the owner chose in
- * `unassigned`, which core has checked and normalised. The webhook's own user is one only when chosen, since a
- * webhook is often a colleague's (NEED-2502); none chosen copies no deal or lead.
+ * The users whose deals a `mine` scope copies: the ones chosen in `unassigned` that core kept, else the signed-in user.
+ * The owner's ruling (2026-11-12): a copy is the signed-in person's own by default; a chosen list, which leaves that
+ * user out unless named, is for working on someone else's portal.
  */
+const chosenOf = (scope: { self: string; also: readonly string[] }) => (scope.also.length ? scope.also : [scope.self])
+
+/** The responsible users a `mine` scope keeps, as numbers for the portal's filter. */
 const assigneesOf = (context?: CrmCallContext): number[] | null => {
   const scope = context?.scope
   if (scope?.mode !== "mine") return null
   // A malformed stored entry reads no deal in core; for clients it only narrows the list, never fails the round.
-  return [...new Set(scope.also.map(Number))].filter(Number.isFinite)
+  return [...new Set(chosenOf(scope).map(Number))].filter(Number.isFinite)
 }
 
-/** Core keeps the webhook's own user in every `mine` scope; their rows stay out unless the owner chose them. */
+/** Core keeps the webhook's own user in every `mine` scope; their rows stay out unless they are among the chosen. */
 const unchosen = (context: CrmCallContext | undefined, raw: Raw) => {
   const scope = context?.scope
-  return scope?.mode === "mine" && !scope.also.includes(scope.self) && String(raw.assignedById) === scope.self
+  return scope?.mode === "mine" && !chosenOf(scope).includes(scope.self) && String(raw.assignedById) === scope.self
 }
 
 type ClientKind = "person" | "organization"
@@ -130,12 +133,10 @@ export const bitrixCrmSource = (
   /** The stored `scope` setting, its key and the chosen users' key: a sync under `all` is refused. */
   asked: () => Promise<{
     mode: "mine" | "all"
-    also: readonly string[]
     setting: string
     chosen: string
   }> = async () => ({
     mode: "mine",
-    also: [],
     setting: "scope",
     chosen: "unassigned",
   }),
@@ -283,15 +284,8 @@ export const bitrixCrmSource = (
     // client is found by a live read of the portal. A stored `all` fails the sync until the owner sets `mine`.
     async self() {
       const self = portal().userId
-      const { mode, also, setting, chosen } = await asked()
-      if (mode === "mine" && also.length) return self
-      if (mode === "mine")
-        throw new CliError(
-          "configuration_error",
-          `no CRM user is chosen, so no deal or lead is copied: "config set ${chosen} <user ids>" ` +
-            'chooses whose, the webhook\'s own user only if you name it; "users list" names them',
-          { setting: chosen, reason: "bitrix.scope-users-unchosen" },
-        )
+      const { mode, setting, chosen } = await asked()
+      if (mode === "mine") return self
       throw new CliError(
         "configuration_error",
         `${setting} is all, and b24 never copies the whole CRM: "config set ${setting} mine" copies the deals and ` +
@@ -336,8 +330,8 @@ export const bitrixCrmSource = (
       const { after, linked, started } = pageOf(page, now())
       const assignees = assigneesOf(context)
       if (assignees?.length === 0) {
-        // Every chosen user was refused (`crm.unassigned-dropped`): nothing to read, and no `in []` to send. Every
-        // round of companies still ends with the account's own ones.
+        // Every chosen id is malformed: nothing to read, and no `in []` to send. Every round of companies still ends
+        // with the account's own ones.
         const items = await completed[kind]([], caller, true, context)
         return { items, hasMore: false, cursor: new Date(started).toISOString() }
       }

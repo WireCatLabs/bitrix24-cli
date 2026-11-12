@@ -39,21 +39,20 @@ const set = async (setting: string, value: string) =>
   expect((await b24(["work", "config", "set", setting, value, "--json"])).code).toBe(0)
 
 describe("sync scope", () => {
-  it("copies no deal or lead until the owner chooses whose, says how, and then copies only theirs", async () => {
+  it("copies the signed-in user's deals when no one is chosen, and only the chosen ones once some are", async () => {
     const { crm } = portal()
     expect((await b24(["work", "config", "unset", UNASSIGNED, "--json"])).code).toBe(0)
-    const ran = await b24(["work", "sync", "--json"], { portal: crm })
-    expect(ran.json().error).toMatchObject({ code: "configuration_error" })
-    expect(String((ran.json().error as { message: string }).message)).toContain(`config set ${UNASSIGNED} <user ids>`)
-    expect(await titles(crm)).toEqual([])
-    expect(crm.calls.filter(({ method }) => method === "crm.deal.list")).toEqual([])
+    expect((await sync(crm)).scope).toEqual({ mode: "mine", self: "7", also: [] })
+    expect(await titles(crm)).toEqual(["Own"])
+    expect(await titles(crm, "leads")).toEqual([])
+    const first = crm.calls.filter(({ method }) => method === "crm.deal.list")
+    expect(first[0]?.body.filter).toContainEqual(["assignedById", "in", [OWN]])
 
     await set(UNASSIGNED, `${OWN},${INTEGRATION}`)
     expect((await sync(crm)).scope).toEqual({ mode: "mine", self: "7", also: [String(OWN), String(INTEGRATION)] })
     expect(await titles(crm)).toEqual(["Own", "Website form"])
-    expect(await titles(crm, "leads")).toEqual([])
     const listed = crm.calls.filter(({ method }) => method === "crm.deal.list")
-    expect(listed[0]?.body.filter).toContainEqual(["assignedById", "in", [OWN, INTEGRATION]])
+    expect(listed.at(-1)?.body.filter).toContainEqual(["assignedById", "in", [OWN, INTEGRATION]])
   })
 
   it("drops a deal given to another user at the next sync", async () => {
@@ -75,8 +74,8 @@ describe("sync scope", () => {
     await set(SCOPE, "all")
     const ran = await b24(["work", "sync", "--json"], { portal: crm })
     expect(ran.code).not.toBe(0)
-    const error = ran.json().error as { code: string; message: string }
-    expect(error.code).toBe("configuration_error")
+    const error = ran.json().error as { code: string; reason: string; message: string }
+    expect(error).toMatchObject({ code: "configuration_error", reason: "bitrix.scope-all-refused" })
     expect(error.message).toContain(`config set ${SCOPE} mine`)
     expect(await titles(crm)).toEqual([])
 

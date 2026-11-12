@@ -97,8 +97,9 @@ than half of them is held back, as a webhook that lost its rights lists none. A 
 ### Whose deals and leads
 
 A sync copies the deals and leads of the Bitrix24 users you choose in `crm.bitrix24:<portal>.unassigned`, and the
-clients on them. No one is chosen for you, the webhook's own user included: a webhook is often a colleague's. Until
-you choose, a sync copies nothing and says how. No sync copies the whole CRM, an administrator's either: find any
+clients on them. Until you choose, it copies the deals and leads of the user who signed in, the webhook's or the
+local application's own user. A chosen list replaces that user, who is left out unless named: choose when the webhook
+is a colleague's, or when you work on someone else's portal. No sync copies the whole CRM, an administrator's either: find any
 other client on the portal itself.
 
 ```sh

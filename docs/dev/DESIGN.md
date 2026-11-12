@@ -64,11 +64,12 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
    round's start less ten minutes, then cli-core's daily id-only pass that finds deletions. Bitrix24 sends events only to an installed app, and a webhook cannot install one, so
    there is no change token to follow. `store status` shows where the sync stands.
 3. **Whose deals and leads.** A sync copies the deals and leads of the users the owner chose in
-   `crm.bitrix24:<portal>.unassigned` (cli-core's `also`), never the whole CRM, an administrator's sync included. The
-   webhook's own user is one only when chosen: on the owner's portal the webhook is a colleague's (NEED-2502), and
-   no account is picked for the owner, so with none chosen a sync is refused (`configuration_error`, reason
-   `bitrix.scope-users-unchosen`). cli-core keeps the webhook's user in every `mine` scope; b24 leaves their rows
-   out of its lists unless chosen, and a deal handed to them in a round of changes leaves at the next id pass. The owner's ruling (2026-11-10): «не надо выгружать все
+   `crm.bitrix24:<portal>.unassigned` (cli-core's `also`), never the whole CRM, an administrator's sync included. With
+   none chosen it copies the signed-in user's own: the owner's ruling (2026-11-12) «выбирать id не надо, это всегда
+   текущий человек», which replaces the refusal `bitrix.scope-users-unchosen` of 0.12.0. A chosen list is for the
+   owner's development on another portal, where the webhook is a colleague's (NEED-2502), and leaves the signed-in
+   user out unless named. cli-core keeps the webhook's user in every `mine` scope; b24 leaves their rows out of its
+   lists when a list is chosen without them, and a deal handed to them in a round of changes leaves at the next id pass. The owner's ruling (2026-11-10): «не надо выгружать все
    вообще, в этом нет смысла, я бы в битриксе скорее искал своих клиентов». A sync under a stored `scope all` is refused
    (`configuration_error`, reason `bitrix.scope-all-refused`, was `bitrix.scope-all-admin-only`) and says to set
    `mine`; another client is found by a live read, `people list` or `organizations list`. Under `mine` contacts and

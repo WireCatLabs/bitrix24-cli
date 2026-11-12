@@ -19,7 +19,7 @@ const over = (crm: ReturnType<typeof fakeCrm>) => {
     () => transport,
     Date.now,
     undefined,
-    async () => ({ mode: "mine", also: ["7"], setting: "scope", chosen: "unassigned" }),
+    async () => ({ mode: "mine", setting: "scope", chosen: "unassigned" }),
   )
   return { source, writer: bitrixCrmWriter(() => transport, source) }
 }
