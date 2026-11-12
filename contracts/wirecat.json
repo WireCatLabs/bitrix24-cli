@@ -73,6 +73,19 @@
     },
     {
       "path": [
+        "account",
+        "remove"
+      ],
+      "summary": "sign this profile out and forget it, keeping or deleting its data",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "account.remove",
+      "entity": "account_removal"
+    },
+    {
+      "path": [
         "sync"
       ],
       "summary": "bring the CRM's copy in the local store up to date: pipelines, companies,…",
@@ -563,7 +576,7 @@
         "schedule",
         "agent"
       ],
-      "summary": "start an agent (claude or codex) with a prompt on a timer; it runs with…",
+      "summary": "start an agent (claude, codex, gemini, cursor, opencode, openclaw, hermes,…",
       "effects": {
         "remote": "none",
         "local": "write"
@@ -582,6 +595,20 @@
       },
       "permission": "schedule.list",
       "entity": "scheduled_job"
+    },
+    {
+      "path": [
+        "schedule",
+        "agents",
+        "list"
+      ],
+      "summary": "the agents a schedule may start, and which are on PATH here",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "schedule.agents.list",
+      "entity": "schedule_harness"
     },
     {
       "path": [
@@ -982,9 +1009,24 @@
         "when",
         "notify",
         "deliver_to",
+        "harness",
+        "reports_cost",
         "spent_today_usd",
         "max_cost_usd",
         "max_cost_per_day_usd"
+      ]
+    },
+    "schedule_harness": {
+      "fields": [
+        "id",
+        "name",
+        "programs",
+        "reports_cost",
+        "restricted",
+        "restricted_reason",
+        "allowed_with_ack",
+        "installed",
+        "path"
       ]
     },
     "run": {

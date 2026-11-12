@@ -121,4 +121,62 @@ describe("session", () => {
       message: expect.stringContaining("b24 work session start"),
     })
   })
+
+  describe("start refuses a webhook another profile already uses", () => {
+    const signedInAsWork = async () => {
+      const keyring = memoryKeyring()
+      expect((await b24(["work", "session", "start"], { keyring, portal: portal(), stdin: FAKE_HOOK })).code).toBe(0)
+      return keyring
+    }
+
+    it("the same address, or the same portal and user with another secret, names that profile and asks nothing", async () => {
+      const keyring = await signedInAsWork()
+      for (const hook of [FAKE_HOOK, "https://example.bitrix24.test/rest/7/wirecatfake0another/"]) {
+        const asked = portal()
+        const ran = await b24(["home", "session", "start", "--json"], { keyring, portal: asked, stdin: hook })
+        expect(ran.code).not.toBe(0)
+        expect(ran.json().error).toMatchObject({
+          code: "conflict",
+          reason: "session.duplicate",
+          message: expect.stringContaining("b24 work account remove --keep-data"),
+        })
+        expect(asked.calls).toHaveLength(0)
+        expect(keyring.get("bitrix24-cli", "token:home")).toBeNull()
+        expect(ran.out + ran.err).not.toContain(FAKE_SECRET)
+      }
+    })
+
+    it("lets the same profile sign in again, and another employee's webhook on the same portal in", async () => {
+      const keyring = await signedInAsWork()
+      expect((await b24(["work", "session", "start"], { keyring, portal: portal(), stdin: FAKE_HOOK })).code).toBe(0)
+      const colleague = fakePortal({ "user.current": ok({ ID: "9" }), "user.admin": ok(false) })
+      const hook = "https://example.bitrix24.test/rest/9/wirecatfake0colleague/"
+      expect((await b24(["home", "session", "start"], { keyring, portal: colleague, stdin: hook })).code).toBe(0)
+    })
+
+    it("counts no profile as a holder for B24_TOKEN, nor one whose session ended", async () => {
+      const keyring = await signedInAsWork()
+      await b24(["work", "session", "end"], { keyring })
+      const ran = await b24(["home", "session", "start"], {
+        keyring,
+        portal: portal(),
+        stdin: FAKE_HOOK,
+        env: { B24_TOKEN: FAKE_HOOK },
+      })
+      expect(ran.code).toBe(0)
+    })
+  })
+
+  it("start says which right a webhook without the user scope lacks, where to add it, and keeps nothing", async () => {
+    const keyring = memoryKeyring()
+    const scopeless = fakePortal({ "user.current": { status: 401, body: { error: "INSUFFICIENT_SCOPE" } } })
+    const ran = await b24(["work", "session", "start", "--json"], { keyring, portal: scopeless, stdin: FAKE_HOOK })
+    expect(ran.code).not.toBe(0)
+    const error = ran.json().error as { message: string }
+    expect(error).toMatchObject({ code: "permission_error", reason: "webhook.scope-missing" })
+    for (const words of ["Users (basic)", "user_basic", "example.bitrix24.test", "Developer resources → Integrations"])
+      expect(error.message).toContain(words)
+    expect(keyring.get("bitrix24-cli", "token:work")).toBeNull()
+    expect(ran.out + ran.err).not.toContain(FAKE_SECRET)
+  })
 })

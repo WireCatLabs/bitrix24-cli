@@ -32,6 +32,14 @@ the webhook's employee can.
 `b24 work session end` forgets the address on this computer; the webhook itself stays in Bitrix24 until you delete
 it there. `b24 session list` lists the profiles on this computer.
 
+One webhook belongs to one profile. `session start` refuses a webhook that another profile here already uses (the
+same portal and the same employee), names that profile, and says how to sign it in again or remove it. Two profiles
+on one portal are fine when each has its own employee's webhook.
+
+When the portal answers that the webhook may not read who made it, the webhook lacks the "Users (basic)" right
+(`user_basic`; «Пользователи (базовый)» on a Russian portal). Open Developer resources → Integrations, edit the
+webhook, tick that right and save, then run `session start` again with the address the webhook shows.
+
 ### With a local application
 
 A webhook acts as the employee who made it. A local application acts as the employee who signs in, and its tokens
@@ -56,6 +64,19 @@ passes the answer back to `b24` on this computer. If the browser cannot reach `b
 address the browser ended on into the terminal. `session status` then shows `kind: app`. Setting a webhook again with
 `session start` forgets the application's sign-in, and the other way round. `session end` forgets the tokens on this
 computer; Bitrix24 has no way to revoke them, so delete the application in the portal to stop them.
+
+### Remove a profile
+
+```sh
+b24 work account remove --keep-data --dry-run   # what it would remove and keep, changing nothing
+b24 work account remove --keep-data             # forget the profile; its copy of the portal stays searchable
+b24 work account remove --delete-data --yes     # also delete the portal's deals, leads, contacts and companies
+```
+
+`account remove` forgets the profile on this computer: its webhook address, its settings and its files. It asks first,
+or takes `--yes`. The webhook itself stays in Bitrix24 until you delete it there. The store keeps one copy of a
+portal, so `--delete-data` refuses while another profile here reads the same portal; remove that one first, or use
+`--keep-data`.
 
 ## Sync
 

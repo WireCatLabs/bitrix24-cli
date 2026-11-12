@@ -94,7 +94,8 @@ account, and none is ever assumed: a command without one stops and lists the pro
 `b24 work session start` asks for the webhook address without showing it, checks it against the portal and keeps it
 in the system keyring; `--credential-storage file` keeps it in a private file instead. `session status --check` shows
 the employee the webhook acts as, `session end` forgets the address on this computer, and `session list` lists the
-profiles.
+profiles. `account remove --keep-data` or `--delete-data` forgets a profile, keeping or deleting its copy of the
+portal. A webhook that another profile already uses is refused at sign-in.
 
 With a local application you create in the portal, `b24 work session start --portal example.bitrix24.ru --client-id
 <id>` signs in through the browser instead, and `b24` acts with the rights of the employee who signs in.

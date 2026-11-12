@@ -1,4 +1,4 @@
-import { CliError } from "@wirecat/cli-base"
+import { CliError, isCliError, type KeyringStore } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
 import { readSecret } from "@wirecat/cli-core"
 import {
@@ -28,11 +28,42 @@ import {
 } from "@wirecat/cli-core/cli"
 import { Command } from "commander"
 import { appSignIn, appSourceOf, appStorage, portalHost } from "../bitrix/oauth.js"
-import { parseWebhook } from "../bitrix/webhook.js"
+import { parseWebhook, type Webhook } from "../bitrix/webhook.js"
 import { configuration } from "../config.js"
 import { IDENTITY } from "../identity.js"
 import { appAuthFor, type B24Environment, contextOf, transportFor, withPortal } from "../portal.js"
 import { webhookUser } from "../whoami.js"
+import { portalsHere } from "./account.js"
+
+/** A second profile on the same webhook user would sync the same copy twice and split its permissions. */
+const refuseDuplicate = (env: NodeJS.ProcessEnv, keyring: KeyringStore | undefined, profile: string, at: Webhook) => {
+  const portal = new URL(at.origin).host
+  const other = portalsHere(env, keyring, { savedOnly: true }).find(
+    (one) => one.profile !== profile && one.portal === portal && one.userId === at.userId,
+  )
+  if (!other) return
+  const b24 = IDENTITY.command
+  throw new CliError(
+    "conflict",
+    `profile ${other.profile} already uses this webhook (${portal}, user ${at.userId}). Use \`${b24} ${other.profile}\`, ` +
+      `sign it in again with \`${b24} ${other.profile} session start\`, or remove it with ` +
+      `\`${b24} ${other.profile} account remove --keep-data\` and then sign in as ${profile}`,
+    { reason: "session.duplicate", profile: other.profile, portal },
+  )
+}
+
+const USER_METHODS = new Set(["user.current", "user.admin"])
+
+/** user.current needs any of user, user_basic or user_brief (apidocs user-current); Bitrix24 calls user_basic "Users (basic)". */
+const userScopeMissing = (portal: string) =>
+  new CliError(
+    "permission_error",
+    "this webhook may not read who made it: it lacks the Users (basic) right, user_basic, which b24 needs to know " +
+      `whose rights it acts with. On ${portal}, open Developer resources → Integrations, edit this webhook, tick ` +
+      '"Users (basic)" (in Russian «Пользователи (базовый)») under the permissions, and save. Then run session start ' +
+      "again with the address the webhook shows: an administrator who edits a colleague's webhook gets a new address",
+    { reason: "webhook.scope-missing", operation: "user.current", scope: "user_basic" },
+  )
 
 const answer = (command: Command, item: unknown) => renderAnswer(command, outputFor(command), itemOf(item))
 
@@ -167,8 +198,17 @@ const startCommand = () =>
       const address = (await readSecret("Bitrix24 webhook address: ", secretInputOf(this))).trim()
       if (!address) throw new CliError("validation_error", "no webhook address was given")
       const webhook = parseWebhook(address)
-      const user = await run((events) => webhookUser(transportFor(this, webhook, events)))
       const portal = new URL(webhook.origin).host
+      refuseDuplicate(env, keyring, profile, webhook)
+      const user = await run((events) => webhookUser(transportFor(this, webhook, events))).catch((error: unknown) => {
+        if (
+          isCliError(error) &&
+          error.details.reason === "webhook.scope-missing" &&
+          USER_METHODS.has(String(error.details.operation))
+        )
+          throw userScopeMissing(portal)
+        throw error
+      })
       const stored = tokens.write(profile, address, storage)
       appStorage(env, profile, keyring).remove()
       rememberAccount(IDENTITY, profile, `${portal}:${webhook.userId}`, env)

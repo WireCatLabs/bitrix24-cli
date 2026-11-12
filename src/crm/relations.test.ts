@@ -279,8 +279,8 @@ describe("relationships from the portal", () => {
     let last: string[] = []
     do {
       const answer = await source.ids?.("organization", page)
-      last = answer?.ids ?? []
-      page = answer?.nextPage
+      last = answer?.items ?? []
+      page = answer?.nextCursor
     } while (page)
     expect(last).toEqual(["1"])
     const { store, person, organization } = await opened()

@@ -139,11 +139,11 @@ describe("the Bitrix24 adapter", () => {
       const answer = await source.changes("organization", null, page)
       if ("reset" in answer) throw new Error("reset")
       listed += answer.items.length
-      if (answer.nextPage === undefined) {
+      if (!answer.hasMore) {
         cursor = answer.cursor
         break
       }
-      page = answer.nextPage
+      page = answer.nextCursor
     }
     expect(listed).toBe(60)
     expect(cursor).toMatch(/^\d{4}-\d{2}-\d{2}T/)
