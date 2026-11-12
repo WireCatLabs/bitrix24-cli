@@ -2,6 +2,16 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## 0.17.0 — 12.11.2026
+
+### Fixed
+
+- `crm sync` with activities on also keeps an e-mail, call or meeting whose own owner is a contact or company and
+  that is only bound to your deal or lead. Before, such an activity never reached `deals show`.
+- `crm sync` with activities on reads only the activities on your own deals and leads, fifty deals or leads per
+  request, instead of every activity on the portal. The first read of a large portal took about four minutes for a
+  handful of activities; it now takes as many requests as you have deals and leads, divided by fifty.
+
 ## 0.16.0 — 12.11.2026
 
 ### Added
