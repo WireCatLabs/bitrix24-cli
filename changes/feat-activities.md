@@ -5,3 +5,8 @@
   `deals show` and `leads show` list them, open ones first. The first sync reads 90 days. The client's phone or
   e-mail on an activity is never copied. Off by default and set by the owner only; tasks need the `task` scope.
   ([usage](../docs/usage.md#activities-and-tasks-on-a-deal))
+
+### Fixed
+
+- **Built on cli-core 0.647.0** (was 0.645.0). `doctor --help` shows its Returns and Example again. What changed is in
+  [cli-core's changelog](https://github.com/WireCatLabs/cli-core/blob/main/CHANGELOG.md).
