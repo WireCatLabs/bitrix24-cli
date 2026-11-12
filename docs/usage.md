@@ -17,7 +17,8 @@ command without one stops with exit code 2 and lists the profiles on this comput
 
 Make an incoming webhook in Bitrix24 (Developer resources → Other → Incoming webhook) with the scopes `crm`,
 `user_basic` (or `user`) and `department`, and copy its address. Without `user_basic` the sync gets no employee's
-e-mail; without `department` it gets no reporting lines; see [Who is who](#who-is-who). Then:
+e-mail; without `department` it gets no reporting lines; see [Who is who](#who-is-who). Add `task` to read the
+Bitrix24 tasks on your deals ([Activities and tasks](#activities-and-tasks-on-a-deal)). Then:
 
 ```sh
 b24 work session start
@@ -49,7 +50,8 @@ last only an hour, renewed by `b24`. A Bitrix24 administrator, or an employee al
 2. Choose **Server** mode. Set **Your handler path** to `https://wirecat.dev/webhooks/apps/b24-callback`. Leave
    **Initial installation path** and the menu item texts empty, and **Application completes the installation itself**
    off, so the portal installs it on save.
-3. Tick the access permissions `crm`, `user_basic` (or `user`) and `department`, and save.
+3. Tick the access permissions `crm`, `user_basic` (or `user`) and `department`, `task` too for Bitrix24 tasks, and
+   save.
 4. Copy the **Application ID (client_id)** and the **Application key (client_secret)** Bitrix24 shows.
 
 Then sign in:
@@ -208,6 +210,23 @@ Moves made before the setting was first set open none, and neither does a deal's
 deal, its stage and pipeline, and is due `due_days` days after the sync. Only you set it: an agent is refused. To
 stop, `b24 work config unset crm.bitrix24:example.bitrix24.ru.stage-tasks`. In the portal itself, Bitrix24's robot
 "Create task" does the same for a portal task.
+
+### Activities and tasks on a deal
+
+With `activities` on, each sync also reads the calls, e-mails, meetings and to-dos on the deals and leads it keeps,
+and the Bitrix24 tasks bound to them. `deals show` and `leads show` list them, open ones first, with their text: an
+e-mail's body, a task's description. The first sync reads the last 90 days, each later one what changed since.
+
+```sh
+b24 work config set crm.bitrix24:example.bitrix24.ru.activities on
+b24 work sync
+b24 work deals show deal:12
+```
+
+It is off until you turn it on, and only you can: an agent is refused. The client's phone number or e-mail address
+on a call or a letter is never copied. Tasks need the webhook's or application's `task` scope; without it the sync
+reads the activities and says the tasks were not read. Timeline comments are not read yet: the portal lists them
+one deal at a time.
 
 ### Ask memo about a client
 
