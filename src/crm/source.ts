@@ -339,7 +339,7 @@ export const bitrixCrmSource = (
         // Every chosen user was refused (`crm.unassigned-dropped`): nothing to read, and no `in []` to send. Every
         // round of companies still ends with the account's own ones.
         const items = await completed[kind]([], caller, true, context)
-        return { items, cursor: new Date(started).toISOString() }
+        return { items, hasMore: false, cursor: new Date(started).toISOString() }
       }
       const clients = assignees && isClient(kind) ? (await clientsOf(caller, assignees, started))[kind] : null
       // A client whose row did not change is already in the copy unless a changed deal or lead now names it.
@@ -364,8 +364,8 @@ export const bitrixCrmSource = (
         const ended = linked + PAGE >= named.size
         const items = await finish(rows, ended)
         return ended
-          ? { items, cursor: new Date(started).toISOString() }
-          : { items, nextPage: `${LINKED}${linked + PAGE}@${started}` }
+          ? { items, hasMore: false, cursor: new Date(started).toISOString() }
+          : { items, hasMore: true, nextCursor: `${LINKED}${linked + PAGE}@${started}` }
       }
       // A round of changes reads every assignee's deals, so core sees a deal given away; clients are kept here.
       const filter = [
@@ -384,11 +384,12 @@ export const bitrixCrmSource = (
           : rows.filter((raw) => !unchosen(context, raw))
       // An empty page ends the round, not a short one: a portal that caps pages below PAGE still lists every row.
       // Every round ends with the named clients: a deal given to the user brings a client whose row did not change.
-      if (last === null && clients) return { items: await finish(kept, false), nextPage: `${LINKED}0@${started}` }
+      if (last === null && clients)
+        return { items: await finish(kept, false), hasMore: true, nextCursor: `${LINKED}0@${started}` }
       const items = await finish(kept, last === null)
       return last !== null
-        ? { items, nextPage: `${last}@${started}` }
-        : { items, cursor: new Date(started).toISOString() }
+        ? { items, hasMore: true, nextCursor: `${last}@${started}` }
+        : { items, hasMore: false, cursor: new Date(started).toISOString() }
     },
     // Under mine only the user's own and their clients: core marks deleted what the pass leaves out of the copy.
     async ids(kind, page, context): Promise<CrmIdPage> {
@@ -397,7 +398,8 @@ export const bitrixCrmSource = (
       const assignees = assigneesOf(context)
       if (assignees?.length === 0)
         return {
-          ids:
+          hasMore: false,
+          items:
             kind === "organization"
               ? ((await ownCompanies(caller))?.map(({ externalId }) => externalId) ?? own.read())
               : [],
@@ -406,11 +408,14 @@ export const bitrixCrmSource = (
       const rows = listedRows((await list(caller, kind, ["id"], filter)).result)
       const listed = rows.map((raw) => id(raw.id)).filter((one): one is string => one !== null)
       const last = listed.at(-1)
-      if (last !== undefined) return { ids: listed, nextPage: last }
-      if (kind !== "organization") return { ids: listed }
+      if (last !== undefined) return { items: listed, hasMore: true, nextCursor: last }
+      if (kind !== "organization") return { items: listed, hasMore: false }
       const linked = assignees ? [...(await clientsOf(caller, assignees, now())).organization] : []
       // The id pass marks deleted whatever this list leaves out: refused, the own companies last listed stand in (WC-DATA-7).
-      return { ids: [...linked, ...((await ownCompanies(caller))?.map(({ externalId }) => externalId) ?? own.read())] }
+      return {
+        hasMore: false,
+        items: [...linked, ...((await ownCompanies(caller))?.map(({ externalId }) => externalId) ?? own.read())],
+      }
     },
     async item(kind, externalId) {
       const defined = await custom(kind, portal())

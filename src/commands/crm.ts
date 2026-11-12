@@ -143,7 +143,8 @@ const listCommand = <T extends Record<string, unknown>>(noun: Noun<T>) => {
       const page = { items: found.items, fields: found.fields ?? [], page: settings.page, hasMore: found.has_more }
       return printCsv(this, page, paths)
     }
-    renderAnswer(this, outputFor(this), pagedList(path, settings, found))
+    const { has_more: hasMore, ...listed } = found
+    renderAnswer(this, outputFor(this), pagedList(path, settings, { ...listed, hasMore }))
   })
 }
 
