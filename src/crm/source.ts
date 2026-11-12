@@ -3,7 +3,7 @@ import type { CrmField, CrmItem, CrmKind, CrmOrganization, CrmPerson, CrmRecords
 import type { CrmCallContext, CrmChanges, CrmIdPage, CrmSource } from "@wirecat/cli-core/crm"
 import type { BitrixCaller, BitrixTransport } from "../bitrix/transport.js"
 import { type Role, roleOf } from "../whoami.js"
-import { readActivities } from "./activities.js"
+import { type ActivityOwners, ownersOf, readActivities } from "./activities.js"
 import { clientsOf as namedClients } from "./clients.js"
 import { DEAL } from "./deal.js"
 import { loadFields, metadataOf } from "./fields.js"
@@ -34,6 +34,7 @@ import { rest3Rows } from "./walk.js"
  * of the portal's. A row read twice is only saved twice.
  */
 const OVERLAP_MS = 10 * 60_000
+const OWNERS_KEPT_MS = 60 * 60_000
 const PAGE = 500
 /** `crm.mycompany.basic.list`'s default page; the docs name no larger one. */
 const MY_PAGE = 50
@@ -251,6 +252,8 @@ export const bitrixCrmSource = (
     lists.set(key, { at: started, found })
     return found
   }
+  /** The deals and leads whose activities a round reads, listed once for all its pages. */
+  const owned = new Map<string, { at: number; found: Promise<ActivityOwners> }>()
   const mineOnly = (raw: Raw, assignees: readonly number[], linked: Set<string>) =>
     assignees.includes(Number(raw.assignedById)) || linked.has(id(raw.id) ?? "")
   /** What a page gets beyond its rows: each lead its deal, and the last page of companies the own ones. */
@@ -319,7 +322,24 @@ export const bitrixCrmSource = (
       }
     },
     pipelines: (kind, context) => bitrixPipelines(metered(context), kind),
-    activities: (since, page, context) => readActivities(metered(context), now(), since, page, context),
+    activities(since, page, context) {
+      const caller = metered(context)
+      const started = now()
+      const assignees = assigneesOf(context)
+      const owners = assignees
+        ? () => {
+            const key = assignees.join(",")
+            const kept = owned.get(key)
+            // A list renewed mid-round would shift the groups the page cursor counts, so it lasts a long round.
+            if (kept && Math.abs(started - kept.at) < OWNERS_KEPT_MS) return kept.found
+            const found = ownersOf(caller, assignees)
+            found.catch(() => owned.delete(key))
+            owned.set(key, { at: started, found })
+            return found
+          }
+        : undefined
+      return readActivities(caller, started, since, page, context, owners)
+    },
     async changes<K extends CrmKind>(
       kind: K,
       cursor: string | null,
