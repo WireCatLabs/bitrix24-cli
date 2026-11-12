@@ -64,15 +64,15 @@ value() {
 }
 
 step session status --check
-# A sync copies only the CRM users chosen; in the throwaway store that is the webhook's own user, whose test lead
-# and deal must be in scope.
-status=$(b24 session status --check --json 2>/dev/null)
-me=$(printf '%s' "$status" | value item.user.id)
-portal=$(printf '%s' "$status" | value item.portal)
-[ -n "$me" ] && [ -n "$portal" ] || { echo "!! session status gave no user or portal"; exit 1; }
-step config set "crm.bitrix24:$portal.unassigned" "$me"
+# Nothing is chosen, as on a new install: a sync copies the signed-in user's deals, where the test lead and deal go.
+me=$(b24 session status --check --json 2>/dev/null | value item.user.id)
+[ -n "$me" ] || { echo "!! session status gave no user"; exit 1; }
 echo "the first sync copies the portal into an empty store at the portal's pace, a request a second: minutes"
-step sync --json=state,synced,issues
+printf '\n== b24 live sync\n'
+first=$(b24 sync --json=state,synced,issues,scope) || fail "exit $?"
+printf '%s\n' "$first"
+scope=$(printf '%s' "$first" | value item.scope.self):$(printf '%s' "$first" | value item.scope.also)
+[ "$scope" = "$me:[]" ] || fail "with no one chosen the sync must copy the signed-in user $me alone, got $scope"
 # The second sync asks only for what changed, through the updatedTime filter; every kind must answer it.
 changed() {
   printf '\n== b24 live sync (changes)\n'
