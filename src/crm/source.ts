@@ -3,6 +3,7 @@ import type { CrmField, CrmItem, CrmKind, CrmOrganization, CrmPerson, CrmRecords
 import type { CrmCallContext, CrmChanges, CrmIdPage, CrmSource } from "@wirecat/cli-core/crm"
 import type { BitrixCaller, BitrixTransport } from "../bitrix/transport.js"
 import { type Role, roleOf } from "../whoami.js"
+import { readActivities } from "./activities.js"
 import { clientsOf as namedClients } from "./clients.js"
 import { DEAL } from "./deal.js"
 import { loadFields, metadataOf } from "./fields.js"
@@ -318,6 +319,7 @@ export const bitrixCrmSource = (
       }
     },
     pipelines: (kind, context) => bitrixPipelines(metered(context), kind),
+    activities: (since, page, context) => readActivities(metered(context), now(), since, page, context),
     async changes<K extends CrmKind>(
       kind: K,
       cursor: string | null,

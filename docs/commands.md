@@ -145,7 +145,7 @@ b24 account remove [options]
 
 ## `b24 sync`
 
-bring the CRM's copy in the local store up to date: pipelines, companies, contacts, deals and leads that changed since the last sync, or everything with --rescan; a run stops before its deadline or --max-pages and the next one goes on from there. Then each deal or lead that moved into a stage the stage-tasks setting names opens a local task, once per move
+bring the CRM's copy in the local store up to date: pipelines, companies, contacts, deals and leads that changed since the last sync, or everything with --rescan; a run stops before its deadline or --max-pages and the next one goes on from there. With the activities setting on, also the activities and tasks on the deals and leads it keeps. Then each deal or lead that moved into a stage the stage-tasks setting names opens a local task, once per move
 
 **Changes something on this computer only.**
 
@@ -158,7 +158,7 @@ b24 sync [options]
 | `--rescan` | list everything again, every id too, dropping a round in progress. |
 | `--max-pages <pages>` | at most this many requests to the CRM in this run. |
 
-**Returns:** crm sync — provider, account, scope, pipelines, skipped_owner_rejected, stage_tasks, synced, issues, and 8 more; every field: b24 commands info sync
+**Returns:** crm sync — provider, account, scope, pipelines, skipped_owner_rejected, stage_tasks, synced, issues, and 9 more; every field: b24 commands info sync
 
 **Example:** `b24 work sync`, `b24 work sync --rescan`, `b24 work sync --max-pages 20`
 
@@ -425,13 +425,13 @@ b24 deals list [query] [options]
 | `--page <n>` | which page, starting at 1. Default: `1`. |
 | `--format <format>` | csv: this page as a table for a spreadsheet; --json=a,b picks its columns. One of: `csv`. |
 
-**Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 27 more; every field: b24 commands info deals list
+**Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 28 more; every field: b24 commands info deals list
 
 **Example:** `b24 work deals list status:open --json`, `b24 work deals list stage:"Quote sent"`, `b24 work deals list status:open --format csv > deals.csv`
 
 ### `b24 deals show`
 
-one deal with its pipeline, stage, status, amount and the people on it
+one deal with its pipeline, stage, status, amount and the people on it; with the activities setting on, its activities and tasks too
 
 ```sh
 b24 deals show <deal>
@@ -441,7 +441,7 @@ b24 deals show <deal>
 |---|---|---|
 | `deal` | required | deal:<id>, as a list shows it. |
 
-**Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 27 more; every field: b24 commands info deals show
+**Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 28 more; every field: b24 commands info deals show
 
 **Example:** `b24 work deals show deal:12`
 
@@ -581,13 +581,13 @@ b24 leads list [query] [options]
 | `--page <n>` | which page, starting at 1. Default: `1`. |
 | `--format <format>` | csv: this page as a table for a spreadsheet; --json=a,b picks its columns. One of: `csv`. |
 
-**Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 27 more; every field: b24 commands info leads list
+**Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 28 more; every field: b24 commands info leads list
 
 **Example:** `b24 work leads list status:open --json`, `b24 work leads list stage:"Quote sent"`, `b24 work leads list status:open --format csv > leads.csv`
 
 ### `b24 leads show`
 
-one lead with its pipeline, stage, status, amount and the people on it
+one lead with its pipeline, stage, status, amount and the people on it; with the activities setting on, its activities and tasks too
 
 ```sh
 b24 leads show <lead>
@@ -597,7 +597,7 @@ b24 leads show <lead>
 |---|---|---|
 | `lead` | required | lead:<id>, as a list shows it. |
 
-**Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 27 more; every field: b24 commands info leads show
+**Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 28 more; every field: b24 commands info leads show
 
 **Example:** `b24 work leads show lead:12`
 
@@ -1353,6 +1353,10 @@ b24 doctor [options]
 |---|---|
 | `--online` | also connect once and read the account; sends nothing. |
 
+**Returns:** the state this installation is in, without connecting unless --online
+
+**Example:** `b24 doctor`, `b24 doctor --json`
+
 ### `b24 doctor reports`
 
 problem reports
@@ -1365,7 +1369,7 @@ what a problem report holds; writes nothing
 b24 doctor reports show
 ```
 
-**Returns:** what a problem report holds; writes nothing
+**Returns:** what a report holds and never holds, and where to send it; writes nothing
 
 **Example:** `b24 doctor reports show`
 
@@ -1384,7 +1388,7 @@ b24 doctor reports create [options]
 | `--run <id>` | the run the report is about; the newest failed one if not given. |
 | `--output <file>` | where to write it; a new file in this directory if not given. |
 
-**Returns:** write a problem report to a file, and say where to send it
+**Returns:** the report file written: its path, the run it is about, and where to send it
 
 **Example:** `b24 doctor reports create --output ./problem-report.json`
 
@@ -1659,7 +1663,7 @@ b24 config set <setting> <value> [options]
 
 | Argument | | What it is |
 |---|---|---|
-| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, keep_store_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types, crm.<provider>:<account>.scope, crm.<provider>:<account>.unassigned, crm.<provider>:<account>.self, crm.<provider>:<account>.stage-tasks. |
+| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, keep_store_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types, crm.<provider>:<account>.scope, crm.<provider>:<account>.unassigned, crm.<provider>:<account>.self, crm.<provider>:<account>.stage-tasks, crm.<provider>:<account>.activities. |
 | `value` | required | a number, true or false; for a group tg:work,max:Alice,email:me@x. |
 
 | Option | What it does |
@@ -1682,7 +1686,7 @@ b24 config unset <setting> [options]
 
 | Argument | | What it is |
 |---|---|---|
-| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, keep_store_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types, crm.<provider>:<account>.scope, crm.<provider>:<account>.unassigned, crm.<provider>:<account>.self, crm.<provider>:<account>.stage-tasks. |
+| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, keep_store_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types, crm.<provider>:<account>.scope, crm.<provider>:<account>.unassigned, crm.<provider>:<account>.self, crm.<provider>:<account>.stage-tasks, crm.<provider>:<account>.activities. |
 
 | Option | What it does |
 |---|---|
