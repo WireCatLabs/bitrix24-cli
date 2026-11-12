@@ -161,6 +161,17 @@ describe("sync scope", () => {
     expect(await titles(crm)).toEqual(["Own"])
   })
 
+  it("copies the employee's own deals when every user they chose is dropped", async () => {
+    const { crm } = portal()
+    crm.putDepartment({ ID: "1", NAME: "Example company", UF_HEAD: String(OTHER) })
+    crm.putUser({ ID: String(OTHER), NAME: "Colleague" })
+    await set(UNASSIGNED, String(OTHER))
+    const item = await sync(crm)
+    expect(item.scope).toEqual({ mode: "mine", self: "7", also: [] })
+    expect(item.issues).toContainEqual(expect.objectContaining({ reason: "crm.unassigned-dropped" }))
+    expect(await titles(crm)).toEqual(["Own"])
+  })
+
   it("lets an administrator choose a working colleague, and leaves out their own deals unless chosen", async () => {
     const { crm } = portal()
     crm.setAdmin(true)
@@ -210,7 +221,7 @@ describe("sync scope", () => {
     expect((ran.json() as { item: Record<string, unknown> }).item.scope).toEqual({
       mode: "mine",
       self: "7",
-      also: [String(OWN)],
+      also: [],
     })
     expect(crm.calls.find(({ method }) => method === "crm.deal.list")?.body.filter).toContainEqual([
       "assignedById",
