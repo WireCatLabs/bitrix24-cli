@@ -2,6 +2,47 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## 0.14.0 — 12.11.2026
+
+### Added
+
+- **`b24 guide` lists scenarios for common tasks**, each as commands in order with why: `first-sync` (the first sync
+  and the pipeline board), `keep-in-sync` (a timer and search) and `safe-agent-writes` (an agent over MCP whose writes
+  stay yours). `b24 guide <name> --json` gives one as data.
+- **[MCP](docs/mcp.md) and [Permissions](docs/permissions.md) pages.** How to add `b24` to an agent, what the
+  agent sees and what it is never offered; each level, the built-in levels, the keys one command checks, and the
+  checks no level lifts.
+- **Sign-in through a local application.** `b24 <profile> session start --portal <host> --client-id <id>` signs in
+  through a local application you create in the portal, in the browser, and acts with the rights of the employee who
+  signs in. The application key is asked without showing it, or read from stdin or `B24_BITRIX24_CLIENT_SECRET`. The
+  sign-in returns through `https://wirecat.dev/webhooks/apps/b24-callback`, or the address you paste. Tokens are renewed
+  by themselves. `session status` and `session list` show the kind of sign-in, and `session end` forgets either. The
+  incoming webhook stays the quick way; see [sign in](docs/usage.md#with-a-local-application).
+
+### Fixed
+
+- **The quick start copies deals.** The [README](README.md) now chooses whose deals and leads to copy before the
+  first `sync`, which copies nothing until then. It no longer says an administrator copies the whole CRM, says that
+  over MCP a delete set to `ask` runs, and names `wcat-b24` for when another package's `b24` command is found first.
+  [Troubleshooting](docs/troubleshooting.md) has the "no CRM user is chosen" error.
+- **Over MCP, `ask` does not stop a write.** The [README](README.md), [security](docs/security.md) and the first
+  screen told owners to set `deals.move` to `ask` against the portal's robots, which stops a move only at a terminal:
+  over MCP nobody answers, so the write goes ahead. They now say to set `readonly` or `deny`, or to turn on approval
+  in the agent's client.
+- **The agent skill covers what an agent needs.** `b24 skill show` now has exit codes and error reasons, MCP and the
+  `ask` trap, the first setup from the webhook to the first sync, the boundaries of a write, and the traps.
+- The examples use the profile `work` throughout, in place of `personal`.
+- **`b24 commands` lists the CRM by section.** Deals, leads, contacts and companies split into Read and Write,
+  pipelines, stages, fields, products, users and `api` are under Read, `sync` under Automate and `session` under
+  Set up; before, most of `b24` was under Other.
+- **The two local state files are written atomically and stay private.** The list of your own companies and the day's
+  count of other people's clients shown now go through a temporary file and a rename, as the settings file does.
+- **A daily `sync` no longer reads every client again.** A round of changes read every contact and company named on
+  the chosen users' deals and leads, whether or not anything changed: on a portal with 50,000 deals that was about
+  300 requests and close to three minutes for a sync with nothing new. It now reads only the clients of the deals and
+  leads that changed, and lists the users' deals for their clients once a sync instead of once for contacts and once
+  for companies.
+
 ## 0.13.0 — 11.11.2026
 
 ### Changed — may break callers
