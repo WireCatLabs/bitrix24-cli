@@ -66,12 +66,17 @@ const plain = (raw: Raw): string | null => {
   )
 }
 
-const activityOf = (raw: Raw): CrmActivity | null => {
-  const externalId = id(raw.ID)
-  const owner = OWNERS[String(raw.OWNER_TYPE_ID) as keyof typeof OWNERS]
+/** The deal or lead an activity's own owner is, if it is one. */
+const ownerOf = (raw: Raw): CrmActivity["on"] => {
+  const kind = OWNERS[String(raw.OWNER_TYPE_ID) as keyof typeof OWNERS]
   const on = id(raw.OWNER_ID)
+  return kind && on ? [{ kind, externalId: on }] : []
+}
+
+const activityOf = (raw: Raw, on: CrmActivity["on"] = ownerOf(raw)): CrmActivity | null => {
+  const externalId = id(raw.ID)
   const updatedAt = epoch(raw.LAST_UPDATED)
-  if (!externalId || !owner || !on || updatedAt === null) return null
+  if (!externalId || on.length === 0 || updatedAt === null) return null
   return {
     externalId: `activity:${externalId}`,
     kind: kindOf(raw),
@@ -82,7 +87,7 @@ const activityOf = (raw: Raw): CrmActivity | null => {
     assignee: id(raw.RESPONSIBLE_ID),
     createdAt: epoch(raw.CREATED) ?? updatedAt,
     updatedAt,
-    on: [{ kind: owner, externalId: on }],
+    on,
   }
 }
 
@@ -133,7 +138,23 @@ export const ownersOf = async (caller: BitrixCaller, assignees: readonly number[
   return { deal: await listed("deal"), lead: await listed("lead") }
 }
 
-/** Ids per `@OWNER_ID` filter: one list of activities per this many deals or leads. */
+/**
+ * An activity found by its bindings may belong to a contact or company and only be bound to the deal, as an e-mail
+ * often is (FIND-2594): its deals and leads are then asked for, one request each.
+ */
+const boundActivity = async (caller: BitrixCaller, raw: Raw) => {
+  const own = ownerOf(raw)
+  if (own.length > 0) return activityOf(raw, own)
+  const answer = await caller.call("crm.activity.binding.list", { activityId: Number(raw.ID) })
+  const on = rawsOf(answer.result).flatMap((one) => {
+    const kind = OWNERS[String(one.entityTypeId) as keyof typeof OWNERS]
+    const externalId = id(one.entityId)
+    return kind && externalId ? [{ kind, externalId }] : []
+  })
+  return activityOf(raw, on)
+}
+
+/** Ids per `BINDINGS` filter: one list of activities per this many deals or leads. */
 const OWNERS_PER_READ = 50
 
 const groupsOf = (owners: ActivityOwners) =>
@@ -148,7 +169,7 @@ const groupsOf = (owners: ActivityOwners) =>
 /**
  * The activities on deals and leads, then the tasks bound to them, changed since `since`: REST 2 lists, paged by id
  * (`activity:<last id>`, then `task:<last id>`) so a row changed mid-read never shifts the rest. With `owners`, only
- * the activities on those, `OWNERS_PER_READ` at a time (`activity:<group>:<last id>`): a first read of a large portal
+ * the activities bound to those, `OWNERS_PER_READ` at a time (`activity:<group>:<last id>`): a first read of a large portal
  * otherwise lists every activity of 90 days to keep a few (PERF-106). A webhook without the `task` scope still reads
  * the activities; the tasks are a gap.
  */
@@ -174,14 +195,18 @@ export const readActivities = async (
       order: { ID: "ASC" },
       filter: {
         ">ID": from,
-        ...(at ? { OWNER_TYPE_ID: at.type, "@OWNER_ID": at.ids } : { "@OWNER_TYPE_ID": [1, 2] }),
+        ...(at
+          ? { BINDINGS: at.ids.map((owner) => ({ OWNER_TYPE_ID: at.type, OWNER_ID: Number(owner) })) }
+          : { "@OWNER_TYPE_ID": [1, 2] }),
         ">=LAST_UPDATED": after,
       },
       select: ACTIVITY_SELECT,
       start: 0,
     })
     const rows = rawsOf(answer.result)
-    const items = rows.map(activityOf).filter((one): one is CrmActivity => one !== null)
+    const items = (
+      at ? await Promise.all(rows.map((raw) => boundActivity(caller, raw))) : rows.map((raw) => activityOf(raw))
+    ).filter((one): one is CrmActivity => one !== null)
     const lastId = id(rows.at(-1)?.ID)
     if (!groups) return { items, hasMore: true, nextCursor: lastId ? `activity:${lastId}` : "task:0" }
     const next = lastId

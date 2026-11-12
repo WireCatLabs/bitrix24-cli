@@ -82,14 +82,32 @@ describe("Bitrix24 activities and tasks", () => {
     const read = (page?: string) => readActivities(fake, NOW, SINCE, page, undefined, owners)
 
     expect(await read(undefined)).toMatchObject({ nextCursor: "activity:0:41" })
-    expect(fake.calls[0]?.params.filter).toMatchObject({ OWNER_TYPE_ID: 2, "@OWNER_ID": deals.slice(0, 50) })
+    expect(fake.calls[0]?.params.filter).toMatchObject({
+      BINDINGS: deals.slice(0, 50).map((owner) => ({ OWNER_TYPE_ID: 2, OWNER_ID: Number(owner) })),
+    })
     expect(await read("activity:0:41")).toMatchObject({ items: [], nextCursor: "activity:1:0" })
     expect(await read("activity:1:0")).toMatchObject({ nextCursor: "activity:1:41" })
-    expect(fake.calls[2]?.params.filter).toMatchObject({ OWNER_TYPE_ID: 2, "@OWNER_ID": ["51"] })
+    expect(fake.calls[2]?.params.filter).toMatchObject({ BINDINGS: [{ OWNER_TYPE_ID: 2, OWNER_ID: 51 }] })
     await read("activity:1:41")
     expect(await read("activity:2:0")).toMatchObject({ nextCursor: "activity:2:41" })
-    expect(fake.calls[4]?.params.filter).toMatchObject({ OWNER_TYPE_ID: 1, "@OWNER_ID": ["9"] })
+    expect(fake.calls[4]?.params.filter).toMatchObject({ BINDINGS: [{ OWNER_TYPE_ID: 1, OWNER_ID: 9 }] })
     expect(await read("activity:2:41")).toMatchObject({ nextCursor: "task:0" })
+  })
+
+  it("asks a contact's activity bound to a deal for its deals and leads", async () => {
+    const fake = portal({
+      "crm.activity.list": () => ({ result: [{ ...ACTIVITY, OWNER_TYPE_ID: "3", OWNER_ID: "77" }] }),
+      "crm.activity.binding.list": () => ({
+        result: [
+          { entityTypeId: 3, entityId: 77 },
+          { entityTypeId: 2, entityId: 12 },
+        ],
+      }),
+    })
+    const owners = async () => ({ deal: ["12"], lead: [] })
+    const { items } = await readActivities(fake, NOW, SINCE, undefined, undefined, owners)
+    expect(items.map(({ on }) => on)).toEqual([[{ kind: "deal", externalId: "12" }]])
+    expect(fake.calls[1]?.params).toEqual({ activityId: 41 })
   })
 
   it("goes straight to the tasks when the user has no deal or lead", async () => {
