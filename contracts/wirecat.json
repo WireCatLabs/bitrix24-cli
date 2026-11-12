@@ -1024,6 +1024,7 @@
         "reports_cost",
         "restricted",
         "restricted_reason",
+        "allowed_with_ack",
         "installed",
         "path"
       ]

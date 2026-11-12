@@ -1,6 +1,6 @@
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { delimiter, isAbsolute, join } from "node:path"
 import { describe, expect, it } from "vitest"
 import { run } from "./program.js"
 import { FAKE_HOOK, FAKE_SECRET } from "./testing/fake-portal.js"
@@ -11,6 +11,11 @@ const harness = (entry = ["/opt/node", "/opt/b24/dist/bin/b24.js"]) => {
   const root = mkdtempSync(join(tmpdir(), "schedule-"))
   const env: NodeJS.ProcessEnv = {
     ...process.env,
+    // pnpm puts ./node_modules/.bin on PATH, and a schedule refuses a relative entry.
+    PATH: (process.env.PATH ?? "")
+      .split(delimiter)
+      .filter((dir) => isAbsolute(dir))
+      .join(delimiter),
     HOME: join(root, "home"),
     XDG_CONFIG_HOME: join(root, "home", ".config"),
     B24_STATE_DIR: join(root, "state"),

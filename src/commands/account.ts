@@ -10,6 +10,7 @@ import {
   ProfileTokenStore,
   profilesHere,
 } from "@wirecat/cli-core/cli"
+import { oauthAccount } from "@wirecat/cli-core/oauth"
 import type { AccountKey } from "@wirecat/cli-core/store"
 import { Command } from "commander"
 import { parseWebhook } from "../bitrix/webhook.js"
@@ -69,10 +70,12 @@ const accountOf = (
 }
 
 const removal: AccountRemoval = {
-  // An incoming webhook cannot be revoked over REST; only the portal's own page deletes it.
+  // Neither an incoming webhook nor a local application's token can be revoked over REST; only the portal deletes them.
   signOut: async (profile) => ({
     revoked: null,
-    removed: [`the webhook address of ${profile} (the webhook itself stays in Bitrix24)`],
+    removed: [
+      `the webhook address or application sign-in of ${profile} (the webhook or application itself stays in Bitrix24)`,
+    ],
   }),
   account: (profile, { env, keyring }) => accountOf(profile, env, keyring),
   secrets: (profile, { env, keyring }) => [
@@ -84,7 +87,7 @@ const removal: AccountRemoval = {
         env,
         ...(keyring ? { keyring } : {}),
       },
-      accounts: [`token:${profile}`],
+      accounts: [`token:${profile}`, oauthAccount(PROVIDER.name, profile)],
     },
   ],
   stateFiles: (profile, { env }) => [join(stateOf(env), "crm", profile)],

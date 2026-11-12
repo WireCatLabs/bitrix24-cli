@@ -51,6 +51,15 @@ describe("account remove", () => {
     expect(ran.out + ran.err).not.toContain(FAKE_SECRET)
   })
 
+  it("forgets a local application's sign-in too", async () => {
+    const { keyring } = await syncedWork()
+    keyring.set("bitrix24-cli", "oauth:bitrix24:work", "{}")
+    const ran = await b24(["work", "account", "remove", "--keep-data", "--yes", "--json"], { keyring })
+    expect(ran.code).toBe(0)
+    expect(keyring.get("bitrix24-cli", "oauth:bitrix24:work")).toBeNull()
+    expect(keyring.get("bitrix24-cli", "token:work")).toBeNull()
+  })
+
   it("--delete-data forgets the webhook and deletes the portal's deals, leads, contacts and companies", async () => {
     const { keyring, crm } = await syncedWork()
     const ran = await b24(["work", "account", "remove", "--delete-data", "--yes", "--json"], { keyring })
