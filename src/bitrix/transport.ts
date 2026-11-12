@@ -9,7 +9,7 @@ import {
 } from "@wirecat/cli-base"
 import { hostFetch, providerWaitMs, readJsonResponse } from "@wirecat/cli-base/http"
 import { apiJson, currentAttempt, type EventSink, providerEvent, providerRequest } from "@wirecat/cli-core/cli"
-import type { Pacer } from "@wirecat/cli-core/sends"
+import { type Pacer, waitForTurn } from "@wirecat/cli-core/sends"
 import { type EmployeeRule, employeeRuleOf } from "../api-keys.js"
 import { isRecord } from "../body.js"
 import { isAdmin } from "../crm/clients.js"
@@ -25,7 +25,7 @@ import { methodUrl, type Webhook } from "./webhook.js"
 const DEFAULT_TIMEOUT_MS = 10_000
 const LARGEST_ANSWER = 16 * 1024 * 1024
 const RETRY: RetryConfig = { retries: 3, baseDelayMs: 1_000, maxDelayMs: 10_000, maxRetryAfterMs: 30_000 }
-/** A pace wait longer than this ends the run instead of sitting in it, as cli-core's messenger pacing does. */
+/** An agent usually waits on b24: past a minute the run ends with retry_after_ms instead of sitting silent. */
 const LONGEST_PACE_WAIT_MS = 60_000
 
 const EMPLOYEE_REFUSALS: Record<EmployeeRule, (method: string) => string> = {
@@ -169,16 +169,13 @@ export class BitrixTransport {
 
   async #turn(method: string) {
     if (!this.#pacer) return
-    const at = await this.#pacer.reserve()
-    const wait = at - this.#now()
-    if (wait <= 0) return
-    if (wait > LONGEST_PACE_WAIT_MS)
-      throw new CliError("rate_limited", `this profile must wait ${Math.ceil(wait / 1000)} s before ${method}`, {
-        operation: method,
-        retry_after_ms: wait,
-        remembered: true,
-      })
-    await this.#wait(wait, method)
+    await waitForTurn(this.#pacer, {
+      name: "Bitrix24",
+      operation: method,
+      now: this.#now,
+      sleep: (ms) => this.#wait(ms, method),
+      longestWaitMs: LONGEST_PACE_WAIT_MS,
+    })
   }
 
   async #wait(ms: number, method: string) {

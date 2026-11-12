@@ -7,11 +7,7 @@
 - **Shell completion:** `b24 complete zsh` prints the script to source; bash, fish and PowerShell too.
 - **The shared store's file commands and problem reports.** `b24 store backup`, `check`, `repair`, `restore` and the
   rest look after the one store file every WireCat tool shares, and `b24 doctor reports create` writes a report to
-  send with a problem.
-
-### Changed
-
+  send with a problem. An agent over MCP sees them too, each with its permission like any write.
 - **`b24` tells you when a newer version is out**, after a command that succeeded, on stderr. `update_check: false`
   or `B24_NO_UPDATE_CHECK=1` turns it off.
-- The read-only store open and the CRM write guard come from cli-core instead of b24's own copies; nothing changes in
-  what they do.
+

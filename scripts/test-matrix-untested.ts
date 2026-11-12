@@ -4,9 +4,37 @@ const SHARED_MCP =
 const SHARED_SCHEDULE =
   "cli-core's scheduleCommandFor; its schedule tests drive every timer and option, and src/schedule.test.ts installs, " +
   "lists and removes b24's sync timer"
+const SHARED_STORE =
+  "cli-core's addStoreMaintenanceCommands, mounted by addCrmCommands; its store and src/crm/cli/store-file tests " +
+  "drive them on a CRM program"
+const SHARED_REPORTS = "cli-core's appDoctorCommand; its app-mcp-command test creates and shows a report"
+const SHARED_COMPLETE = "cli-core's appCompleteCommand; its complete-command test drives every shell and word"
 const LONG_RUNNING = `starts an HTTP server or a background process that runs until stopped; ${SHARED_MCP}`
 
 export const UNTESTED: { command: string; option?: string; reason: string }[] = [
+  { command: "store info", reason: SHARED_STORE },
+  { command: "store check", reason: SHARED_STORE },
+  { command: "store migrate", reason: SHARED_STORE },
+  { command: "store rebuild", reason: SHARED_STORE },
+  { command: "store backup", reason: SHARED_STORE },
+  { command: "store backup", option: "--encrypt", reason: SHARED_STORE },
+  { command: "store restore", reason: SHARED_STORE },
+  { command: "store decrypt", reason: SHARED_STORE },
+  { command: "store decrypt", option: "--output", reason: SHARED_STORE },
+  { command: "store repair", reason: SHARED_STORE },
+  { command: "store repair", option: "--dry-run", reason: SHARED_STORE },
+  { command: "store reset", reason: SHARED_STORE },
+  { command: "store reset", option: "--no-backup", reason: SHARED_STORE },
+  { command: "store reset", option: "--dry-run", reason: SHARED_STORE },
+  { command: "store copies delete", reason: SHARED_STORE },
+  { command: "store tables list", reason: SHARED_STORE },
+  { command: "store recover", reason: SHARED_STORE },
+  { command: "store recover run", reason: SHARED_STORE },
+  { command: "doctor reports show", reason: SHARED_REPORTS },
+  { command: "doctor reports create", reason: SHARED_REPORTS },
+  { command: "doctor reports create", option: "--run", reason: SHARED_REPORTS },
+  { command: "doctor reports create", option: "--output", reason: SHARED_REPORTS },
+  { command: "complete", reason: SHARED_COMPLETE },
   ...[
     ...["--at", "--at-time", "--notify-on", "--deliver-to"].map((option) => ({ command: "schedule command", option })),
     { command: "schedule agent" },
