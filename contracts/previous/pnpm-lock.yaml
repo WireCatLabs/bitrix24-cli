@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@wirecat/previous-cli':
-        specifier: npm:@wirecat/bitrix24-cli@0.8.0
-        version: '@wirecat/bitrix24-cli@0.8.0(zod@4.6.7)'
+        specifier: npm:@wirecat/bitrix24-cli@0.14.0
+        version: '@wirecat/bitrix24-cli@0.14.0(zod@4.6.7)'
 
 packages:
 
@@ -263,13 +263,13 @@ packages:
   '@wasm-audio-decoders/opus-ml@0.0.3':
     resolution: {integrity: sha512-SEeTmk0eb3q5etJA/NHCRWW6BivTx9tqvNTmG0kg2ynuATEQRUZnwQE6Ibvl1BBvqIGHqI57+qyJMWmJBwb5XQ==}
 
-  '@wirecat/bitrix24-cli@0.8.0':
-    resolution: {integrity: sha512-Zr1O4y5HPw2v82uRdpYqffCcBD1YVYZXNKF0ewhEwh8FsVhK0dl+tdoq6ef8qq8BBziibTt/AA8xvmFkaSF3wA==}
+  '@wirecat/bitrix24-cli@0.14.0':
+    resolution: {integrity: sha512-whvG1yYMtIn4YXkPoWoWR0Fls1mJ2AqExKHUBoro3uq8Ake6t6vqJq4FQlICeal9qjHMEnGDW11niZDSwR6/Rw==}
     engines: {node: ^22.16.0 || >=24}
     hasBin: true
 
-  '@wirecat/cli-base@0.82.0':
-    resolution: {integrity: sha512-xAO/H3dvHguW1drv6jk2fk1yUdY+cS0ep78VCeBxPi7y5NVQHGyuOeQY9Uf44Xbiqm5oUY6Nv6fqI35uzL2PDg==}
+  '@wirecat/cli-base@0.93.0':
+    resolution: {integrity: sha512-1d76GYx6sE/pE5LrhC/aeebV/zFVcwhn2tUInvM10vCahQvVzGqpPiq9YrhwDn58Nyh4kJWMJhz63XHZAGRlEQ==}
     engines: {node: '>=22'}
     hasBin: true
     peerDependencies:
@@ -290,13 +290,13 @@ packages:
   '@wirecat/cli-core-sqlite@1.1.0':
     resolution: {integrity: sha512-GpGlh/dAIX/nblBYCdT6DfWSLFxav9mxxeELQAfEuw+QZdT9unKxbi5xa02s/s4JS1P7n0PQx2sCABj4FlMRNw==}
 
-  '@wirecat/cli-core@0.612.0':
-    resolution: {integrity: sha512-QU14Xi6gi+0s9f35SE7NlqrsPJRhy1ZgRQZczzYUFzKtSDn2Gw3zdNQBdQ2dh0fSz0n6jDgcJk2k29YqQ3wt3w==}
+  '@wirecat/cli-core@0.635.0':
+    resolution: {integrity: sha512-PyDy79uLq+Y4pjqE37YWvs5GZm1WTGtNzlkkpkUXpsAr/W7B00IKlHbOAz5RW5d6EggFfpK9wSMWWcOZz1WJpA==}
     engines: {node: ^22.16.0 || >=24}
     hasBin: true
     peerDependencies:
       '@napi-rs/canvas': '>=0.1.69 <2'
-      '@wirecat/cli-base': '>=0.80.7 <0.86.0'
+      '@wirecat/cli-base': '>=0.80.7 <1.0.0'
       commander: '>=15'
     peerDependenciesMeta:
       '@napi-rs/canvas':
@@ -788,6 +788,7 @@ packages:
 
   tldts-core@7.4.20:
     resolution: {integrity: sha512-C630TWXZCZmLq0F2bW4QqwnaaxCQ/svpAqvJwnC4JvgEM5ohhBnGsEzTLSOXcN+xjz+kEaHS5uoWIw2klnqd0A==}
+    deprecated: Partial release, see https://github.com/remusao/tldts/issues/2735. Use >=7.4.22.
 
   tldts@7.4.19:
     resolution: {integrity: sha512-48dH6aSpQnpbzDUc4vIQZ1VjB8tkK+e8c1yx05/SZK+rkssgjEOlxDd/yU8/a4vGYQ9vRgJr9dwMq9TJ0b3X2Q==}
@@ -1056,10 +1057,10 @@ snapshots:
     dependencies:
       '@wasm-audio-decoders/common': 9.0.7
 
-  '@wirecat/bitrix24-cli@0.8.0(zod@4.6.7)':
+  '@wirecat/bitrix24-cli@0.14.0(zod@4.6.7)':
     dependencies:
-      '@wirecat/cli-base': 0.82.0(commander@15.0.0)
-      '@wirecat/cli-core': 0.612.0(@wirecat/cli-base@0.82.0(commander@15.0.0))(commander@15.0.0)(zod@4.6.7)
+      '@wirecat/cli-base': 0.93.0(commander@15.0.0)
+      '@wirecat/cli-core': 0.635.0(@wirecat/cli-base@0.93.0(commander@15.0.0))(commander@15.0.0)(zod@4.6.7)
       commander: 15.0.0
       valibot: 1.5.0
     transitivePeerDependencies:
@@ -1073,7 +1074,7 @@ snapshots:
       - vitest
       - zod
 
-  '@wirecat/cli-base@0.82.0(commander@15.0.0)':
+  '@wirecat/cli-base@0.93.0(commander@15.0.0)':
     dependencies:
       '@valibot/to-json-schema': 1.8.0(valibot@1.5.0)
       cli-table3: 0.6.5
@@ -1091,7 +1092,7 @@ snapshots:
 
   '@wirecat/cli-core-sqlite@1.1.0': {}
 
-  '@wirecat/cli-core@0.612.0(@wirecat/cli-base@0.82.0(commander@15.0.0))(commander@15.0.0)(zod@4.6.7)':
+  '@wirecat/cli-core@0.635.0(@wirecat/cli-base@0.93.0(commander@15.0.0))(commander@15.0.0)(zod@4.6.7)':
     dependencies:
       '@anthropic-ai/sdk': 1.3.0(zod@4.6.7)
       '@bomb.sh/tab': 0.0.22(commander@15.0.0)
@@ -1101,7 +1102,7 @@ snapshots:
       '@valibot/to-json-schema': 1.8.0(valibot@1.5.0)
       '@wasm-audio-decoders/flac': 0.2.11
       '@wasm-audio-decoders/ogg-vorbis': 0.1.20
-      '@wirecat/cli-base': 0.82.0(commander@15.0.0)
+      '@wirecat/cli-base': 0.93.0(commander@15.0.0)
       '@wirecat/cli-core-onnx': 1.2.0
       '@wirecat/cli-core-sqlite': 1.1.0
       '@xmldom/xmldom': 0.9.12
