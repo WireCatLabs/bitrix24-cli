@@ -5,8 +5,8 @@ can do and then calls it. An agent with a terminal, such as Claude Code or Codex
 the skill (`b24 skill install`). MCP is for a client that cannot run commands: a chat app, a remote agent, ChatGPT or
 Claude in the browser.
 
-Before you start, sign the profile in (`b24 work session start`) and read [Permissions](permissions.md): over MCP a
-write at `ask` goes ahead.
+Before you start, sign the profile in (`b24 work session start`, with a webhook or a local application) and read
+[Permissions](permissions.md): over MCP a write at `ask` goes ahead.
 
 ## Add b24 to an agent
 

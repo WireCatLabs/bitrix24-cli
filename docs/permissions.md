@@ -112,4 +112,7 @@ They never loosen the profile. See [MCP](mcp.md).
 - **Bitrix24's own access rights.** The webhook acts as the employee who made it, and the portal refuses what that
   employee may not do (`bitrix.access-denied`).
 
+Signed in through a local application instead of a webhook, `b24` acts as the employee who signed in, and every rule
+above that names the webhook's user applies to that employee.
+
 More: [settings](configuration.md), [security](security.md).
