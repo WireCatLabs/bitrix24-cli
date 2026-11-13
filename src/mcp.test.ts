@@ -1,7 +1,7 @@
 import { describeProgram } from "@wirecat/cli-base/commands"
 import { changesAuthorityAt, readsOverMcpAt } from "@wirecat/cli-core/cli"
 import { toolsFromCommands } from "@wirecat/cli-core/mcp"
-import { mcpOverStdio } from "@wirecat/cli-core/testing"
+import { mcpOverStdio, ownCatalogue } from "@wirecat/cli-core/testing"
 import { expect, it } from "vitest"
 import { permissions } from "./config.js"
 import { createProgram, run } from "./program.js"
@@ -28,17 +28,20 @@ it("serves search, read and write, and runs a command through the CLI", async ()
   }
 })
 
-it("pins the commands an agent can find, and never offers api call or schedule", async () => {
+it("pins b24's own commands an agent can find, and never offers api call or schedule", async () => {
   const program = createProgram()
-  const tools = toolsFromCommands(describeProgram(program), {
+  const options = {
     includeUnavailable: true,
     exclude: [["mcp"]],
     authority: changesAuthorityAt(program),
     fetchOnly: readsOverMcpAt(program),
     permissions,
-  })
+  }
+  await expect(`${JSON.stringify(ownCatalogue(program, options), null, 2)}\n`).toMatchFileSnapshot(
+    "../contracts/mcp-catalogue.json",
+  )
+  const tools = toolsFromCommands(describeProgram(program), options)
   const catalogue = Object.fromEntries(tools.map((tool) => [tool.command, tool.writes ? "write" : "read"]))
-  await expect(`${JSON.stringify(catalogue, null, 2)}\n`).toMatchFileSnapshot("../contracts/mcp-catalogue.json")
   expect(Object.keys(catalogue)).not.toContain("api call")
   expect(Object.keys(catalogue).filter((command) => command.startsWith("schedule"))).toEqual([])
   expect(catalogue["deals update"]).toBe("write")

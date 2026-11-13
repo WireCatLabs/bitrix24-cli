@@ -173,25 +173,32 @@ describe("BitrixTransport", () => {
     expect(portal.calls[0]?.headers["Idempotency-Key"]).toBe("op-9")
   })
 
-  it("does not repeat a keyed write on a 429", async () => {
+  it("sends a keyed write again after the portal refused its rate, with the same key", async () => {
     const portal = fakePortal({
-      "crm.deal.add": { status: 429, body: { error: "QUERY_LIMIT_EXCEEDED", error_description: "Too many requests" } },
+      "crm.deal.add": [
+        { status: 503, body: { error: "QUERY_LIMIT_EXCEEDED", error_description: "Too many requests" } },
+        ok({ item: { id: 5 } }),
+      ],
     })
-    const error = await failureOf(transportOf(portal).transport.call("crm.deal.add", {}, { idempotencyKey: "op-1" }))
-    expect(error.code).toBe("rate_limited")
-    expect(portal.calls).toHaveLength(1)
+    const { transport, waits } = transportOf(portal)
+    expect(await transport.call("crm.deal.add", {}, { idempotencyKey: "op-1" })).toEqual({
+      result: { item: { id: 5 } },
+    })
+    expect(waits).toEqual([1000])
+    expect(portal.calls.map((call) => call.headers["Idempotency-Key"])).toEqual(["op-1", "op-1"])
   })
 
-  it("does not repeat a write without a key on a 429", async () => {
+  it("sends a write without a key again after a 429, and stops when the wait is too long", async () => {
+    const blocked = { status: 429, body: { error: "OPERATION_TIME_LIMIT", error_description: "Method is blocked" } }
     const portal = fakePortal({
-      "crm.status.update": {
-        status: 429,
-        body: { error: "OPERATION_TIME_LIMIT", error_description: "Method is blocked" },
-      },
+      "crm.status.update": [{ status: 429, body: { error: "QUERY_LIMIT_EXCEEDED" } }, ok(true)],
     })
-    const error = await failureOf(transportOf(portal).transport.call("crm.status.update", {}))
+    expect(await transportOf(portal).transport.call("crm.status.update", {})).toEqual({ result: true })
+    expect(portal.calls).toHaveLength(2)
+    const held = fakePortal({ "crm.status.update": blocked })
+    const error = await failureOf(transportOf(held).transport.call("crm.status.update", {}))
     expect(error.code).toBe("rate_limited")
-    expect(portal.calls).toHaveLength(1)
+    expect(held.calls).toHaveLength(1)
   })
 
   it("keeps the secret out of a refusal that quotes it", async () => {
@@ -284,7 +291,7 @@ describe("BitrixTransport", () => {
     }
   })
 
-  it("keeps the profile's pace across calls through the shared pacer", async () => {
+  it("keeps the portal's pace across calls through the shared pacer", async () => {
     const now = 1_000_000
     const pacer = new Pacer(
       join(mkdtempSync(join(tmpdir(), "pace-")), "pace.json"),

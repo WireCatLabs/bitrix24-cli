@@ -59,13 +59,14 @@ export const epoch = (value: unknown): number | null => {
 
 /**
  * Money as a decimal string in its currency, both or neither. Bitrix24 gives every deal a currency and `0` for no
- * amount, so `0` is no amount.
+ * amount, so `0` is no amount. REST 2 sends the amount as a string, kept as sent; REST 3.0 as a number, whose
+ * shortest form is the one the portal wrote, where `toFixed` would add the double's error from about 1e10.
  */
 export const amountOf = (value: unknown, currency: unknown): { amount: string | null; currency: string | null } => {
   const found = number(value)
   const code = text(currency)?.toUpperCase() ?? null
   if (found === null || found <= 0 || code === null) return { amount: null, currency: null }
-  return { amount: found.toFixed(6).replace(/\.?0+$/, ""), currency: code }
+  return { amount: typeof value === "string" ? value.trim() : String(found), currency: code }
 }
 
 export const yes = (value: unknown): boolean => value === true || value === "Y" || value === "1" || value === 1

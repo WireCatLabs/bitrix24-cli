@@ -300,7 +300,8 @@ clears the field. A field that names a stage, a pipeline or an owner is refused:
 For `people` and `organizations`, `--field "<label or code>=<value>"` takes the label too, and a field that holds
 several values takes `--field` once per value; `--body` takes the other fields in Bitrix24's own REST 3.0 names.
 
-Each write answers an `operation_id`, which the run journal keeps. A write is sent once. If it ends with
+Each write answers an `operation_id`, which the run journal keeps. A write is sent once, and again only when the
+portal refused it for its request limit, which it does before making anything. If it ends with
 `outcome_unknown`, the portal may have made it: look at the record first (`sync`, then `show`), and write it again only
 if it is not there, because Bitrix24 would make a repeat a second time. `--dry-run` sends nothing and names every
 permission key the command checks, with the option that adds each one: a stage's move and close keys, and

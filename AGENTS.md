@@ -42,8 +42,9 @@ Kept from the template, the same for every service:
   each command path is its own key (WC-PERM-22). `api call` also checks the key of the command it does the same as,
   with `alsoChecks`.
 - **Writes**, `src/commands/write.ts` and `src/commands/crm-writes.ts`: the guard asks or refuses by the command's
-  key, the send journal records the attempt, the answer carries `operation_id`, and a write is never retried: one that
-  got no answer is `outcome_unknown` (WC-PERM-13, WC-PERM-17, WC-OUT-10, WC-LIFE-9). `--dry-run` and
+  key, the send journal records the attempt, the answer carries `operation_id`, and a write is tried again only when
+  the portal refused its rate: one that got no answer is `outcome_unknown` (WC-PERM-13, WC-PERM-17, WC-OUT-10,
+  WC-LIFE-9). `--dry-run` and
   `B24_READ_ONLY` are cli-core's.
 - **MCP and doctor**, `src/program.ts`: cli-core's `appMcpCommand` and `appDoctorCommand`, with b24's own `name` and
   `untrusted` list (WC-MCP-11).
@@ -53,8 +54,9 @@ Kept from the template, the same for every service:
 Bitrix24's own:
 
 - **The transport**, `src/bitrix/transport.ts`: the webhook's secret in the URL path, never in output, no redirects,
-  a timeout, cli-core's `Pacer` at the portal's limit, cli-base's error codes and no retry (WC-SECR-6, WC-SECR-7,
-  WC-OUT-20). `src/bitrix/errors.ts` maps the portal's errors.
+  a timeout, cli-core's `Pacer` at the portal's limit shared by every profile on the portal, and cli-base's error
+  codes. It tries a read again up to 3 times on a refused rate or a lost answer, and a write only on a refused rate
+  (WC-SECR-6, WC-SECR-7, WC-OUT-20). `src/bitrix/errors.ts` maps the portal's errors.
 - **Wire shapes and mappers**, `src/crm/` and `src/bitrix/methods.ts`: each field name from the Bitrix24 REST
   documentation or a captured answer, never from memory; no wire type leaves them (WC-ARCH-3).
 - **The commands**, `src/commands/crm.ts`, `crm-shared.ts`, `crm-writes.ts` and `api.ts`: the shared CRM commands

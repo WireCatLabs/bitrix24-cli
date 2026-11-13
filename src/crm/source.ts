@@ -52,6 +52,8 @@ const toPerson = (raw: Raw): CrmPerson => ({
   name: fullName(raw.name, raw.secondName, raw.lastName),
   email: contacts(raw.email)[0]?.value ?? null,
   phone: contacts(raw.phone)[0]?.value ?? null,
+  ...(Array.isArray(raw.phone) ? { phones: contacts(raw.phone).map(({ value }) => value) } : {}),
+  ...(Array.isArray(raw.email) ? { emails: contacts(raw.email).map(({ value }) => value) } : {}),
   position: text(raw.post),
   ...(Array.isArray(raw.companiesId)
     ? { organizations: ids(raw.companiesId).map((externalId, at) => ({ externalId, primary: at === 0 })) }

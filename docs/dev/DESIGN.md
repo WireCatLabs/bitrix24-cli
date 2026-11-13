@@ -204,7 +204,8 @@ and `type`); field names are from the REST 3.0 field pages and the `user.get` an
    journalled (WC-OUT-10, WC-PERM-13). On REST 3.0 the `operation_id` is sent as the `Idempotency-Key` header, but
    the live check of 2026-11-07 saw a repeated create make a second lead, so the write port declares Bitrix24 not
    idempotent and there is no `--operation-id`. A write that got no answer is `outcome_unknown`, and the owner looks
-   at the portal before writing again.
+   at the portal before writing again. A write the portal refused for its rate is sent again after the wait: the
+   refusal comes before the portal does anything.
 
 ### Writes
 
@@ -242,9 +243,11 @@ and `type`); field names are from the REST 3.0 field pages and the `user.get` an
 ### The portal's limits
 
 - Bitrix24 allows 2 requests a second with a burst of 50 per portal (5 and 250 on Enterprise), shared by every app
-  and webhook. `b24` paces itself with cli-core's `Pacer`, shared by every `b24` process of a profile.
+  and webhook. `b24` paces itself with cli-core's `Pacer`, shared by every `b24` process on the portal, whatever
+  the profile.
 - A refused rate (HTTP 503 `QUERY_LIMIT_EXCEEDED`, or 429 `OPERATION_TIME_LIMIT` for one method) is `rate_limited`
-  with how long to wait. A read is tried again a few times; a write never is.
+  with how long to wait. A read or a write is tried again a few times, since the portal refused it before doing
+  anything. A read is also tried again on a lost answer; a write never is.
 
 ## Open questions for the owner
 

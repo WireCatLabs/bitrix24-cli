@@ -50,7 +50,7 @@ export interface BitrixTransportOptions {
   timeoutMs?: number
   signal?: AbortSignal
   events?: EventSink
-  /** Shared by every `b24` process of the profile: the portal's limit is per portal, not per process. */
+  /** Shared by every `b24` process on the portal, whatever the profile: the portal's limit is per portal. */
   pacer?: Pacer
   sleep?: SleepLike
   now?: () => number
@@ -115,9 +115,10 @@ export class BitrixTransport {
   }
 
   /**
-   * Reads are tried again on a refused rate or a lost answer. A write is sent once: on a live portal, a create repeated
-   * with the same `Idempotency-Key` made a second record, so a write that got no answer is `outcome_unknown` and the
-   * owner looks at the portal before repeating it.
+   * Reads are tried again on a refused rate or a lost answer. A write is tried again only on a refused rate, which the
+   * portal answers before doing anything. Otherwise it is sent once: on a live portal, a create repeated with the same
+   * `Idempotency-Key` made a second record, so a write that got no answer is `outcome_unknown` and the owner looks at
+   * the portal before repeating it.
    */
   async call(method: string, params: Record<string, unknown> = {}, options: CallOptions = {}): Promise<BitrixAnswer> {
     const known = methodOf(method)
@@ -142,10 +143,10 @@ export class BitrixTransport {
             continue
           }
         }
-        if (!isCliError(error) || !reads) throw error
+        if (!isCliError(error)) throw error
         const asked = error.details.retry_after_ms
         const wait = typeof asked === "number" ? asked : backoffMs(attempt, RETRY, this.#random)
-        const again = error.code === "rate_limited" || error.details.retryable === true
+        const again = error.code === "rate_limited" || (reads && error.details.retryable === true)
         if (!again || wait > RETRY.maxRetryAfterMs || attempt > RETRY.retries) throw error
         if (error.code === "rate_limited") await this.#pacer?.holdFor(wait)
         await this.#wait(wait, method)

@@ -39,14 +39,15 @@ export const contextOf = (command: Command) => {
 }
 
 export const transportFor = (command: Command, auth: Webhook | AppAuth, events?: EventSink): BitrixTransport => {
-  const { environment, env, profile } = contextOf(command)
+  const { environment, env } = contextOf(command)
   return new BitrixTransport({
     auth,
     ...(events ? { events } : {}),
     ...(environment.fetch ? { fetch: environment.fetch } : {}),
     ...(environment.signal ? { signal: environment.signal } : {}),
     ...(environment.sleep ? { sleep: environment.sleep } : {}),
-    pacer: new Pacer(pacePathFor(IDENTITY, profile, env), PORTAL_PACE),
+    // Bitrix24 counts requests per portal: two profiles on one portal share one pace.
+    pacer: new Pacer(pacePathFor(IDENTITY, `portal-${new URL(auth.origin).hostname}`, env), PORTAL_PACE),
   })
 }
 

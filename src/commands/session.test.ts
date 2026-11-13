@@ -1,3 +1,5 @@
+import { readdirSync } from "node:fs"
+import { join } from "node:path"
 import { memoryKeyring } from "@wirecat/cli-base"
 import { describe, expect, it } from "vitest"
 import { FAKE_HOOK, FAKE_SECRET, fakePortal, ok } from "../testing/fake-portal.js"
@@ -27,6 +29,14 @@ describe("session", () => {
     })
     expect(keyring.get("bitrix24-cli", "token:work")).toBe(FAKE_HOOK)
     expect(ran.out + ran.err).not.toContain(FAKE_SECRET)
+  })
+
+  it("two profiles on one portal share one pace, since Bitrix24 limits the portal", async () => {
+    const keyring = memoryKeyring()
+    const hooks = { work: FAKE_HOOK, home: FAKE_HOOK.replace("/7/", "/9/") }
+    for (const [profile, hook] of Object.entries(hooks))
+      expect((await b24([profile, "session", "start"], { keyring, portal: portal(), stdin: hook })).code).toBe(0)
+    expect(readdirSync(join(process.env.B24_STATE_DIR ?? "", "pace"))).toEqual(["portal-example.bitrix24.test.json"])
   })
 
   it("start names a department head a manager, and anyone else not one even when departments are refused", async () => {
