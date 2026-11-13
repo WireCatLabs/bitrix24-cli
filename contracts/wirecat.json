@@ -1275,7 +1275,13 @@
   },
   "network": {
     "hosts": [
-      "oauth.bitrix.info"
+      "oauth.bitrix.info",
+      "registry.npmjs.org",
+      "huggingface.co",
+      "*.huggingface.co",
+      "*.hf.co",
+      "github.com",
+      "*.githubusercontent.com"
     ],
     "user_hosts": "the Bitrix24 portal in your webhook address, or the one you sign in to with a local application"
   },

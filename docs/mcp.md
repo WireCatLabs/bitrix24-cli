@@ -34,8 +34,9 @@ The server has three tools:
 - `b24_write` runs a command that writes: `{ "command": "deals move", "arguments": { "deal": "deal:12", ... } }`.
 
 A command is named as on the command line, without the profile, and checks the same permission key. These are never
-offered over MCP: `api call`, `schedule`, `session start` and `session end`. The agent asks you to run them in a
-terminal.
+offered over MCP: `api call`, `session start` and `session end`. The agent asks you to run them in a terminal. Of
+`schedule`, MCP runs `list`, `run` and `exec`; the commands that add, change or remove a timer are refused unless
+`permissions.mcp.authority` is `allow`.
 
 Text from the portal comes marked `untrusted`: deal and lead titles, pipeline and stage names, the names of contacts,
 companies and employees, custom field values, phones, e-mails and links, and what `search all` finds. The agent is told
