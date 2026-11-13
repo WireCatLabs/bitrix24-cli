@@ -64,7 +64,9 @@ not offered over MCP.
 terminal. The timer runs `b24 schedule exec <file>`, and the schedule file in the state folder holds the words, the
 profile, your `PATH` and the folders `b24` uses (`B24_CONFIG_DIR`, `B24_STATE_DIR`, `MESSAGING_STORE`), never the
 webhook's address. Each run checks the permissions again. `B24_READ_ONLY` refuses
-`schedule command`, `remove`, `run` and `exec`, and no MCP tool offers `schedule`.
+`schedule command`, `remove`, `run` and `exec`. Over MCP an agent may run `schedule run` and `schedule exec`, each
+behind its own permission key (`schedule.run`, `schedule.exec`). Adding, pausing, resuming or removing a timer over MCP
+is refused unless the profile sets `permissions.mcp.authority` to `allow`.
 
 A write that got no answer is not sent again: it is `outcome_unknown` with its `operation_id`. Check the portal, and
 write it again only if it is not there: Bitrix24 would make a repeat a second time.

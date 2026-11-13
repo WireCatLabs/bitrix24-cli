@@ -28,12 +28,13 @@ it("serves search, read and write, and runs a command through the CLI", async ()
   }
 })
 
-it("pins b24's own commands an agent can find, and never offers api call or schedule", async () => {
+it("pins b24's own commands an agent can find, and offers schedule run and exec but never api call", async () => {
   const program = createProgram()
+  const authority = changesAuthorityAt(program)
   const options = {
     includeUnavailable: true,
     exclude: [["mcp"]],
-    authority: changesAuthorityAt(program),
+    authority,
     fetchOnly: readsOverMcpAt(program),
     permissions,
   }
@@ -43,6 +44,12 @@ it("pins b24's own commands an agent can find, and never offers api call or sche
   const tools = toolsFromCommands(describeProgram(program), options)
   const catalogue = Object.fromEntries(tools.map((tool) => [tool.command, tool.writes ? "write" : "read"]))
   expect(Object.keys(catalogue)).not.toContain("api call")
-  expect(Object.keys(catalogue).filter((command) => command.startsWith("schedule"))).toEqual([])
+  const schedule = Object.keys(catalogue).filter((command) => command.startsWith("schedule "))
+  expect(schedule.filter((command) => !authority(command.split(" ")))).toEqual([
+    "schedule list",
+    "schedule agents list",
+    "schedule run",
+    "schedule exec",
+  ])
   expect(catalogue["deals update"]).toBe("write")
 })

@@ -135,8 +135,10 @@ and `type`); field names are from the REST 3.0 field pages and the `user.get` an
 - **Company type** ([dictionaries](https://apidocs.bitrix24.com/api-reference/crm/rest-v3/dictionaries/index.html)). `typeId` goes to core as `type`; it means a relationship only through the owner's
   `crm.bitrix24:<portal>.company-types` setting.
 - **No parent company, no dates** ([fields-company](https://apidocs.bitrix24.com/api-reference/crm/rest-v3/items/fields-company.html)). Bitrix24 has neither, so neither is stored.
-- **On a timer.** `schedule` is cli-core's shared command, mounted as gcal mounts it and off MCP, so `b24 <profile>
-  schedule command <name> --every 1h -- sync` keeps the store fresh.
+- **On a timer.** `schedule` is cli-core's shared command, mounted as cli-core gives it, so `b24 <profile>
+  schedule command <name> --every 1h -- sync` keeps the store fresh. The owner ruled on 2026-11-13 that an agent may
+  run `schedule run` and `schedule exec` over MCP, behind their own permission keys; installing or removing a timer
+  stays behind `permissions.mcp.authority`, as in every CLI on cli-core.
 
 ### Search
 
