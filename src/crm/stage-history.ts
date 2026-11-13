@@ -1,17 +1,8 @@
+import type { CrmStageEntry } from "@wirecat/cli-core"
 import type { CrmCallContext, CrmPage } from "@wirecat/cli-core/crm"
 import type { BitrixCaller } from "../bitrix/transport.js"
 import { LEAD_PIPELINE } from "./lead.js"
 import { epoch, fieldOf, id, portalTime, type Raw, rawsOf } from "./values.js"
-
-/** Until cli-core exports it: the shape of `CrmStageEntry`. */
-export interface StageEntry {
-  externalId: string
-  kind: "deal" | "lead"
-  item: string
-  pipeline: string
-  stage: string
-  at: number
-}
 
 /** A list page of `crm.stagehistory.list` (apidocs: 50 rows). */
 const PAGE = 50
@@ -21,7 +12,7 @@ const ENTRIES = new Set(["2", "3", "5"])
 
 const entryOf =
   (kind: "deal" | "lead") =>
-  (raw: Raw): StageEntry | null => {
+  (raw: Raw): CrmStageEntry | null => {
     const externalId = id(raw.ID)
     const item = id(raw.OWNER_ID)
     // Leads name their stage `STATUS_ID` and have one list of stages; a deal's pipeline is its category.
@@ -50,7 +41,7 @@ export const readStageHistory = async (
   since: number,
   after: string | undefined,
   _context?: CrmCallContext,
-): Promise<CrmPage<StageEntry>> => {
+): Promise<CrmPage<CrmStageEntry>> => {
   const answer = await caller.call("crm.stagehistory.list", {
     entityTypeId: kind === "lead" ? 1 : 2,
     order: { ID: "ASC" },
@@ -59,7 +50,7 @@ export const readStageHistory = async (
     start: 0,
   })
   const rows = rawsOf(fieldOf(answer.result, "items"))
-  const items = rows.map(entryOf(kind)).filter((one): one is StageEntry => one !== null)
+  const items = rows.map(entryOf(kind)).filter((one): one is CrmStageEntry => one !== null)
   const last = id(rows.at(-1)?.ID) ?? after
   if (rows.length === PAGE && last) return { items, hasMore: true, nextCursor: last }
   return last ? { items, hasMore: false, cursor: last } : { items, hasMore: false }

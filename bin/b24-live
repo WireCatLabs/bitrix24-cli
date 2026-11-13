@@ -260,7 +260,18 @@ deal=$(b24 deals create --title "$title" --pipeline "$pipeline" --json | value i
 [ -n "$deal" ] || { echo "!! deals create gave no ref"; exit 1; }
 echo "created $deal: $title"
 step deals update "$deal" --close-date "$(date -d '+30 days' +%Y-%m-%d)" --json=deal.close_date
-if [ -n "$next" ]; then step deals move "$deal" "$next" --json=deal.stage,deal.status; else echo "one open stage only — no move"; fi
+if [ -n "$next" ]; then
+  # A rule on the stage the deal moves to: the sync after the move opens its task from the portal's stage history.
+  b24 config set "crm.bitrix24:$portal.stage-tasks" "{\"$next\":{\"title\":\"WireCat test task\",\"due_days\":0}}" \
+    >/dev/null || fail "config set stage-tasks: exit $?"
+  step deals move "$deal" "$next" --json=deal.stage,deal.status
+  printf '\n== b24 live stage history\n'
+  opened=$(b24 sync --json 2>/dev/null | value item.stage_tasks)
+  if [ "${opened:-0}" -ge 1 ]; then echo "ok: the move opened $opened stage task(s) from the stage history"; else
+    fail "the move opened no stage task ('$opened')"
+  fi
+  b24 config unset "crm.bitrix24:$portal.stage-tasks" >/dev/null || fail "config unset stage-tasks: exit $?"
+else echo "one open stage only — no move"; fi
 step deals delete "$deal" --yes --json=ref,removed
 echo "deleted $deal"
 

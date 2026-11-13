@@ -310,7 +310,7 @@
         "deals",
         "show"
       ],
-      "summary": "one deal with its pipeline, stage, status, amount and the people on it; with…",
+      "summary": "one deal with its pipeline, stage, status, amount and the people on it, and…",
       "effects": {
         "remote": "none",
         "local": "read"
@@ -401,7 +401,7 @@
         "leads",
         "show"
       ],
-      "summary": "one lead with its pipeline, stage, status, amount and the people on it; with…",
+      "summary": "one lead with its pipeline, stage, status, amount and the people on it, and…",
       "effects": {
         "remote": "none",
         "local": "read"
