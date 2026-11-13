@@ -128,6 +128,25 @@ describe("the Bitrix24 adapter", () => {
     expect(partner).toMatchObject({ pipeline: "1", stage: "C1:NEW", amount: null, currency: null })
   })
 
+  it("hands core every phone and address of a contact, so a call or a chat can be linked by any of them", async () => {
+    const crm = seededCrm()
+    crm.put("contact", {
+      name: "Boris",
+      phone: [
+        { valueTypeId: "WORK", value: "+7 900 000-00-01" },
+        { valueTypeId: "MOBILE", value: "+7 900 000-00-02" },
+      ],
+      email: [{ valueTypeId: "WORK", value: "boris@example.com" }],
+    })
+    const page = await over(crm).source.changes("person", null)
+    if ("reset" in page) throw new Error("reset")
+    expect(page.items.find((one) => one.name === "Boris")).toMatchObject({
+      phone: "+7 900 000-00-01",
+      phones: ["+7 900 000-00-01", "+7 900 000-00-02"],
+      emails: ["boris@example.com"],
+    })
+  })
+
   it("maps a lead with nobody linked with its own person and company, an empty name part left out", async () => {
     const { source } = over(seededCrm())
     const page = await source.changes("lead", null)

@@ -133,6 +133,30 @@ describe("lists read the store, --offline too", () => {
     expect(items(await b24(["work", "deals", "list", "--json"], { env })).length).toBeGreaterThan(0)
   })
 
+  it("a large amount keeps its digits, and one past core's largest is named, not stored wrong", async () => {
+    const portal = seededCrm()
+    portal.put("deal", {
+      title: "Big",
+      categoryId: 0,
+      stageId: "PREPARATION",
+      opportunity: 98765432109.87,
+      currencyId: "RUB",
+    })
+    portal.put("deal", {
+      title: "Huge",
+      categoryId: 0,
+      stageId: "PREPARATION",
+      opportunity: 1e15 + 0.5,
+      currencyId: "RUB",
+    })
+    const sync = await b24(["work", "sync", "--json"], { portal })
+    expect(sync.code, sync.err).toBe(0)
+    const deals = items(await b24(["work", "--offline", "deals", "list", "--json"], { portal }))
+    expect(deals.find((one) => one.title === "Big")).toMatchObject({ amount: "98765432109.87", currency: "RUB" })
+    expect(deals.find((one) => one.title === "Huge")).toBeUndefined()
+    expect(JSON.stringify(sync.json())).toContain("crm.item-invalid")
+  })
+
   it("deals and leads in core's shape: status, pipeline, stage, close date, a decimal amount, assignee, custom values", async () => {
     const { portal } = await synced()
     const before = portal.calls.length
