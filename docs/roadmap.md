@@ -28,7 +28,7 @@ the [command reference](commands.md).
 ## Later
 
 - **Portal events.** A queue of the portal's events, so `b24` learns what changed without a full pass.
-- **Activities, to-dos and timeline comments** on deals, leads, contacts and companies.
+- **Activities, to-dos and timeline comments on contacts and companies.** Those on deals and leads are read.
 - **Quotes, smart invoices and smart processes.**
 - **A duplicate check before create.** `b24` warns when a contact, company or lead like the new one already exists.
 - **CSV import.** Export is there: `--format csv` on the lists.
