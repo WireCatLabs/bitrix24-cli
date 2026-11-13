@@ -2,6 +2,30 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## 0.20.0 — 13.11.2026
+
+### Added
+
+- **An agent can run a schedule over MCP.** `schedule list`, `schedule run` and `schedule exec` are MCP tools, each
+  behind its own permission key. Adding, pausing, resuming or removing a timer over MCP is still refused unless
+  `permissions.mcp.authority` is `allow`. Before, b24 kept all of `schedule` off MCP. See
+  [MCP](docs/mcp.md).
+- `b24 --help` lists `pbx`, the Asterisk tool, under "Works with" (cli-core 0.651.0).
+
+### Changed — may break callers
+
+- **Built on cli-core 0.651.0** (was 0.650.0). A stale meeting project fingerprint is now `conflict`, not
+  `configuration_error`. See the [cli-core changelog](https://github.com/WireCatLabs/cli-core/blob/main/CHANGELOG.md).
+- **Built on cli-core 0.654.0** (was 0.651.0). See the
+  [cli-core changelog](https://github.com/WireCatLabs/cli-core/blob/main/CHANGELOG.md).
+
+### Fixed
+
+- **`sync` runs on a fresh install.** A shared WireCat config that could not be read (a byte-order mark, broken
+  JSON, a folder in its place, an older `setup` shape) made b24 refuse `sync` with "setup's answer keeps every
+  WireCat tool read-only". Now only the owner's own "read only" answer limits b24, and even then `sync` runs: it only
+  reads the portal into the local store (cli-core 0.654.0).
+
 ## 0.19.0 — 13.11.2026
 
 ### Added
