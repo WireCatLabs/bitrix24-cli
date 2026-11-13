@@ -49,8 +49,6 @@ b24 commands info [path]
 |---|---|---|
 | `path` | optional | one command path; without one, export schemas, error reasons and explicit overrides. |
 
-**Returns:** one command contract, or all schemas, error reasons and explicit overrides
-
 **Example:** `b24 commands info commands`
 
 ## `b24 session`
@@ -73,8 +71,6 @@ b24 session start [options]
 | `--portal <host>` | sign in through a local application on this portal, such as example.bitrix24.ru. |
 | `--client-id <id>` | the local application's Application ID (client_id), or B24_BITRIX24_CLIENT_ID; its key comes from B24_BITRIX24_CLIENT_SECRET, a hidden prompt or stdin. |
 
-**Returns:** sign in with a Bitrix24 incoming webhook, or with a local application
-
 **Example:** `b24 work session start`, `b24 work session start --json`, `b24 work session start --portal example.bitrix24.ru --client-id local.0123abcd.45678901`
 
 ### `b24 session status`
@@ -89,8 +85,6 @@ b24 session status [options]
 |---|---|
 | `--check` | ask the portal whether the sign-in still works and whose it is: the user's id, name and admin rights. |
 
-**Returns:** show how this profile signs in, and with --check as whom it acts
-
 **Example:** `b24 work session status`, `b24 work session status --check --json`
 
 ### `b24 session end`
@@ -103,8 +97,6 @@ forget this profile's webhook address, or its local application's key and tokens
 b24 session end
 ```
 
-**Returns:** forget this profile's webhook address or application sign-in on this computer
-
 **Example:** `b24 work session end`
 
 ### `b24 session list`
@@ -114,8 +106,6 @@ list the profiles on this computer and whether each has a webhook or an applicat
 ```sh
 b24 session list
 ```
-
-**Returns:** list the profiles here and whether each is signed in
 
 **Example:** `b24 session list`, `b24 session list --json`
 
@@ -398,8 +388,6 @@ copy every readable row into a new file with the sqlite3 program, rebuild the se
 ```sh
 b24 store recover run
 ```
-
-**Returns:** rebuild a damaged store from every row it can read
 
 **Example:** `b24 personal store recover run`
 
@@ -804,7 +792,7 @@ search what the local store holds
 
 ### `b24 search all`
 
-search the CRM's deals and leads by the words of their title, company and contacts, and messages, notes, calendar events and meetings other WireCat tools stored — best match first. Use it when you do not know where something was written
+search the CRM's deals and leads by the words of their title, company, contacts and activities, and the messages, notes, calendar events and meetings other WireCat tools stored — best match first. Use it when you do not know where something was written
 
 ```sh
 b24 search all <query> [options]
@@ -812,7 +800,7 @@ b24 search all <query> [options]
 
 | Argument | | What it is |
 |---|---|---|
-| `query` | required | words and "phrases"; deals and leads match the words of their title, company and contacts. |
+| `query` | required | words and "phrases"; deals and leads match the words of their title, company, contacts and activities. |
 
 | Option | What it does |
 |---|---|
@@ -1119,8 +1107,6 @@ b24 api show <method>
 |---|---|---|
 | `method` | required | the Bitrix24 method, such as crm.deal.list. |
 
-**Returns:** show a method's REST version and permissions; calls nothing
-
 **Example:** `b24 work api show crm.deal.update --json`
 
 ### `b24 api call`
@@ -1141,8 +1127,6 @@ b24 api call <method> [options]
 |---|---|
 | `--body <json>` | the method's parameters, as a JSON object. |
 | `--dry-run` | show every permission this call checks, with its level, and call nothing. |
-
-**Returns:** call one Bitrix24 method by name with JSON parameters
 
 **Example:** `b24 work api call crm.deal.list --body '{"select":["id","title"],"pagination":{"limit":5}}'`, `b24 work api call crm.status.list --body '{"filter":{"ENTITY_ID":"STATUS"}}'`
 
@@ -1173,8 +1157,6 @@ b24 schedule command <name> <args> [options]
 | `--notify-on <when>` | desktop notice after a run (default failures for an agent that repeats with --every, else always). One of: `always`, `failures`, `never`. |
 | `--deliver-to <route>` | also send the result, when --notify-on says so, by the owner's own tg or mail: telegram-bot:<profile>/<chat id or user:id>, or email:<profile>/<address>; repeat it for more. |
 
-**Returns:** run b24 <args…> on a timer — reads save what they read, so this is how a…
-
 **Example:** `b24 personal schedule command health --every 1h -- doctor`, `b24 personal schedule command morning-check --at 08:00 -- doctor`
 
 ### `b24 schedule agent`
@@ -1204,8 +1186,6 @@ b24 schedule agent <name> <harness> <prompt> [options]
 | `--at-time <time>` | one run: 30m, 2d from now, or an ISO time; the schedule removes itself after it. |
 | `--notify-on <when>` | desktop notice after a run (default failures for an agent that repeats with --every, else always). One of: `always`, `failures`, `never`. |
 | `--deliver-to <route>` | also send the result, when --notify-on says so, by the owner's own tg or mail: telegram-bot:<profile>/<chat id or user:id>, or email:<profile>/<address>; repeat it for more. |
-
-**Returns:** start an agent (claude, codex, gemini, cursor, opencode, openclaw, hermes,…
 
 **Example:** `b24 personal schedule agent review claude "review what came in overnight and draft replies" --at 08:30`, `b24 personal schedule agent triage gemini "list what needs an answer today" --every 2h`, `b24 personal schedule agent weekly claude "review the week's open threads" --at 09:00 --model opus`
 
@@ -1264,8 +1244,6 @@ b24 schedule run <name> [options]
 | `--no-notify` | keep the result here: send it along none of its routes. |
 | `--deliver-to <route>` | send it along only this one of its own routes; repeat it for more. |
 
-**Returns:** run a schedule now, as its timer would, and wait for it; a paused one runs too
-
 **Example:** `b24 personal schedule run health`
 
 ### `b24 schedule remove`
@@ -1281,8 +1259,6 @@ b24 schedule remove <name>
 | Argument | | What it is |
 |---|---|---|
 | `name` | required | the schedule's name, as `schedule list` shows it. |
-
-**Returns:** stop a schedule and remove its timer; its past output stays
 
 **Example:** `b24 personal schedule remove health`
 
@@ -1300,8 +1276,6 @@ b24 schedule pause <name>
 |---|---|---|
 | `name` | required | the schedule's name, as `schedule list` shows it. |
 
-**Returns:** take a schedule off its timer and keep it; run runs it, resume puts it back
-
 **Example:** `b24 personal schedule pause health`
 
 ### `b24 schedule resume`
@@ -1317,8 +1291,6 @@ b24 schedule resume <name>
 | Argument | | What it is |
 |---|---|---|
 | `name` | required | the schedule's name, as `schedule list` shows it. |
-
-**Returns:** put a paused schedule back on its timer
 
 **Example:** `b24 personal schedule resume health`
 
@@ -1337,8 +1309,6 @@ b24 schedule exec <file> [seal]
 | `file` | required | the schedule's schedule.json in the state folder, as the timer passes it. |
 | `seal` | optional | the file's SHA-256 as it was saved, which the timer passes; a file that differs does not run. |
 
-**Returns:** what a timer runs, given the schedule's file; to run one by hand, use run
-
 **Example:** `b24 personal schedule exec ~/.local/share/bitrix24-cli/schedules/health/schedule.json`
 
 ## `b24 doctor`
@@ -1353,8 +1323,6 @@ b24 doctor [options]
 |---|---|
 | `--online` | also connect once and read the account; sends nothing. |
 
-**Returns:** the state this installation is in, without connecting unless --online
-
 **Example:** `b24 doctor`, `b24 doctor --json`
 
 ### `b24 doctor reports`
@@ -1368,8 +1336,6 @@ what a problem report holds; writes nothing
 ```sh
 b24 doctor reports show
 ```
-
-**Returns:** what a report holds and never holds, and where to send it; writes nothing
 
 **Example:** `b24 doctor reports show`
 
@@ -1387,8 +1353,6 @@ b24 doctor reports create [options]
 |---|---|
 | `--run <id>` | the run the report is about; the newest failed one if not given. |
 | `--output <file>` | where to write it; a new file in this directory if not given. |
-
-**Returns:** the report file written: its path, the run it is about, and where to send it
 
 **Example:** `b24 doctor reports create --output ./problem-report.json`
 
@@ -1408,8 +1372,6 @@ b24 skill show [options]
 |---|---|
 | `--for <agents>` | print the copy installed for these agents instead of this version's. One of: `claude`, `agents`. |
 
-**Returns:** print the tool's instructions for AI agents
-
 **Example:** `b24 skill show`
 
 ### `b24 skill install`
@@ -1426,8 +1388,6 @@ b24 skill install [options]
 |---|---|
 | `--for <agents>` | which agents to install for. One of: `claude`, `agents`, `hermes`, `all`. Default: `all`. |
 
-**Returns:** install the tool's instructions for AI agents
-
 **Example:** `b24 skill install --for agents`
 
 ### `b24 skill status`
@@ -1437,8 +1397,6 @@ for each place `b24 skill install` writes to, and for the copy Hermes reads: the
 ```sh
 b24 skill status
 ```
-
-**Returns:** whether the installed instructions for AI agents match this version
 
 **Example:** `b24 skill status`, `b24 skill status --json`
 
@@ -1453,8 +1411,6 @@ b24 guide [name]
 | Argument | | What it is |
 |---|---|---|
 | `name` | optional | one scenario; without it, the list. |
-
-**Returns:** scenarios: the commands for a common task, in order, and why each
 
 **Example:** `b24 guide`, `b24 guide first-sync --json`
 
@@ -1480,8 +1436,6 @@ b24 mcp serve [options]
 | `--port <port>` | the local port for --http (default 8765). |
 | `--public-url <url>` | the tunnel's https address the browser apps use, e.g. https://<name>.ts.net or https://<name>.ts.net/tg. |
 
-**Returns:** serve this profile's commands to an AI agent
-
 **Example:** `b24 personal mcp serve`, `b24 mcp serve --profiles work,personal`, `b24 personal mcp serve --http --public-url https://laptop.example.ts.net`
 
 ### `b24 mcp revoke`
@@ -1497,8 +1451,6 @@ b24 mcp revoke [options]
 | Option | What it does |
 |---|---|
 | `--profiles <names\|all>` | serve several profiles from one server instead of one: names, comma-separated, or all for every profile. |
-
-**Returns:** forget every login given to a browser app
 
 **Example:** `b24 personal mcp revoke`, `b24 mcp revoke --profiles all`
 
@@ -1523,8 +1475,6 @@ b24 mcp server start [options]
 | `--permission <key=level>` | make a permission stricter for this server only; repeat for more keys. |
 | `--profiles <names\|all>` | the server of several profiles that `mcp serve --profiles` serves: names, comma-separated, or all. |
 
-**Returns:** start the HTTP MCP server in the background
-
 **Example:** `b24 personal mcp server start --public-url https://laptop.example.ts.net`
 
 #### `b24 mcp server stop`
@@ -1541,8 +1491,6 @@ b24 mcp server stop [options]
 |---|---|
 | `--profiles <names\|all>` | the server of several profiles that `mcp serve --profiles` serves: names, comma-separated, or all. |
 
-**Returns:** stop the background HTTP MCP server
-
 **Example:** `b24 personal mcp server stop`
 
 #### `b24 mcp server status`
@@ -1556,8 +1504,6 @@ b24 mcp server status [options]
 | Option | What it does |
 |---|---|
 | `--profiles <names\|all>` | the server of several profiles that `mcp serve --profiles` serves: names, comma-separated, or all. |
-
-**Returns:** whether the HTTP MCP server runs, its login code and the apps logged in
 
 **Example:** `b24 personal mcp server status --json`
 
@@ -1573,8 +1519,6 @@ b24 mcp config [options]
 |---|---|
 | `--permission <key=level>` | make a permission stricter for this server only, like deals.delete=deny; it never loosens the profile; repeat for more keys. |
 | `--profiles <names\|all>` | serve several profiles from one server instead of one: names, comma-separated, or all for every profile. |
-
-**Returns:** print the local MCP configuration of this profile, or of those --profiles names
 
 **Example:** `b24 personal mcp config`, `b24 mcp config --profiles all`
 
@@ -1597,8 +1541,6 @@ b24 mcp add <client> [options]
 | `--allow-writes` | acknowledge that this profile offers writing tools. |
 | `--permission <key=level>` | make a permission stricter for this server only, like deals.delete=deny; it never loosens the profile; repeat for more keys. |
 
-**Returns:** add this profile's local MCP server to Codex or Claude Code
-
 **Example:** `b24 personal mcp add codex --allow-writes`
 
 ### `b24 mcp check`
@@ -1612,8 +1554,6 @@ b24 mcp check [options]
 | Option | What it does |
 |---|---|
 | `--permission <key=level>` | make a permission stricter for this server only, like deals.delete=deny; it never loosens the profile; repeat for more keys. |
-
-**Returns:** check this profile's local MCP handshake and tool list
 
 **Example:** `b24 personal mcp check`
 
@@ -1631,8 +1571,6 @@ b24 upgrade [options]
 |---|---|
 | `--check` | say whether a newer version exists, and install nothing. |
 
-**Returns:** upgrade b24 with the package manager that installed it; --check only looks
-
 **Example:** `b24 upgrade --check`
 
 ## `b24 config`
@@ -1646,8 +1584,6 @@ the profile, the profiles that exist, and each setting with where it came from
 ```sh
 b24 config show
 ```
-
-**Returns:** the profile, the profiles that exist, and each setting with where it came from
 
 **Example:** `b24 personal config show`
 
@@ -1670,8 +1606,6 @@ b24 config set <setting> <value> [options]
 |---|---|
 | `--defaults` | change what every profile gets, rather than this profile. |
 
-**Returns:** save a setting to the configuration file
-
 **Example:** `b24 personal config set limit 20`
 
 ### `b24 config unset`
@@ -1692,8 +1626,6 @@ b24 config unset <setting> [options]
 |---|---|
 | `--defaults` | change what every profile gets, rather than this profile. |
 
-**Returns:** remove a setting from the configuration file
-
 **Example:** `b24 personal config unset limit`
 
 ### `b24 config migrate`
@@ -1705,8 +1637,6 @@ write each setting the file lacks at its default, keeping yours
 ```sh
 b24 config migrate
 ```
-
-**Returns:** write each setting the file lacks at its default, keeping yours
 
 **Example:** `b24 config migrate`
 
@@ -1724,8 +1654,6 @@ b24 config repair [options]
 |---|---|
 | `--dry-run` | say what it would fix, and change nothing. |
 
-**Returns:** fix the settings file's JSON syntax, keeping every value
-
 **Example:** `b24 config repair`, `b24 config repair --dry-run`
 
 ## `b24 complete`
@@ -1739,8 +1667,6 @@ b24 complete [words]
 | Argument | | What it is |
 |---|---|---|
 | `words` | optional | zsh for the shell script, or command words to complete. |
-
-**Returns:** shell completion: `b24 complete zsh` prints the script to source
 
 **Example:** `b24 complete zsh`
 
