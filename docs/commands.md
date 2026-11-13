@@ -413,13 +413,13 @@ b24 deals list [query] [options]
 | `--page <n>` | which page, starting at 1. Default: `1`. |
 | `--format <format>` | csv: this page as a table for a spreadsheet; --json=a,b picks its columns. One of: `csv`. |
 
-**Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 28 more; every field: b24 commands info deals list
+**Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 29 more; every field: b24 commands info deals list
 
 **Example:** `b24 work deals list status:open --json`, `b24 work deals list stage:"Quote sent"`, `b24 work deals list status:open --format csv > deals.csv`
 
 ### `b24 deals show`
 
-one deal with its pipeline, stage, status, amount and the people on it; with the activities setting on, its activities and tasks too
+one deal with its pipeline, stage, status, amount and the people on it, and the newest recorded meetings and calls of those people in this account's scope; with the activities setting on, its activities and tasks too
 
 ```sh
 b24 deals show <deal>
@@ -429,7 +429,7 @@ b24 deals show <deal>
 |---|---|---|
 | `deal` | required | deal:<id>, as a list shows it. |
 
-**Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 28 more; every field: b24 commands info deals show
+**Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 29 more; every field: b24 commands info deals show
 
 **Example:** `b24 work deals show deal:12`
 
@@ -569,13 +569,13 @@ b24 leads list [query] [options]
 | `--page <n>` | which page, starting at 1. Default: `1`. |
 | `--format <format>` | csv: this page as a table for a spreadsheet; --json=a,b picks its columns. One of: `csv`. |
 
-**Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 28 more; every field: b24 commands info leads list
+**Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 29 more; every field: b24 commands info leads list
 
 **Example:** `b24 work leads list status:open --json`, `b24 work leads list stage:"Quote sent"`, `b24 work leads list status:open --format csv > leads.csv`
 
 ### `b24 leads show`
 
-one lead with its pipeline, stage, status, amount and the people on it; with the activities setting on, its activities and tasks too
+one lead with its pipeline, stage, status, amount and the people on it, and the newest recorded meetings and calls of those people in this account's scope; with the activities setting on, its activities and tasks too
 
 ```sh
 b24 leads show <lead>
@@ -585,7 +585,7 @@ b24 leads show <lead>
 |---|---|---|
 | `lead` | required | lead:<id>, as a list shows it. |
 
-**Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 28 more; every field: b24 commands info leads show
+**Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 29 more; every field: b24 commands info leads show
 
 **Example:** `b24 work leads show lead:12`
 

@@ -13,6 +13,7 @@ import { ORGANIZATION } from "./organization.js"
 import { NO_MEMORY, type OwnMemory } from "./own-memory.js"
 import { PERSON } from "./person.js"
 import { bitrixPipelines } from "./pipelines.js"
+import { readStageHistory } from "./stage-history.js"
 import { activeEmployees, portalDepartments, portalUsers } from "./user.js"
 import {
   contacts,
@@ -324,6 +325,7 @@ export const bitrixCrmSource = (
       }
     },
     pipelines: (kind, context) => bitrixPipelines(metered(context), kind),
+    stageHistory: (kind, since, after, context) => readStageHistory(metered(context), kind, since, after, context),
     activities(since, page, context) {
       const caller = metered(context)
       const started = now()

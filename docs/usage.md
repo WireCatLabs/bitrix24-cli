@@ -206,6 +206,8 @@ b24 work config set crm.bitrix24:example.bitrix24.ru.stage-tasks \
 b24 work sync          # moves since the last sync open their tasks
 ```
 
+b24 reads the portal's own stage history, so a deal that passed through a stage between two syncs still gets that
+stage's task: a move from "New" through "Quote" to "Won" in one day opens the tasks of both "Quote" and "Won".
 Moves made before the setting was first set open none, and neither does a deal's first copy. The task names the
 deal, its stage and pipeline, and is due `due_days` days after the sync. Only you set it: an agent is refused. To
 stop, `b24 work config unset crm.bitrix24:example.bitrix24.ru.stage-tasks`. In the portal itself, Bitrix24's robot
