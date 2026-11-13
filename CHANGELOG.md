@@ -2,6 +2,34 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## 0.19.0 — 13.11.2026
+
+### Added
+
+- **A stage task opens for a stage passed between two syncs.** `sync` reads the portal's stage history
+  (`crm.stagehistory.list`) while `stage-tasks` names a stage, so a deal moved from "New" through "Quote" to "Won" in
+  one day opens the tasks of both "Quote" and "Won"; before, only "Won". The history is read from the last sync on,
+  a page or two a day, and not at all without the setting (cli-core 0.650.0).
+
+### Changed — may break callers
+
+- **Built on cli-core 0.650.0** (was 0.648.0). See the
+  [cli-core changelog](https://github.com/WireCatLabs/cli-core/blob/main/CHANGELOG.md).
+
+### Fixed
+
+- `sync` keeps a deal's or lead's amount as the portal wrote it. From about 10 billion with kopecks or cents, the old
+  rounding added digits such as `98765432109.869995`, and the copy then left that deal out. An amount the copy cannot
+  hold, more than about 90 trillion or with more decimals than its currency has, is still named in `sync`'s issues
+  and left out, as before.
+- Two profiles on one portal now share one request pace. Bitrix24 counts requests per portal, so before, they could
+  go twice as fast as the portal allows and get refused.
+- A write the portal refused because of its request limit is sent again after the wait the portal asks for, as a read
+  is. The portal refuses such a request before doing anything, so it is not made twice. A write that got no answer is
+  still never sent again.
+- `sync` hands every phone and e-mail of a contact to the copy, not only the first, so a call or chat from any of
+  them can be matched to the contact.
+
 ## 0.18.0 — 13.11.2026
 
 ### Added
