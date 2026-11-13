@@ -269,9 +269,9 @@ describe("organizations: the list and show every portal noun shares", () => {
     ).toBe(6)
   })
 
-  it("refuses --offline and a profile with no sign-in", async () => {
+  it("refuses --offline and a profile this computer has never seen", async () => {
     expect((await b24(["work", "organizations", "list", "--offline"])).code).toBe(5)
-    expect((await b24(["work", "organizations", "list"], { keyring: memoryKeyring() })).code).toBe(4)
+    expect((await b24(["work", "organizations", "list"], { keyring: memoryKeyring() })).code).toBe(6)
   })
 })
 

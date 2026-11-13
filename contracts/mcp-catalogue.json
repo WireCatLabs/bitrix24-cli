@@ -14,7 +14,6 @@
   "store restore": "write",
   "store decrypt": "write",
   "store repair": "write",
-  "store reset": "write",
   "store copies delete": "write",
   "store tables list": "read",
   "store recover": "read",

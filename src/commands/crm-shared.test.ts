@@ -46,10 +46,10 @@ describe("sync", () => {
     }
   })
 
-  it("refuses --offline and a profile with no sign-in before any request", async () => {
+  it("refuses --offline and a profile this computer has never seen before any request", async () => {
     const portal = seededCrm()
     expect((await b24(["work", "sync", "--offline"], { portal })).code).toBe(5)
-    expect((await b24(["other", "sync"], { portal, keyring: memoryKeyring() })).code).toBe(4)
+    expect((await b24(["other", "sync"], { portal, keyring: memoryKeyring() })).code).toBe(6)
     expect(portal.calls).toHaveLength(0)
   })
 

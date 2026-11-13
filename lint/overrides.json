@@ -1,19 +1,5 @@
 [
   {
-    "rule": "unknown-verb",
-    "target": "api call",
-    "reason": "Calls one Bitrix24 method by its API name, the same command gcal-cli and drive-cli have; no shared verb names a raw API call. Review when the vocabulary names it: https://github.com/WireCatLabs/cli-base/issues/425",
-    "owner": "@WireCatLabs",
-    "review_after": "2027-02-06"
-  },
-  {
-    "rule": "option-role",
-    "target": "session start --client-id",
-    "reason": "Names the owner's own Bitrix24 local application by its ID, the way gcal-cli's session start --client-id names the owner's Google client (WC-SECR-25); a local application exists only in one portal, so no WireCat app can stand in. Review when the vocabulary names an app credential: https://github.com/WireCatLabs/cli-base/issues/424",
-    "owner": "@WireCatLabs",
-    "review_after": "2027-02-11"
-  },
-  {
     "rule": "option-role",
     "target": "session start --portal",
     "reason": "Names the portal the local application lives in, which the browser sign-in must open before any token exists; a webhook carries its portal in its address, so only the application sign-in needs it. Review with --client-id when the vocabulary names an app credential: https://github.com/WireCatLabs/cli-base/issues/424",
@@ -26,19 +12,5 @@
     "reason": "The issues link in src/identity.ts, printed for the person to open; b24 never sends a request there, and hostFetch would refuse one.",
     "owner": "@WireCatLabs",
     "review_after": "2027-05-09"
-  },
-  {
-    "rule": "option-role",
-    "target": "account remove --keep-data",
-    "reason": "cli-core's shared account remove declares it, the same flag tg, wa, max, mail, zm and gcal take and WireCat Desktop calls; the vocabulary has no role for it yet, and the flag is cli-core's to rename.",
-    "owner": "@WireCatLabs",
-    "review_after": "2027-05-11"
-  },
-  {
-    "rule": "option-role",
-    "target": "account remove --delete-data",
-    "reason": "cli-core's shared account remove declares it, the same flag tg, wa, max, mail, zm and gcal take and WireCat Desktop calls; the vocabulary has no role for it yet, and the flag is cli-core's to rename.",
-    "owner": "@WireCatLabs",
-    "review_after": "2027-05-11"
   }
 ]

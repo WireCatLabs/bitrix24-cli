@@ -258,7 +258,7 @@ export const appSignIn = async <T extends { id: string }>(
     }),
     storage: appStorage(options.env, options.profile, options.keyring, options.storage === "file" ? "file" : "auto"),
     lockDir: paths(options.env).config,
-    fetch: options.fetch ?? fetch,
+    fetch: options.fetch ?? hostFetch({ hosts: [OAUTH_HOST], timeoutMs: REQUEST_MS }),
     signInCommand: options.signInCommand,
     ...(options.signal ? { signal: options.signal } : {}),
   })
@@ -298,7 +298,7 @@ export const appAuthOf = (options: {
     provider: appProvider(host, stored.client),
     storage,
     lockDir: paths(options.env).config,
-    fetch: options.fetch ?? fetch,
+    fetch: options.fetch ?? hostFetch({ hosts: [OAUTH_HOST], timeoutMs: REQUEST_MS }),
     signInCommand: `${IDENTITY.command} ${options.profile} session start --portal ${host} --client-id ${stored.client.clientId}`,
     ...(options.signal ? { signal: options.signal } : {}),
   })
