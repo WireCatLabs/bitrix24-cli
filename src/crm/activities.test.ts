@@ -177,4 +177,89 @@ describe("Bitrix24 activities and tasks", () => {
     expect(page).toEqual({ items: [], hasMore: false, cursor: String(NOW) })
     expect(gaps).toEqual([expect.objectContaining({ kind: "activities", scope: "task" })])
   })
+
+  it("reads only the tasks bound to the given deals and leads, fifty at a time, then the comments", async () => {
+    const fake = portal({ "tasks.task.list": () => ({ result: { tasks: [] } }) })
+    const deals = Array.from({ length: 50 }, (_, at) => String(at + 1))
+    const owners = async () => ({ deal: deals, lead: ["9"] })
+    const read = (page: string) => readActivities(fake, NOW, SINCE, page, undefined, owners)
+
+    expect(await read("task:0")).toMatchObject({ nextCursor: "task:1:0" })
+    expect(fake.calls[0]?.params.filter).toMatchObject({ UF_CRM_TASK: deals.map((one) => `D_${one}`) })
+    expect(await read("task:1:0")).toMatchObject({ hasMore: true, nextCursor: "comment:0:0" })
+    expect(fake.calls[1]?.params.filter).toMatchObject({ UF_CRM_TASK: ["L_9"] })
+  })
+
+  it("reads the comments of open deals and of closed ones changed since, by offset, and keeps the new ones", async () => {
+    const comment = (n: number, created: string) => ({ ID: String(n), CREATED: created, AUTHOR_ID: "7", COMMENT: "" })
+    const fake = portal({
+      "crm.timeline.comment.list": ({ filter, start }) => {
+        const { ENTITY_ID } = filter as { ENTITY_ID: number }
+        if (ENTITY_ID === 12 && start === 0)
+          return {
+            result: Array.from({ length: 50 }, (_, at) => comment(at + 1, "2026-10-01T09:00:00+03:00")),
+            next: 50,
+          } as Answer
+        if (ENTITY_ID === 12)
+          return { result: [{ ...comment(51, "2026-11-10T09:00:00+03:00"), COMMENT: "[B]Call[/B] [URL=x]back[/URL]" }] }
+        return { result: [comment(60, "2026-11-11T09:00:00+03:00")] }
+      },
+    })
+    const owners = async () => ({
+      deal: ["12", "13", "14"],
+      lead: ["9"],
+      closed: new Map([
+        ["deal:13", Date.UTC(2026, 9, 1)],
+        ["deal:14", Date.UTC(2026, 10, 5)],
+      ]),
+    })
+    const read = (page: string) => readActivities(fake, NOW, SINCE, page, undefined, owners)
+
+    expect(await read("comment:0:0")).toMatchObject({ items: [], nextCursor: "comment:0:50" })
+    expect(fake.calls[0]?.params).toEqual({
+      filter: { ENTITY_ID: 12, ENTITY_TYPE: "deal" },
+      select: ["ID", "CREATED", "AUTHOR_ID", "COMMENT"],
+      order: { ID: "ASC" },
+      start: 0,
+    })
+    const second = await read("comment:0:50")
+    expect(second.items).toEqual([
+      {
+        externalId: "comment:51",
+        kind: "comment",
+        subject: "",
+        body: "Call back",
+        done: true,
+        assignee: "7",
+        createdAt: Date.parse("2026-11-10T06:00:00Z"),
+        updatedAt: Date.parse("2026-11-10T06:00:00Z"),
+        on: [{ kind: "deal", externalId: "12" }],
+      },
+    ])
+    expect(second).toMatchObject({ nextCursor: "comment:1:0" })
+    expect(await read("comment:1:0")).toMatchObject({ items: [{ on: [{ kind: "deal", externalId: "14" }] }] })
+    expect(await read("comment:2:0")).toMatchObject({
+      items: [{ on: [{ kind: "lead", externalId: "9" }] }],
+      hasMore: false,
+      cursor: String(NOW),
+    })
+    expect(fake.calls.map(({ params }) => (params.filter as { ENTITY_ID: number }).ENTITY_ID)).toEqual([12, 12, 14, 9])
+  })
+
+  it("without the task scope goes on to the comments of the given deals and leads", async () => {
+    const fake = portal({
+      "tasks.task.list": () => {
+        throw new CliError("permission_error", "insufficient scope", { scope: "task" })
+      },
+    })
+    const owners = async () => ({ deal: ["12"], lead: [] })
+    const gaps: unknown[] = []
+    const context = { spend: () => {}, gap: (one: unknown) => gaps.push(one) }
+    expect(await readActivities(fake, NOW, SINCE, "task:0", context, owners)).toEqual({
+      items: [],
+      hasMore: true,
+      nextCursor: "comment:0:0",
+    })
+    expect(gaps).toHaveLength(1)
+  })
 })

@@ -216,9 +216,10 @@ stop, `b24 work config unset crm.bitrix24:example.bitrix24.ru.stage-tasks`. In t
 ### Activities and tasks on a deal
 
 With `activities` on, each sync also reads the calls, e-mails, meetings and to-dos on the deals and leads it keeps,
-and the Bitrix24 tasks bound to them. `deals show` and `leads show` list them, open ones first, with their text: an
-e-mail's body, a task's description. The first sync reads the last 90 days, each later one what changed since. Only
-the activities on the deals and leads the copy keeps are read.
+the Bitrix24 tasks bound to them, and the comments in their timelines. `deals show` and `leads show` list them, open
+ones first, with their text: an e-mail's body, a task's description, a comment. The first sync reads the last 90
+days, each later one what changed since. Only the activities, tasks and comments of the deals and leads the copy keeps
+are read.
 
 ```sh
 b24 work config set crm.bitrix24:example.bitrix24.ru.activities on
@@ -228,8 +229,11 @@ b24 work deals show deal:12
 
 It is off until you turn it on, and only you can: an agent is refused. The client's phone number or e-mail address
 on a call or a letter is never copied. Tasks need the webhook's or application's `task` scope; without it the sync
-reads the activities and says the tasks were not read. Timeline comments are not read yet: the portal lists them
-one deal at a time.
+reads the activities and says the tasks were not read.
+
+The portal gives comments one deal or lead per request, so a sync asks each open deal and lead in the copy, and each
+closed one that changed since the last sync. A comment does not change its deal: one left on a deal already won or
+lost, with nothing else changed, is read once the deal changes. An edited comment keeps its first text.
 
 ### Ask memo about a client
 

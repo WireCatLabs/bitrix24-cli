@@ -2,7 +2,7 @@ import { isCliError } from "@wirecat/cli-base"
 import type { CrmActivity, CrmActivityKind } from "@wirecat/cli-core"
 import type { CrmCallContext, CrmPage } from "@wirecat/cli-core/crm"
 import type { BitrixCaller } from "../bitrix/transport.js"
-import { epoch, fieldOf, id, isRaw, portalTime, type Raw, rawsOf, text, yes } from "./values.js"
+import { epoch, fieldOf, id, isRaw, outcomeOf, portalTime, type Raw, rawsOf, text, yes } from "./values.js"
 import { rest3Rows } from "./walk.js"
 
 /** A change made while the last read ran is read again rather than missed: the portal's clock is not ours. */
@@ -126,16 +126,28 @@ const refused = (error: unknown) =>
 export interface ActivityOwners {
   deal: readonly string[]
   lead: readonly string[]
+  /** The won or lost ones (`deal:12`), with when each last changed: their comments are read only after a change. */
+  closed?: ReadonlyMap<string, number>
 }
 
 /** The deals and leads assigned to these users: the ones a `mine` copy keeps. */
 export const ownersOf = async (caller: BitrixCaller, assignees: readonly number[]): Promise<ActivityOwners> => {
-  const listed = async (type: string) => {
-    const params = { select: ["id"], filter: [["assignedById", "in", assignees]], order: { id: "ASC" } }
+  const closed = new Map<string, number>()
+  const listed = async (type: "deal" | "lead") => {
+    const params = {
+      select: ["id", "stageSemanticId", "updatedTime"],
+      filter: [["assignedById", "in", assignees]],
+      order: { id: "ASC" },
+    }
     const { items } = await rest3Rows(caller, `crm.${type}.list`, params, 500)
-    return items.map((raw) => id(raw.id)).filter((one): one is string => one !== null)
+    return items.flatMap((raw) => {
+      const one = id(raw.id)
+      if (one === null) return []
+      if (outcomeOf(raw.stageSemanticId) !== "open") closed.set(`${type}:${one}`, epoch(raw.updatedTime) ?? 0)
+      return [one]
+    })
   }
-  return { deal: await listed("deal"), lead: await listed("lead") }
+  return { deal: await listed("deal"), lead: await listed("lead"), closed }
 }
 
 /**
@@ -157,7 +169,7 @@ const boundActivity = async (caller: BitrixCaller, raw: Raw) => {
 /** Ids per `BINDINGS` filter: one list of activities per this many deals or leads. */
 const OWNERS_PER_READ = 50
 
-const groupsOf = (owners: ActivityOwners) =>
+const groupsOf = (owners: Pick<ActivityOwners, "deal" | "lead">) =>
   (["deal", "lead"] as const).flatMap((kind) => {
     const all = [...owners[kind]]
     return Array.from({ length: Math.ceil(all.length / OWNERS_PER_READ) }, (_, at) => ({
@@ -166,12 +178,84 @@ const groupsOf = (owners: ActivityOwners) =>
     }))
   })
 
+/** A task's binding to a deal is `D_<id>`, to a lead `L_<id>`; the filter takes a list of them (seen live 2026-11-13). */
+const taskGroupsOf = (owners: ActivityOwners) => {
+  const all = [...owners.deal.map((one) => `D_${one}`), ...owners.lead.map((one) => `L_${one}`)]
+  return Array.from({ length: Math.ceil(all.length / OWNERS_PER_READ) }, (_, at) =>
+    all.slice(at * OWNERS_PER_READ, (at + 1) * OWNERS_PER_READ),
+  )
+}
+
+/** A comment's text keeps its words: `[B]`, `[URL=…]` and the other BB codes are dropped, a link's address too. */
+const words = (value: unknown) => text(String(value ?? "").replace(/\[\/?[a-z]+(=[^\]]*)?\]/gi, ""))
+
+const commentOf = (raw: Raw, on: CrmActivity["on"][number]): CrmActivity | null => {
+  const externalId = id(raw.ID)
+  const createdAt = epoch(raw.CREATED)
+  if (!externalId || createdAt === null) return null
+  return {
+    externalId: `comment:${externalId}`,
+    kind: "comment",
+    subject: "",
+    body: words(raw.COMMENT),
+    done: true,
+    assignee: id(raw.AUTHOR_ID),
+    createdAt,
+    updatedAt: createdAt,
+    on: [on],
+  }
+}
+
+/** One page of `crm.timeline.comment.list`, fixed by the portal (apidocs crm.timeline.comment.list). */
+const COMMENTS_PAGE = 50
+
+/**
+ * The timeline comments on the open deals and leads, and on the closed ones changed since `since`. The portal gives
+ * them one deal or lead per request and ignores a filter on their id or time (seen live 2026-11-13), so each is read
+ * whole, by offset (`comment:<index>:<start>`), and those older than the read are left out. A comment is not a
+ * change of its deal, so one on a deal closed and left alone waits until the deal changes; an edited comment keeps its
+ * first text.
+ */
+const readComments = async (
+  caller: BitrixCaller,
+  owners: ActivityOwners | null,
+  since: number,
+  parts: string[],
+  cursor: string,
+): Promise<CrmPage<CrmActivity>> => {
+  const done: CrmPage<CrmActivity> = { items: [], hasMore: false, cursor }
+  if (!owners) return done
+  const from = since - OVERLAP_MS
+  const quiet = (kind: string, one: string) => (owners.closed?.get(`${kind}:${one}`) ?? Infinity) < from
+  const read = (["deal", "lead"] as const).flatMap((kind) =>
+    owners[kind].filter((one) => !quiet(kind, one)).map((externalId) => ({ kind, externalId })),
+  )
+  const index = Number(parts[1]) || 0
+  const start = Number(parts[2]) || 0
+  const on = read[index]
+  if (!on) return done
+  const answer = await caller.call("crm.timeline.comment.list", {
+    filter: { ENTITY_ID: Number(on.externalId), ENTITY_TYPE: on.kind },
+    select: ["ID", "CREATED", "AUTHOR_ID", "COMMENT"],
+    order: { ID: "ASC" },
+    start,
+  })
+  const rows = rawsOf(answer.result)
+  const items = rows
+    .map((raw) => commentOf(raw, on))
+    .filter((one): one is CrmActivity => one !== null && one.createdAt >= from)
+  if (rows.length === COMMENTS_PAGE && answer.next !== undefined)
+    return { items, hasMore: true, nextCursor: `comment:${index}:${start + COMMENTS_PAGE}` }
+  return index + 1 < read.length ? { items, hasMore: true, nextCursor: `comment:${index + 1}:0` } : { ...done, items }
+}
+
 /**
  * The activities on deals and leads, then the tasks bound to them, changed since `since`: REST 2 lists, paged by id
  * (`activity:<last id>`, then `task:<last id>`) so a row changed mid-read never shifts the rest. With `owners`, only
- * the activities bound to those, `OWNERS_PER_READ` at a time (`activity:<group>:<last id>`): a first read of a large portal
- * otherwise lists every activity of 90 days to keep a few (PERF-106). A webhook without the `task` scope still reads
- * the activities; the tasks are a gap.
+ * the activities and tasks bound to those, `OWNERS_PER_READ` at a time (`activity:<group>:<last id>`,
+ * `task:<group>:<last id>`), then their timeline comments: a first read of a large portal otherwise lists every
+ * activity and task of 90 days to keep a few (PERF-106, DEBT-348). A webhook without the `task` scope still reads the
+ * activities and comments; the tasks are a gap.
  */
 export const readActivities = async (
   caller: BitrixCaller,
@@ -216,13 +300,21 @@ export const readActivities = async (
         : "task:0"
     return { items, hasMore: true, nextCursor: next }
   }
-  const from = Number(parts[1]) || 0
+  if (list === "comment") return readComments(caller, owners ? await owners() : null, since, parts, cursor)
+  const refs = owners ? taskGroupsOf(await owners()) : null
+  const group = refs && parts.length === 3 ? Number(parts[1]) || 0 : 0
+  const from = refs && parts.length !== 3 ? 0 : Number(parts.at(-1)) || 0
+  const ended: CrmPage<CrmActivity> = refs
+    ? { items: [], hasMore: true, nextCursor: "comment:0:0" }
+    : { items: [], hasMore: false, cursor }
+  const at = refs?.[group]
+  if (refs && !at) return ended
   let answer: Awaited<ReturnType<BitrixCaller["call"]>>
   try {
     answer = await caller.call("tasks.task.list", {
       order: { ID: "asc" },
-      // Tasks bound to no deal or lead are dropped here: the documented filter cannot ask for a binding's type.
-      filter: { ">ID": from, ">=CHANGED_DATE": after },
+      // Without a copy's deals and leads, tasks bound to neither are dropped here: no filter asks for a binding's type.
+      filter: { ">ID": from, ">=CHANGED_DATE": after, ...(at ? { UF_CRM_TASK: at } : {}) },
       select: TASK_SELECT,
       start: 0,
     })
@@ -234,10 +326,12 @@ export const readActivities = async (
       message: "the sign-in may not read Bitrix24 tasks (the task scope): the activities were read, the tasks were not",
       ...(typeof scope === "string" ? { scope } : { scope: "task" }),
     })
-    return { items: [], hasMore: false, cursor }
+    return ended
   }
   const tasks = rawsOf(fieldOf(answer.result, "tasks")).filter(isRaw)
   const items = tasks.map(taskOf).filter((one): one is CrmActivity => one !== null)
   const lastId = id(tasks.at(-1)?.id)
-  return lastId ? { items, hasMore: true, nextCursor: `task:${lastId}` } : { items, hasMore: false, cursor }
+  if (!refs) return lastId ? { items, hasMore: true, nextCursor: `task:${lastId}` } : { items, hasMore: false, cursor }
+  if (lastId) return { items, hasMore: true, nextCursor: `task:${group}:${lastId}` }
+  return group + 1 < refs.length ? { items, hasMore: true, nextCursor: `task:${group + 1}:0` } : { ...ended, items }
 }

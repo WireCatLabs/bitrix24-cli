@@ -272,6 +272,25 @@ if [ -n "$next" ]; then
   fi
   b24 config unset "crm.bitrix24:$portal.stage-tasks" >/dev/null || fail "config unset stage-tasks: exit $?"
 else echo "one open stage only — no move"; fi
+# A comment in the deal's timeline: the next sync reads it as an activity of kind comment. It goes with the deal.
+printf '\n== b24 live timeline comment\n'
+on=$(b24 api call crm.deal.list --body "{\"select\":[\"id\"],\"filter\":[[\"title\",\"=\",\"$title\"]]}" --json |
+  value item.result.items.0.id)
+if [ -z "$on" ]; then fail "the portal has no deal titled \"$title\""; else
+  b24 api call crm.timeline.comment.add --yes \
+    --body "{\"fields\":{\"ENTITY_ID\":$on,\"ENTITY_TYPE\":\"deal\",\"COMMENT\":\"$title comment\"}}" >/dev/null ||
+    fail "crm.timeline.comment.add: exit $?"
+  b24 sync >/dev/null 2>&1 || fail "sync after the comment: exit $?"
+  b24 deals show "$deal" --json 2>/dev/null | node -e '
+    let s = ""
+    process.stdin.on("data", (d) => (s += d)).on("end", () => {
+      let item
+      try { item = JSON.parse(s).item } catch {}
+      const found = (item?.activities ?? []).filter((one) => one.kind === "comment" && one.body === process.argv[1])
+      if (found.length !== 1) process.exit(1)
+      console.log("ok: the sync read the comment into deals show")
+    })' "$title comment" || fail "deals show has not the timeline comment"
+fi
 step deals delete "$deal" --yes --json=ref,removed
 echo "deleted $deal"
 
