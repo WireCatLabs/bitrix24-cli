@@ -175,8 +175,12 @@ apply scope mine to the contacts already stored: remove those no deal or lead of
 **Changes something on this computer only.**
 
 ```sh
-b24 store apply
+b24 store apply [options]
 ```
+
+| Option | What it does |
+|---|---|
+| `--yes` | remove the contacts it counts; otherwise only count them. |
 
 **Returns:** crm contacts removed — contacts, persons, persons_kept, names, applied; every field: b24 commands info store apply
 

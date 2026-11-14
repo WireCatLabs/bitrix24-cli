@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**190 ✅ · 65 ⛔ · 0 ❌** — 92 commands, 163 options.
+**190 ✅ · 66 ⛔ · 0 ❌** — 92 commands, 164 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -30,6 +30,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `sync` | `--max-pages` | ✅ |  |
 | `store status` |  | ✅ |  |
 | `store apply` |  | ✅ |  |
+| `store apply` | `--yes` | ⛔ | cli-core 0.662.0 src/crm/cli/commands.test.ts removes the counted contacts only with --yes |
 | `store info` |  | ⛔ | cli-core's addStoreMaintenanceCommands, mounted by addCrmCommands; its store and src/crm/cli/store-file tests drive them on a CRM program |
 | `store check` |  | ⛔ | cli-core's addStoreMaintenanceCommands, mounted by addCrmCommands; its store and src/crm/cli/store-file tests drive them on a CRM program |
 | `store migrate` |  | ⛔ | cli-core's addStoreMaintenanceCommands, mounted by addCrmCommands; its store and src/crm/cli/store-file tests drive them on a CRM program |
