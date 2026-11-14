@@ -24,7 +24,9 @@ others=()
 [ -f "$root/config/parity-groups.json" ] && others+=(--groups "$root/config/parity-groups.json")
 # max on npm still words `doctor reports` as an older cli-core did (its summaries came in 0.647.0), and an audit
 # across releases would block on that wording alone. Put it back once it is published on cli-core 0.647.0 or later.
-for cli in tg wa memo drive zm gcal; do
+# memo 0.132.0 words `mcp` and `mcp serve` "serve <cli>'s commands", an unfilled placeholder, where cli-core and
+# every other CLI say "serve this profile's commands". Put memo back once it publishes the shared wording.
+for cli in tg wa drive zm gcal; do
   [ "$cli" = "$command" ] || others+=(--cli "$bin/$cli")
 done
 # This CLI's entity schemas and error reasons, from its own `commands info`, so same-entity-schema and
