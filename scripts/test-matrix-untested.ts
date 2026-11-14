@@ -28,6 +28,11 @@ export const UNTESTED: { command: string; option?: string; reason: string }[] = 
   { command: "store reset", option: "--dry-run", reason: SHARED_STORE },
   { command: "store copies delete", reason: SHARED_STORE },
   { command: "store tables list", reason: SHARED_STORE },
+  {
+    command: "store apply",
+    option: "--yes",
+    reason: "cli-core 0.662.0 src/crm/cli/commands.test.ts removes the counted contacts only with --yes",
+  },
   { command: "store recover", reason: SHARED_STORE },
   { command: "store recover run", reason: SHARED_STORE },
   { command: "doctor reports show", reason: SHARED_REPORTS },
