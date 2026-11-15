@@ -343,6 +343,7 @@ describe("products and users", () => {
     })
     expect((await b24(["work", "users", "show", "7", "--json"], { portal })).json().item).toMatchObject({ id: "7" })
     expect((await b24(["work", "users", "show", "8"], { portal })).code).toBe(6)
+    expect(listed(await b24(["work", "users", "list", "active:false", "--json"], { portal })).items).toEqual([])
   })
 })
 
