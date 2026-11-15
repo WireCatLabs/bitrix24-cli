@@ -117,15 +117,18 @@ const typeOf = (method: string, body: Body) => {
 /** Where a contact's or a company's phones, e-mails and papers come from, besides their own methods. */
 const CLIENT_DATA = ["crm.requisite", "crm.address", "crm.duplicate"]
 
+/** A lead holds its own name, phones and e-mails, so it counts as a client (NEED-2666). */
+const CLIENT_TYPES = new Set(["contact", "company", "lead"])
+
 /**
- * A raw read that returns contacts or companies, or their contact data: for anyone but an administrator `api call`
- * refuses it whatever the permissions say (NEED-2488), since one list call would hand over the whole client base.
- * Field definitions name no client and stay open.
+ * A raw read that returns contacts, companies or leads, or their contact data: for anyone but an administrator
+ * `api call` refuses it whatever the permissions say (NEED-2488), since one list call would hand over the whole client
+ * base. Field definitions name no client and stay open.
  */
 export const readsClients = (method: string, body: Body): boolean => {
   if (inFamily(CLIENT_DATA, method)) return true
   const found = typeOf(method, body)
-  if (!found || (found.type !== "contact" && found.type !== "company")) return false
+  if (!found || !CLIENT_TYPES.has(found.type)) return false
   return !/^(fields$|field\.|userfield\.)/.test(found.action)
 }
 

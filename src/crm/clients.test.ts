@@ -90,4 +90,32 @@ describe("contacts and companies that are not the user's clients", () => {
     crm.setAdmin(true)
     expect((await call("crm.contact.list", '{"select":["id"]}')).code).toBe(0)
   })
+
+  it("refuses api call reads of leads to anyone but an administrator, since a lead holds its own phones", async () => {
+    const { crm } = portal()
+    crm.put("lead", {
+      title: "Stranger's enquiry",
+      stageId: "NEW",
+      assignedById: OTHER,
+      phone: phone("+7 900 000-00-99"),
+    })
+    const call = (method: string, body = "{}") =>
+      b24(["work", "api", "call", method, "--body", body, "--json"], { portal: crm })
+    for (const [method, body] of [
+      ["crm.lead.list", '{"select":["title","phone","email"]}'],
+      ["crm.lead.get", '{"id":1}'],
+      ["crm.item.list", '{"entityTypeId":1}'],
+    ] as const) {
+      const ran = await call(method, body)
+      expect(ran.code, method).not.toBe(0)
+      expect(ran.json().error, method).toMatchObject({
+        code: "permission_error",
+        message: expect.stringContaining("only a Bitrix24 administrator reads"),
+      })
+    }
+    expect(crm.calls.some(({ method }) => method.startsWith("crm.lead.") || method === "crm.item.list")).toBe(false)
+
+    crm.setAdmin(true)
+    expect((await call("crm.lead.list", '{"select":["id"]}')).code).toBe(0)
+  })
 })
