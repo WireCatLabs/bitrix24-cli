@@ -317,9 +317,9 @@ Bitrix24 tells that employee:
 
 `b24 work api call crm.deal.get --body '{"id":12}'` calls any other Bitrix24 method, here a read of deal 12. It
 checks the same permissions as the command that does the same thing, and refuses writes that send messages, start the
-portal's automation or create tasks until you allow them. Only a Bitrix24 administrator reads contacts or companies
-through it (`crm.contact.*`, `crm.company.*`, `crm.item.*` of type 3 or 4, requisites, addresses and duplicate
-searches): for anyone else they are refused, whatever the permissions say. `b24 api list` and `b24 api show crm.deal.update` show what
+portal's automation or create tasks until you allow them. Only a Bitrix24 administrator reads contacts, companies or
+leads through it (`crm.contact.*`, `crm.company.*`, `crm.lead.*`, `crm.item.*` of type 1, 3 or 4, requisites, addresses
+and duplicate searches): for anyone else they are refused, whatever the permissions say. `b24 api list` and `b24 api show crm.deal.update` show what
 each method checks.
 
 ## Output for scripts

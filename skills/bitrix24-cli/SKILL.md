@@ -189,7 +189,7 @@ Gemini CLI and OpenClaw look; `--for hermes` adds Hermes Agent too.
 6. **Phones and e-mails of other people's clients are counted.** A list gives them only for the webhook user's own
    clients (assigned to them, or on their deals and leads), unless the user is an administrator. `people show` or
    `organizations show` of anyone else gives them, at most 100 a day for the user and their agents together. Show only
-   the one the task needs. `api call` refuses contact and company reads to anyone but an administrator.
+   the one the task needs. `api call` refuses contact, company and lead reads to anyone but an administrator.
 7. **The store holds the chosen users' work only.** A deal that is not in `deals list` may belong to a user nobody
    chose. Read any contact or company live with `people list` or `organizations list`. No sync copies the whole CRM,
    an administrator's either; a stored `scope all` is refused until the owner sets `mine`.
