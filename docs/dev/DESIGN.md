@@ -47,8 +47,9 @@ Answered from the owner's plan for `b24` (2026-11-06) and his rulings on it.
   organizations, products and users ask the portal on every read, and refuse `--offline`. `fields` reads the
   definitions the last sync stored.
 - A list follows WC-OUT-5. Bitrix24's newer API (REST 3.0) gives no total, so `page.total` is left out and
-  `page.has_more` says whether another page exists. `--all` has no cap: a long walk is cut by the run's budget and
-  answers `meta.complete: false` (WC-CMD-10).
+  `page.has_more` says whether another page exists. `products list --all` has no cap: a long walk is cut by the run's
+  budget and answers `meta.complete: false` (WC-CMD-10). `people`, `organizations` and `users` are cli-core's shared
+  live lists (`CrmSource.list`, `get`), paged by `--limit` and `--page` only.
 
 ### Storing, indexing, syncing and deleting
 
@@ -211,13 +212,14 @@ and `type`); field names are from the REST 3.0 field pages and the `user.get` an
 
 ### Writes
 
-- Deals and leads are written through cli-core's write port (`CrmWriter`, `src/crm/writer.ts`): `create`, `update`,
+- Deals, leads, people and organizations are written through cli-core's write port (`CrmWriter`, `src/crm/writer.ts`): `create`, `update`,
   `move`, `close`, `delete`, with the operation id as REST 3.0's `Idempotency-Key`, sent once, then read back whole
   into the store. `close` goes to the first won or lost stage of the record's pipeline; Bitrix24 keeps no close
   reason, so `--reason` is refused. A `--field` that names a standard field (`stageId`, `categoryId`,
   `assignedById`, a lead's `STATUS_ID`, in any letter case) is refused before any request.
-- `people` and `organizations` keep b24's own `create` and `update`, with the vocabulary's flags (`--name`,
-  `--first-name`, `--last-name`), `--field` by label or code, and `--body` in Bitrix24's REST 3.0 field names.
+- `people` and `organizations` are cli-core's shared `create` and `update`: `--name` (a person's split at the first
+  space), `--first-name`, `--last-name`, `--position`, `--owner` and `--field`. A contact's phones and e-mails are set
+  only on create: Bitrix24 adds an update's multifield values to the old ones (apidocs data-types#crm_multifield).
 - A stage change can start the portal's own automation (robots, business processes), which may write to clients.
   That is the portal owner's set-up, not `b24`'s; `move` stays `allow` by WC-PERM-22, and the owner can set
   `deals.move` and `leads.move` to `ask` or `deny`.
@@ -229,18 +231,20 @@ and `type`); field names are from the REST 3.0 field pages and the `user.get` an
 - **Definitions.** Every lookup reads two calls that need only read rights: REST 3.0 `crm.<type>.field.list`
   (title, filterable) and REST 2 `crm.<type>.userfield.list` (the real type and a list field's options).
   `field.list` alone shows a list field as `int` with no options. `sync` reads them for all four kinds and cli-core
-  keeps them, so `fields list <kind>` and a deal's or lead's `--field` read the store; `people` and `organizations`
-  read them once per command run, only when a command needs them.
+  keeps them, so `fields list <kind>` and `--field` labels read the store; `people` and `organizations` read them
+  once per command run, for every live list and show. A portal that refuses `field.list` still gives the fields from
+  `userfield.list`, with no label. No field gets `holds`: a phone or e-mail is a standard `crm_multifield` field, and
+  no custom field type holds one (apidocs crm.userfield.types).
 - **A list field's value** is its option's label, with the id beside it: `{ "label", "value": "Wholesale",
   "option_id": "45" }`, both arrays for a multiple field. Every other field keeps `{ label, value }`.
 - **Names.** A custom field is named by its code or its whole label, ignoring case, spaces and underscores, so
   `lead_source` is `Lead source`. Two fields with one label are refused with their codes, never guessed. The query
   language has no quoted field name, so a label with spaces is `lead_source:web` or `Lead\ source:web`.
-- **Lists** filter only by the fields the portal marks `filterable`. `--json=…,provider_metadata.<code>` adds a
-  custom field to each item, and `provider_metadata` alone adds all. A bare code in `--json` is refused by cli-core's
+- **Lists** filter only by the fields the portal marks `filterable`. Every live list selects all custom fields;
+  `--json=…,provider_metadata.<code>` keeps one in the answer. A bare code in `--json` is refused by cli-core's
   field check before `b24` runs.
 - **Writes:** `--field "<label or code>=<value>"` sets custom fields only, the name and shape of `gh api --field`.
-  `--body` comes first, `--field` over it, and the named options over both.
+  cli-core resolves a label by the stored definitions; b24 checks the code and the option against the portal's own.
 
 ### The portal's limits
 

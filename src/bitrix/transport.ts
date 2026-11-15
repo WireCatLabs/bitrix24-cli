@@ -1,15 +1,8 @@
-import {
-  backoffMs,
-  CliError,
-  isCliError,
-  type RetryConfig,
-  realSleep,
-  type SleepLike,
-  wallClock,
-} from "@wirecat/cli-base"
+import { CliError, isCliError, realSleep, type SleepLike, wallClock } from "@wirecat/cli-base"
 import { hostFetch, providerWaitMs, readJsonResponse } from "@wirecat/cli-base/http"
 import { apiJson, currentAttempt, type EventSink, providerEvent, providerRequest } from "@wirecat/cli-core/cli"
-import { type Pacer, waitForTurn } from "@wirecat/cli-core/sends"
+import { providerCall } from "@wirecat/cli-core/crm"
+import type { Pacer } from "@wirecat/cli-core/sends"
 import { type EmployeeRule, employeeRuleOf } from "../api-keys.js"
 import { isRecord } from "../body.js"
 import { isAdmin } from "../crm/clients.js"
@@ -24,7 +17,6 @@ import { methodUrl, type Webhook } from "./webhook.js"
  */
 const DEFAULT_TIMEOUT_MS = 10_000
 const LARGEST_ANSWER = 16 * 1024 * 1024
-const RETRY: RetryConfig = { retries: 3, baseDelayMs: 1_000, maxDelayMs: 10_000, maxRetryAfterMs: 30_000 }
 /** An agent usually waits on b24: past a minute the run ends with retry_after_ms instead of sitting silent. */
 const LONGEST_PACE_WAIT_MS = 60_000
 
@@ -118,7 +110,7 @@ export class BitrixTransport {
    * Reads are tried again on a refused rate or a lost answer. A write is tried again only on a refused rate, which the
    * portal answers before doing anything. Otherwise it is sent once: on a live portal, a create repeated with the same
    * `Idempotency-Key` made a second record, so a write that got no answer is `outcome_unknown` and the owner looks at
-   * the portal before repeating it.
+   * the portal before repeating it (cli-core `providerCall`).
    */
   async call(method: string, params: Record<string, unknown> = {}, options: CallOptions = {}): Promise<BitrixAnswer> {
     const known = methodOf(method)
@@ -126,33 +118,45 @@ export class BitrixTransport {
     const reads = known.effect === "read"
     const key = api === 3 && !reads ? options.idempotencyKey : undefined
     if (!reads) await this.#refuseForEmployee(method, params)
+    let attempt = 0
     let waited: number | undefined
-    let refresh: boolean | undefined
-    for (let attempt = 1; ; attempt++) {
-      try {
-        await this.#turn(method)
-        const renew = refresh === true
-        if (renew) refresh = false
-        return await this.#once(method, params, { api, reads, key, attempt, waited, refresh: renew })
-      } catch (error) {
-        // A refused token did nothing, so even a write is sent again, once, with a refreshed one (apidocs auto-renewal).
-        // REST 2 names it `expired_token`; REST 3.0 documents no code for it, so any 401 counts.
-        if (refresh === undefined && "accessToken" in this.#auth && isCliError(error)) {
-          if (error.details.provider_error === "EXPIRED_TOKEN" || error.details.status === 401) {
-            refresh = true
-            continue
+    let renew = false
+    const wait = (ms: number) => this.#wait(ms, method)
+    return providerCall({
+      write: !reads,
+      send: () => {
+        attempt += 1
+        const refresh = renew
+        renew = false
+        return this.#once(method, params, { api, reads, key, attempt, waited, refresh })
+      },
+      ...(this.#pacer
+        ? {
+            pace: {
+              pacer: this.#pacer,
+              name: "Bitrix24",
+              operation: method,
+              now: this.#now,
+              sleep: wait,
+              longestWaitMs: LONGEST_PACE_WAIT_MS,
+            },
           }
-        }
-        if (!isCliError(error)) throw error
-        const asked = error.details.retry_after_ms
-        const wait = typeof asked === "number" ? asked : backoffMs(attempt, RETRY, this.#random)
-        const again = error.code === "rate_limited" || (reads && error.details.retryable === true)
-        if (!again || wait > RETRY.maxRetryAfterMs || attempt > RETRY.retries) throw error
-        if (error.code === "rate_limited") await this.#pacer?.holdFor(wait)
-        await this.#wait(wait, method)
-        waited = wait
-      }
-    }
+        : {}),
+      // A refused token did nothing, so even a write is sent again, once, with a refreshed one (apidocs auto-renewal).
+      ...("accessToken" in this.#auth
+        ? {
+            refresh: async () => {
+              renew = true
+              return true
+            },
+          }
+        : {}),
+      sleep: async (ms) => {
+        waited = ms
+        await wait(ms)
+      },
+      random: this.#random,
+    })
   }
 
   /** Here, where every write passes, so neither a command nor its permission level can get round it. */
@@ -166,17 +170,6 @@ export class BitrixTransport {
         "(session start) to do it",
       { reason: `employee.${rule}`, operation: method, sent: false },
     )
-  }
-
-  async #turn(method: string) {
-    if (!this.#pacer) return
-    await waitForTurn(this.#pacer, {
-      name: "Bitrix24",
-      operation: method,
-      now: this.#now,
-      sleep: (ms) => this.#wait(ms, method),
-      longestWaitMs: LONGEST_PACE_WAIT_MS,
-    })
   }
 
   async #wait(ms: number, method: string) {
@@ -250,7 +243,8 @@ export class BitrixTransport {
           throw failure
         }
         end({ status: response.status, errorCode: "invalid_response" })
-        if (!response.ok) throw this.#refused(method, bitrixError(method, response.status, undefined), run.reads)
+        if (!response.ok)
+          throw this.#refused(method, this.#expired(bitrixError(method, response.status, undefined), app), run.reads)
         throw new CliError("invalid_response", `Bitrix24 answered ${method} with something that is not JSON`, {
           operation: method,
           status: response.status,
@@ -258,10 +252,13 @@ export class BitrixTransport {
       }
       const answer = isRecord(body) ? body : {}
       if (!response.ok || answer.error !== undefined) {
-        const refusal = bitrixError(method, response.status, answer, {
-          now: this.#now(),
-          waitMs: providerWaitMs(response.headers, wallClock),
-        })
+        const refusal = this.#expired(
+          bitrixError(method, response.status, answer, {
+            now: this.#now(),
+            waitMs: providerWaitMs(response.headers, wallClock),
+          }),
+          app,
+        )
         end({
           status: response.status,
           errorCode: refusal.code,
@@ -278,6 +275,16 @@ export class BitrixTransport {
     } finally {
       clearTimeout(timer)
     }
+  }
+
+  /**
+   * An application's refused token, which one refresh may cure: REST 2 names it `expired_token`, REST 3.0 documents
+   * no code for it, so any 401 counts. A webhook's refusal stays what it is.
+   */
+  #expired(refusal: CliError, app: boolean): CliError {
+    const { provider_error: code, status } = refusal.details
+    if (!app || refusal.code !== "authentication_error" || (code !== "EXPIRED_TOKEN" && status !== 401)) return refusal
+    return new CliError(refusal.code, refusal.message, { ...refusal.details, reason: "oauth.expired" })
   }
 
   /** A gateway or server failure may come after a write was made; only a refusal says it was not. */

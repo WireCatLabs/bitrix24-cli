@@ -3,6 +3,7 @@ import { annotate } from "@wirecat/cli-base/commands"
 import type { QueryRegistry } from "@wirecat/cli-base/query"
 import {
   answerEntity,
+  environmentOf,
   itemOf,
   LOCAL_READ,
   listOf,
@@ -11,14 +12,16 @@ import {
   queryTerms,
   REMOTE_WRITE,
   readApiBody,
+  readOnlyLockOf,
+  readOnlyRefusal,
   renderAnswer,
   snakeKeys,
   termField,
   terminalAsker,
   withQuery,
 } from "@wirecat/cli-core/cli"
-import { CRM_ASSIGN_OTHERS_KEY } from "@wirecat/cli-core/crm"
-import { levelFor } from "@wirecat/cli-core/sends"
+import { CRM_ASSIGN_OTHERS_KEY, refuseForeignClientReads } from "@wirecat/cli-core/crm"
+import { guardedWrite, guardFor, keyedGuard, type Level, levelFor, newOperationId } from "@wirecat/cli-core/sends"
 import { Command } from "commander"
 import * as v from "valibot"
 import {
@@ -33,12 +36,12 @@ import {
   readsClients,
 } from "../api-keys.js"
 import { KNOWN_METHODS, type Method, methodOf } from "../bitrix/methods.js"
+import type { BitrixTransport } from "../bitrix/transport.js"
 import { type Body, parseBody } from "../body.js"
 import { permissions } from "../config.js"
-import { DAILY_FOREIGN, isAdmin } from "../crm/clients.js"
+import { bitrixCrmSource } from "../crm/source.js"
 import { IDENTITY } from "../identity.js"
-import { contextOf, withPortal } from "../portal.js"
-import { write } from "./write.js"
+import { contextOf, signInOf, transportFor, withPortal } from "../portal.js"
 
 const B24 = IDENTITY.command
 const METHOD = /^[a-z][a-z0-9]*(\.[a-z0-9_]+)*$/i
@@ -123,6 +126,62 @@ const showCommand = () =>
     .action(function (this: Command, raw: string) {
       renderAnswer(this, outputFor(this), itemOf(described(methodOf(methodName(raw)))))
     })
+
+interface Write {
+  key: string
+  /** The employee the record is assigned to, when the write sets one. */
+  assignee: string | undefined
+  /** The command keys the call does the same as. */
+  extra: readonly string[]
+  /** The built-in levels with this call's own key (`callDefaults`). */
+  defaults: Readonly<Record<string, Level>>
+  act: (portal: BitrixTransport, operationId: string) => Promise<Record<string, unknown>>
+}
+
+/**
+ * A raw write's one path, as gcal-cli's `api call` (src/commands/api.ts): the read-only lock, the profile's levels,
+ * one question for every key at `ask`, the send journal, and an `operation_id` in the answer (WC-PERM-13, WC-OUT-10).
+ */
+const write = async (command: Command, { key, assignee, extra: also, defaults, act }: Write) => {
+  const { env, settings, run } = contextOf(command)
+  const lock = readOnlyLockOf(IDENTITY, env)
+  if (lock) throw readOnlyRefusal(lock, "change the Bitrix24 portal")
+  const operationId = newOperationId()
+  const auth = signInOf(command)
+  const extra = [...also, ...(assignee !== undefined && assignee !== auth.userId ? [CRM_ASSIGN_OTHERS_KEY] : [])]
+  const levelOf = (one: string) => levelFor(settings.permissions, one, defaults).level
+  const guard = keyedGuard(
+    (ask) =>
+      guardFor(
+        IDENTITY,
+        // The portal limits its own rate; the guard is here for the levels and the journal, not a send limit.
+        { ...settings, sendsPerHour: Number.MAX_SAFE_INTEGER, permissionDefaults: defaults },
+        outputFor(command).renderer.warn,
+        environmentOf(command).env ?? process.env,
+        ask,
+      ),
+    terminalAsker(command),
+    levelOf,
+    extra,
+  )
+  const request = { chatId: null, kind: "edit" as const, key, operationId }
+  guard.refuse(request)
+  let done: Record<string, unknown>
+  try {
+    done = await guardedWrite(guard, request, () =>
+      run((events) => act(transportFor(command, auth, events), operationId)),
+    )
+  } catch (error) {
+    if (error instanceof CliError && error.code === "outcome_unknown")
+      throw new CliError(
+        "outcome_unknown",
+        `${error.message} — check the portal before you write it again: Bitrix24 would make it a second time`,
+        { ...error.details, operation_id: operationId },
+      )
+    throw error
+  }
+  renderAnswer(command, outputFor(command), itemOf({ operation_id: operationId, ...done }))
+}
 
 const pathOf = (command: Command) => {
   const path: string[] = []
@@ -240,15 +299,11 @@ const callCommand = () =>
       const asked = levels.find(({ level }) => level === "ask")
       if (asked) await terminalAsker(this)(asked.one, { chatId: null, kind: "read", key: asked.one })
       const answer = await withPortal(this, async (portal) => {
-        if (readsClients(method.name, body) && !(await isAdmin(portal)))
-          throw new CliError(
-            "permission_error",
-            `${method.name} reads contacts, companies or leads, which only a Bitrix24 administrator reads through ` +
-              "api call: your clients and leads come with sync, and another client with people show or " +
-              "organizations show, " +
-              `${DAILY_FOREIGN} a day`,
-            { sent: false },
-          )
+        await refuseForeignClientReads(
+          bitrixCrmSource(() => portal),
+          readsClients(method.name, body),
+          method.name,
+        )
         return portal.call(method.name, body)
       })
       renderAnswer(this, outputFor(this), itemOf(shown(answer)))

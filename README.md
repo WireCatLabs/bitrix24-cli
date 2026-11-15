@@ -38,7 +38,7 @@ More: [installation](docs/installation.md), [usage](docs/usage.md).
 b24 work leads list stage:"In progress" --json      # from the store, offline too
 b24 work deals move deal:42 "Contract signed"       # checks deals.move, and deals.close for a won or lost stage
 b24 work search all kitchen                         # stored deals and leads beside your other WireCat data
-b24 work people update 4 --body '{"post":"Buyer"}'  # a contact, in Bitrix24's own field names
+b24 work people update 4 --position Buyer           # a contact, read back into the store
 b24 work api call crm.deal.fields --dry-run         # any REST method, with every permission it checks
 ```
 

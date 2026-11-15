@@ -19,31 +19,33 @@ const withPermissions = async (permissions: Record<string, string>, body: () => 
 const added = () =>
   fakePortal({
     "crm.contact.add": ok({ id: 78 }),
-    "crm.lead.add": ok({ id: 79 }),
+    "crm.contact.get": ok({ item: { id: 78, name: "x" } }),
     "crm.company.add": ok({ id: 80 }),
+    "crm.company.get": ok({ item: { id: 80, title: "WireCat test org" } }),
   })
 
 describe("create", () => {
   it("creates a company on REST 3.0 with the operation id as its Idempotency-Key", async () => {
     const portal = added()
-    const ran = await b24(
-      ["work", "organizations", "create", "--name", "WireCat test org", "--body", '{"revenue":15000}', "--json"],
-      { portal },
-    )
+    const ran = await b24(["work", "organizations", "create", "--name", "WireCat test org", "--json"], { portal })
     expect(ran.code).toBe(0)
     const item = ran.json().item as Record<string, unknown>
-    expect(item).toEqual({ operation_id: expect.any(String), id: "80", created: true })
+    expect(item).toMatchObject({
+      operation_id: expect.any(String),
+      stored: true,
+      organization: { id: "80", name: "WireCat test org" },
+    })
     const call = portal.calls[0] as PortalCall
     expect(call).toMatchObject({ api: 3, method: "crm.company.add" })
-    expect(call.body).toEqual({ fields: { revenue: 15000, title: "WireCat test org" } })
+    expect(call.body).toEqual({ fields: { title: "WireCat test org" } })
     expect(call.headers["Idempotency-Key"]).toBe(item.operation_id)
+    expect(portal.calls[1]).toMatchObject({ method: "crm.company.get", body: { id: 80 } })
   })
 
-  it("refuses a create without its name, a bad --body and --operation-id, before the portal", async () => {
+  it("refuses a create without its name, and --operation-id, before the portal", async () => {
     const portal = added()
     expect((await b24(["work", "people", "create"], { portal })).code).toBe(2)
-    expect((await b24(["work", "organizations", "create", "--name", "x", "--body", "{"], { portal })).code).toBe(2)
-    expect((await b24(["work", "organizations", "create", "--name", "x", "--body", "[1]"], { portal })).code).toBe(2)
+    expect((await b24(["work", "organizations", "create"], { portal })).code).toBe(2)
     expect(
       (await b24(["work", "organizations", "create", "--name", "x", "--operation-id", "op-7"], { portal })).code,
     ).toBe(2)
@@ -52,16 +54,14 @@ describe("create", () => {
 
   it("denies assigning a record to another employee until the owner allows it", async () => {
     const portal = added()
-    const other = ["work", "organizations", "create", "--name", "x", "--body", '{"assignedById":9}']
+    const other = ["work", "organizations", "create", "--name", "x", "--owner", "9"]
     const refused = await b24([...other, "--json"], { portal })
     expect(refused.code).toBe(5)
     expect(portal.calls).toHaveLength(0)
     await withPermissions({ "crm.assign-others": "allow" }, async () => {
       expect((await b24(other, { portal })).code).toBe(0)
     })
-    expect(
-      (await b24(["work", "organizations", "create", "--name", "x", "--body", '{"assignedById":7}'], { portal })).code,
-    ).toBe(0)
+    expect((await b24(["work", "organizations", "create", "--name", "x", "--owner", "7"], { portal })).code).toBe(0)
   })
 
   it("refuses under B24_READ_ONLY and under a denied key, and sends nothing", async () => {
@@ -87,7 +87,7 @@ describe("create", () => {
     const ran = await b24(["work", "organizations", "create", "--name", "x", "--json"], { portal })
     expect(ran.code).toBe(14)
     const error = ran.json().error as Record<string, unknown>
-    expect(String(error.message)).toContain("check the portal before you write it again")
+    expect(String(error.message)).toContain("look at the CRM before writing again")
     expect(String(error.message)).not.toContain("--operation-id")
     expect(portal.calls).toHaveLength(1)
   })
@@ -100,26 +100,58 @@ describe("create", () => {
 
 describe("update", () => {
   it("update sends only the named fields", async () => {
-    const portal = fakePortal({ "crm.company.update": ok({ result: true }) })
+    const portal = fakePortal({
+      "crm.company.update": ok({ result: true }),
+      "crm.company.get": ok({ item: { id: 42, title: "New" } }),
+    })
     const ran = await b24(["work", "organizations", "update", "42", "--name", "New", "--json"], { portal })
-    expect(ran.json().item).toEqual({ operation_id: expect.any(String), id: "42", updated: ["title"] })
+    expect(ran.json().item).toMatchObject({ operation_id: expect.any(String), organization: { id: "42", name: "New" } })
     expect(portal.calls[0]?.body).toEqual({ id: 42, fields: { title: "New" } })
     expect((await b24(["work", "organizations", "update", "42"], { portal })).code).toBe(2)
     expect((await b24(["work", "organizations", "update", "abc", "--name", "x"], { portal })).code).toBe(2)
     expect(
       (
         await b24(["work", "people", "update", "4", "--last-name", "Ivanova"], {
-          portal: fakePortal({ "crm.contact.update": ok({ result: true }) }),
+          portal: fakePortal({
+            "crm.contact.update": ok({ result: true }),
+            "crm.contact.get": ok({ item: { id: 4, lastName: "Ivanova" } }),
+          }),
         })
       ).code,
     ).toBe(0)
     expect(
       (
         await b24(["work", "organizations", "update", "9", "--name", "Acme"], {
-          portal: fakePortal({ "crm.company.update": ok({ result: true }) }),
+          portal: fakePortal({
+            "crm.company.update": ok({ result: true }),
+            "crm.company.get": ok({ item: { id: 9, title: "Acme" } }),
+          }),
         })
       ).code,
     ).toBe(0)
+  })
+})
+
+describe("a person's and an organization's own options", () => {
+  const portal = () =>
+    fakePortal({
+      "crm.contact.add": ok({ id: 4 }),
+      "crm.contact.update": ok({ result: true }),
+      "crm.contact.get": ok({ item: { id: 4, name: "Anna" } }),
+      "crm.company.update": ok({ result: true }),
+      "crm.company.get": ok({ item: { id: 9, title: "Acme" } }),
+    })
+  const sent = (fake: ReturnType<typeof portal>) =>
+    fake.calls.filter((call) => /\.(add|update)$/.test(call.method)).map((call) => call.body.fields)
+
+  it("sends --name split at the first space, --position as the post and --owner as the assignee", async () => {
+    const fake = portal()
+    const person = ["--name", "Anna Maria Ivanova", "--position", "Buyer", "--owner", "7"]
+    expect((await b24(["work", "people", "create", ...person], { portal: fake })).code).toBe(0)
+    expect((await b24(["work", "people", "update", "4", ...person], { portal: fake })).code).toBe(0)
+    expect((await b24(["work", "organizations", "update", "9", "--owner", "7"], { portal: fake })).code).toBe(0)
+    const fields = { name: "Anna", lastName: "Maria Ivanova", post: "Buyer", assignedById: 7 }
+    expect(sent(fake)).toEqual([fields, fields, { assignedById: 7 }])
   })
 })
 
@@ -168,7 +200,12 @@ const customFields = (type: string) => ({
 })
 
 describe("--field", () => {
-  const portal = () => fakePortal({ ...customFields("company"), "crm.company.update": ok({ result: true }) })
+  const portal = () =>
+    fakePortal({
+      ...customFields("company"),
+      "crm.company.update": ok({ result: true }),
+      "crm.company.get": ok({ item: { id: 42, title: "x" } }),
+    })
   const update = (fake: ReturnType<typeof portal>, ...pairs: string[]) =>
     b24(["work", "organizations", "update", "42", ...pairs.flatMap((one) => ["--field", one]), "--json"], {
       portal: fake,
@@ -182,6 +219,7 @@ describe("--field", () => {
       "crm.company.field.list",
       "crm.company.userfield.list",
       "crm.company.update",
+      "crm.company.get",
     ])
     expect(fake.calls[2]?.body).toEqual({
       id: 42,
@@ -190,38 +228,15 @@ describe("--field", () => {
     expect(fake.calls[2]?.headers["Idempotency-Key"]).toBe((ran.json().item as Record<string, unknown>).operation_id)
   })
 
-  it("takes е for ё and a decomposed й for a composed one, in a label and in an option", async () => {
+  it("takes е for ё and a decomposed й for a composed one in an option", async () => {
     const fake = portal()
-    expect((await update(fake, "ГОРОД=Орел")).code).toBe(0)
-    expect((await update(fake, "город=Йошкар-Ола".normalize("NFD"))).code).toBe(0)
+    expect((await update(fake, "UF_CRM_6_CITY=Орел")).code).toBe(0)
+    expect((await update(fake, "uf_crm_6_city=Йошкар-Ола".normalize("NFD"))).code).toBe(0)
     const sent = fake.calls.filter((call) => call.method === "crm.company.update").map((call) => call.body)
     expect(sent).toEqual([
       { id: 42, fields: { UF_CRM_6_CITY: 60 } },
       { id: 42, fields: { UF_CRM_6_CITY: 61 } },
     ])
-  })
-
-  it("wins over --body for the same field, and named options win over both", async () => {
-    const fake = portal()
-    await b24(
-      [
-        "work",
-        "organizations",
-        "update",
-        "42",
-        "--body",
-        '{"UF_CRM_1_SOURCE":"45","title":"body","revenue":1}',
-        "--field",
-        "Source=Website",
-        "--name",
-        "named",
-      ],
-      { portal: fake },
-    )
-    expect(fake.calls[2]?.body).toEqual({
-      id: 42,
-      fields: { UF_CRM_1_SOURCE: 44, title: "named", revenue: 1 },
-    })
   })
 
   it("refuses an ambiguous label with the codes, an unknown name with close ones, and sends nothing", async () => {
@@ -253,7 +268,10 @@ describe("--field", () => {
 
   it("refuses a standard field, an option the list does not have, and two values for a single field", async () => {
     const fake = portal()
-    expect((await update(fake, "Title=x")).json().error).toMatchObject({ reason: "field.unknown" })
+    expect((await update(fake, "Title=x")).json().error).toMatchObject({
+      param: "--field",
+      message: expect.stringContaining("one of Bitrix24's own fields"),
+    })
     expect((await update(fake, "Source=Radio")).json().error).toMatchObject({
       reason: "field.unknown-option",
       details: { field: "UF_CRM_1_SOURCE" },
@@ -283,19 +301,20 @@ describe("every write takes its options", () => {
     organizations: ["--name", "WireCat test"],
   }
   for (const [noun, type] of Object.entries(TYPES))
-    it(`${noun} create and update take their names and --body, each with its own operation id`, async () => {
+    it(`${noun} create and update take their names and --field, each with its own operation id`, async () => {
       const portal = fakePortal({
         ...customFields(type),
         [`crm.${type}.add`]: ok({ id: 1 }),
         [`crm.${type}.update`]: ok({ result: true }),
+        [`crm.${type}.get`]: ok({ item: { id: 1 } }),
       })
-      const options = [...(NAMES[noun] ?? []), "--body", '{"comments":"x"}', "--field", "Source=Fair"]
+      const options = [...(NAMES[noun] ?? []), "--field", "Source=Fair"]
       expect((await b24(["work", noun, "create", ...options], { portal })).code).toBe(0)
       expect((await b24(["work", noun, "update", "1", ...options], { portal })).code).toBe(0)
-      const writes = portal.calls.filter((call) => !call.method.includes("field"))
+      const writes = portal.calls.filter((call) => /\.(add|update)$/.test(call.method))
       const keys = writes.map((call) => call.headers["Idempotency-Key"])
       expect(keys).toHaveLength(2)
       expect(keys[0]).not.toBe(keys[1])
-      expect(writes[1]?.body).toMatchObject({ id: 1, fields: { comments: "x", UF_CRM_1_SOURCE: 45 } })
+      expect(writes[1]?.body).toMatchObject({ id: 1, fields: { UF_CRM_1_SOURCE: 45 } })
     })
 })

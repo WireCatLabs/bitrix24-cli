@@ -70,7 +70,7 @@ describe("session start with a local application", () => {
       provider: "bitrix24",
       clientId: FAKE_CLIENT_ID,
       clientSecret: FAKE_CLIENT_SECRET,
-      origin: "https://example.bitrix24.test",
+      host: "https://example.bitrix24.test",
       userId: "7",
       scopes: ["crm", "user_basic", "department"],
     })
@@ -128,14 +128,17 @@ describe("a profile signed in with a local application", () => {
     for (const call of crm.calls) expect(call.url).not.toContain(app.access)
   })
 
-  it("refreshes the token once the portal answers expired_token, and keeps the new one", async () => {
+  // Bitrix24 hands out a new refresh token on each refresh and the old one dies (apidocs settings/oauth/auto-renewal):
+  // a run with moved folders, as every test is, would keep the new one in its own entry and leave the owner's dead.
+  it("refuses to refresh an expired token in a run with moved folders, and leaves the sign-in as it was", async () => {
     const { keyring, app } = await signIn()
+    const before = keyring.get(...ENTRY)
     app.expire()
     const ran = await b24(["work", "session", "status", "--check", "--json"], { keyring, portal: app })
-    expect(ran.code, ran.err).toBe(0)
-    expect(ran.json().item).toMatchObject({ kind: "app", verified: true, user: { id: "7" } })
-    expect(app.exchanges.map((one) => one.get("grant_type"))).toEqual(["authorization_code", "refresh_token"])
-    expect(keyring.get(...ENTRY)).toContain("wirecatfake0refresh2")
+    expect(ran.code).toBe(4)
+    expect(ran.json().error).toMatchObject({ code: "authentication_error", reason: "oauth.moved-rotating" })
+    expect(app.exchanges.map((one) => one.get("grant_type"))).toEqual(["authorization_code"])
+    expect(keyring.get(...ENTRY)).toBe(before)
   })
 
   it("shows its kind in status and list, and session end forgets it", async () => {

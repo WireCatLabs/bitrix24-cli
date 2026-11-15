@@ -317,6 +317,7 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
         CUSTOM[type].map((field) => ({
           FIELD_NAME: field.code,
           USER_TYPE_ID: field.type,
+          MULTIPLE: field.multiple ? "Y" : "N",
           ...(field.options ? { LIST: field.options } : {}),
         })),
       )

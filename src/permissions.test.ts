@@ -568,11 +568,16 @@ describe("an id that is not a number is refused before any request", () => {
     expect(calls()).toBe(before)
   })
 
-  it.each(["users", "products"])("%s show abc", async (noun) => {
+  it("products show abc", async () => {
     const portal = seededCrm()
-    const ran = await b24(["work", noun, "show", "abc", "--json"], { portal })
+    const ran = await b24(["work", "products", "show", "abc", "--json"], { portal })
     expect(ran.code).toBe(2)
     expect(portal.calls).toHaveLength(0)
+  })
+
+  it("users show abc looks for an employee by that name, and finds none", async () => {
+    const ran = await b24(["work", "users", "show", "abc", "--json"], { portal: seededCrm() })
+    expect(ran.json().error).toMatchObject({ code: "not_found" })
   })
 })
 

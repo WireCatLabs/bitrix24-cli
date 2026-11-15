@@ -23,11 +23,13 @@ const items = (rows: unknown[]) => ok({ items: rows })
 const listed = (ran: Awaited<ReturnType<typeof b24>>) =>
   ran.json() as { items: Record<string, unknown>[]; page: Record<string, unknown> }
 
+const trusted = ({ untrusted: _, ...rest }: Record<string, unknown>) => rest
+
 describe("organizations: the list and show every portal noun shares", () => {
-  it("list sends the query as REST 3.0 triples and answers neutral organizations", async () => {
+  it("list sends the query as REST 3.0 triples and answers shared organizations", async () => {
     const portal = fakePortal({ "crm.company.list": items([company(2), company(1)]) })
     const ran = await b24(
-      ["work", "organizations", "list", "type_id:CUSTOMER", "assigned_to:7", "--limit", "1", "--json"],
+      ["work", "organizations", "list", "type:CUSTOMER", "assigned_to:7", "--limit", "1", "--json"],
       { portal },
     )
     expect(ran.code).toBe(0)
@@ -39,19 +41,22 @@ describe("organizations: the list and show every portal noun shares", () => {
     ])
     expect(call.body.pagination).toEqual({ limit: 2, offset: 0 })
     const answer = listed(ran)
-    expect(answer.items).toEqual([
+    expect(answer.items.map(trusted)).toEqual([
       {
         id: "2",
         name: "Example 2",
-        type_id: "CUSTOMER",
-        industry_id: "IT",
-        revenue: 15000,
-        currency: "EUR",
+        type: "CUSTOMER",
+        own: false,
         person_ids: ["3", "4"],
         assigned_to: "7",
         created_at: "2026-11-01T07:00:00.000Z",
         updated_at: "2026-11-02T07:00:00.000Z",
         url: "https://example.bitrix24.test/crm/company/details/1/",
+        provider_metadata: {
+          industryId: { label: "Industry", value: "IT" },
+          revenue: { label: "Revenue", value: 15000 },
+          currencyId: { label: "Currency", value: "EUR" },
+        },
       },
     ])
     expect(answer.page).toMatchObject({ has_more: true, limit: 1 })
@@ -59,7 +64,7 @@ describe("organizations: the list and show every portal noun shares", () => {
 
   it("list sends a free word to REST 2's substring match, which REST 3.0 does not have", async () => {
     const portal = fakePortal({ "crm.item.list": ok({ items: [company(5)] }) })
-    const ran = await b24(["work", "organizations", "list", "kitchen", "type_id:PARTNER", "--json"], { portal })
+    const ran = await b24(["work", "organizations", "list", "kitchen", "type:PARTNER", "--json"], { portal })
     expect(ran.code).toBe(0)
     const call = portal.calls[0] as PortalCall
     expect(call).toMatchObject({ api: 2, method: "crm.item.list" })
@@ -68,17 +73,6 @@ describe("organizations: the list and show every portal noun shares", () => {
       filter: { "%title": "kitchen", "=typeId": "PARTNER" },
       start: 0,
     })
-  })
-
-  it("list --all walks every page", async () => {
-    const pages = [Array.from({ length: 1000 }, (_, i) => company(2000 - i)), [company(1)]]
-    const portal = fakePortal({ "crm.company.list": () => items(pages.shift() ?? []) })
-    const ran = await b24(["work", "organizations", "list", "--all", "--json"], { portal })
-    expect(listed(ran).items).toHaveLength(1001)
-    expect(portal.calls.map((call) => call.body.pagination)).toEqual([
-      { limit: 1000, offset: 0 },
-      { limit: 1000, offset: 1000 },
-    ])
   })
 
   it("list reads a time window in UTC", async () => {
@@ -138,17 +132,14 @@ describe("organizations: the list and show every portal noun shares", () => {
 
   const withCustomFields = (labels: Reply, more: Record<string, unknown> = {}) =>
     fakePortal({
-      "crm.company.get": ok({ item: company(42) }),
-      "crm.item.get": ok({
+      "crm.company.get": ok({
         item: {
-          id: 42,
+          ...company(42),
           UF_CRM_1_SIZE: "large",
-          UF_CRM_1_SIZE_data: {},
           UF_CRM_2_PAID: false,
           UF_CRM_3_NOTE: null,
           UF_CRM_4_CODE: "",
           UF_CRM_5_TAGS: [],
-          title: "x",
           ...more,
         },
       }),
@@ -156,28 +147,45 @@ describe("organizations: the list and show every portal noun shares", () => {
       "crm.company.userfield.list": userFields,
     })
 
+  const custom = (ran: Awaited<ReturnType<typeof b24>>) => {
+    const {
+      industryId: _,
+      revenue: __,
+      currencyId: ___,
+      ...rest
+    } = (ran.json().item as { provider_metadata: Record<string, unknown> }).provider_metadata
+    return rest
+  }
+
   it("show reads one company with the portal's custom fields and their labels under provider_metadata", async () => {
     const portal = withCustomFields(
       items([
         { name: "title", title: "Name" },
         { name: "UF_CRM_1_SIZE", title: "Size" },
-        { name: "UF_CRM_1_SIZE_data", title: "Size" },
         { name: "UF_CRM_2_PAID", title: "Paid" },
+        { name: "UF_CRM_3_NOTE", title: "Note" },
+        { name: "UF_CRM_4_CODE", title: "Code" },
+        { name: "UF_CRM_5_TAGS", title: "Tags", multiple: true },
       ]),
     )
     const ran = await b24(["work", "organizations", "show", "42", "--json"], { portal })
-    expect((ran.json().item as Record<string, unknown>).provider_metadata).toEqual({
+    expect(custom(ran)).toEqual({
       UF_CRM_1_SIZE: { label: "Size", value: "large" },
       UF_CRM_2_PAID: { label: "Paid", value: false },
     })
-    expect(portal.calls[1]?.body).toEqual({ entityTypeId: 4, id: 42, useOriginalUfNames: "Y" })
-    expect(portal.calls[2]).toMatchObject({
+    expect(portal.calls.map((call) => call.method)).toEqual([
+      "crm.company.field.list",
+      "crm.company.userfield.list",
+      "crm.company.get",
+    ])
+    expect(portal.calls[0]).toMatchObject({
       api: 3,
-      method: "crm.company.field.list",
       body: { select: ["name", "title", "type", "multiple", "filterable"] },
     })
-    expect(portal.calls[3]).toMatchObject({ api: 2, method: "crm.company.userfield.list" })
-    expect(portal.calls).toHaveLength(4)
+    expect(portal.calls[2]?.body).toMatchObject({
+      id: 42,
+      select: expect.arrayContaining(["title", "UF_CRM_1_SIZE", "UF_CRM_5_TAGS"]),
+    })
   })
 
   it("show gives a list field's value by its option's label and keeps the option id", async () => {
@@ -197,7 +205,7 @@ describe("organizations: the list and show every portal noun shares", () => {
   it("show gives a custom field the portal has no label for a null label", async () => {
     const portal = withCustomFields(items([{ name: "UF_CRM_1_SIZE", title: "Size" }]))
     const ran = await b24(["work", "organizations", "show", "42", "--json"], { portal })
-    expect((ran.json().item as Record<string, unknown>).provider_metadata).toEqual({
+    expect(custom(ran)).toEqual({
       UF_CRM_1_SIZE: { label: "Size", value: "large" },
       UF_CRM_2_PAID: { label: null, value: false },
     })
@@ -210,7 +218,7 @@ describe("organizations: the list and show every portal noun shares", () => {
     })
     const ran = await b24(["work", "organizations", "show", "42", "--json"], { portal })
     expect(ran.code).toBe(0)
-    expect((ran.json().item as Record<string, unknown>).provider_metadata).toEqual({
+    expect(custom(ran)).toEqual({
       UF_CRM_1_SIZE: { label: null, value: "large" },
       UF_CRM_2_PAID: { label: null, value: false },
     })
@@ -222,17 +230,6 @@ describe("organizations: the list and show every portal noun shares", () => {
     const portal = withCustomFields({ status: 500, body: { error: "INTERNAL_SERVER_ERROR" } })
     const ran = await b24(["work", "organizations", "show", "42", "--json"], { portal })
     expect(ran.code).not.toBe(0)
-  })
-
-  it("show asks for labels only when a custom field holds a value, and list never does", async () => {
-    const portal = fakePortal({
-      "crm.company.get": ok({ item: company(42) }),
-      "crm.item.get": ok({ item: { UF_CRM_3_NOTE: null } }),
-      "crm.company.list": items([company(1)]),
-    })
-    await b24(["work", "organizations", "show", "42", "--json"], { portal })
-    await b24(["work", "organizations", "list", "--json"], { portal })
-    expect(portal.calls.map((call) => call.method)).toEqual(["crm.company.get", "crm.item.get", "crm.company.list"])
   })
 
   it("show finds a company by its exact title, and refuses two with candidates", async () => {
@@ -251,7 +248,7 @@ describe("organizations: the list and show every portal noun shares", () => {
     })
     const ran = await b24(["work", "organizations", "show", "Kitchen", "--json"], { portal: two })
     expect(ran.code).toBe(2)
-    expect(ran.json().error).toMatchObject({ reason: "organization.ambiguous" })
+    expect(ran.json().error).toMatchObject({ reason: "crm.record-ambiguous" })
     const none = fakePortal({ "crm.item.list": ok({ items: [] }) })
     expect((await b24(["work", "organizations", "show", "Nothing"], { portal: none })).code).toBe(6)
   })
@@ -299,10 +296,10 @@ describe("people and organizations", () => {
     })
     expect((await b24(["work", "organizations", "show", "9", "--json"], { portal })).json().item).toMatchObject({
       name: "Acme",
-      revenue: 1000.5,
       person_ids: ["4"],
+      provider_metadata: { revenue: { label: "Revenue", value: 1000.5 } },
     })
-    const listedOrganizations = await b24(["work", "organizations", "list", "type_id:CUSTOMER", "--json"], {
+    const listedOrganizations = await b24(["work", "organizations", "list", "type:CUSTOMER", "--json"], {
       portal: fakePortal({ "crm.company.list": items([]) }),
     })
     expect(listedOrganizations.code).toBe(0)
@@ -336,7 +333,7 @@ describe("products and users", () => {
       "user.get": (call) => ok((call.body.FILTER as { ID?: number }).ID === 8 ? [] : [user]),
     })
     const ran = await b24(["work", "users", "list", "active:true", "--json"], { portal })
-    expect(listed(ran).items[0]).toEqual({
+    expect(trusted(listed(ran).items[0] ?? {})).toEqual({
       id: "7",
       name: "Anna Admin",
       email: "a@example.test",
@@ -344,7 +341,6 @@ describe("products and users", () => {
       active: true,
       department_ids: ["1"],
     })
-    expect(portal.calls[0]?.body.FILTER).toEqual({ ACTIVE: true })
     expect((await b24(["work", "users", "show", "7", "--json"], { portal })).json().item).toMatchObject({ id: "7" })
     expect((await b24(["work", "users", "show", "8"], { portal })).code).toBe(6)
   })
@@ -359,10 +355,19 @@ describe("every list pages the same way", () => {
       "user.get": ok([]),
     })
 
-  for (const noun of ["people", "organizations", "products", "users"])
-    it(`${noun} list takes --limit, --page and --all`, async () => {
+  for (const [noun, all] of [
+    ["people", false],
+    ["organizations", false],
+    ["products", true],
+    ["users", false],
+  ] as const)
+    it(`${noun} list takes --limit and --page${all ? " and --all" : ""}`, async () => {
       const at = portal()
-      for (const flags of [["--limit", "5", "--page", "2", "--json"], ["--all", "--json"], ["--compact"]])
+      for (const flags of [
+        ["--limit", "5", "--page", "2", "--json"],
+        ["--compact"],
+        ...(all ? [["--all", "--json"]] : []),
+      ])
         expect((await b24(["work", noun, "list", ...flags], { portal: at })).code).toBe(0)
     })
 

@@ -1,10 +1,11 @@
 import { mkdirSync, writeFileSync } from "node:fs"
 import { dirname } from "node:path"
+import { DAILY_FOREIGN_CONTACTS, foreignContactsPathFor } from "@wirecat/cli-core/crm"
 import { describe, expect, it } from "vitest"
-import type { BitrixTransport } from "../bitrix/transport.js"
+import { IDENTITY } from "../identity.js"
+import { PROVIDER } from "../store.js"
 import { fakeCrm } from "../testing/fake-crm.js"
 import { b24 } from "../testing/harness.js"
-import { DAILY_FOREIGN, quotaFile } from "./clients.js"
 
 const OWN = 7
 const OTHER = 9
@@ -30,12 +31,17 @@ const phones = async (crm: ReturnType<typeof fakeCrm>) => {
 }
 
 const quota = () =>
-  quotaFile(process.env, { origin: "https://example.bitrix24.test", userId: String(OWN) } as BitrixTransport)
+  foreignContactsPathFor(
+    IDENTITY,
+    { provider: PROVIDER.name, account: "example.bitrix24.test" },
+    process.env,
+    String(OWN),
+  )
 
 const used = (count: number) => {
   const file = quota()
   mkdirSync(dirname(file), { recursive: true })
-  const seen = Array.from({ length: count }, (_, at) => `contact:${1000 + at}`)
+  const seen = Array.from({ length: count }, (_, at) => `person:${1000 + at}`)
   writeFileSync(file, JSON.stringify({ day: new Date().toISOString().slice(0, 10), seen }))
 }
 
@@ -49,7 +55,7 @@ describe("contacts and companies that are not the user's clients", () => {
 
   it("shows one with its phones, a hundred a day, and the user's own clients for free", async () => {
     const { crm, ids } = portal()
-    used(DAILY_FOREIGN - 1)
+    used(DAILY_FOREIGN_CONTACTS - 1)
     const show = (id: number) => b24(["work", "people", "show", String(id), "--json"], { portal: crm })
 
     expect((await show(ids.stranger)).code).toBe(0)
@@ -82,7 +88,7 @@ describe("contacts and companies that are not the user's clients", () => {
       expect(ran.code, method).not.toBe(0)
       expect(ran.json().error, method).toMatchObject({
         code: "permission_error",
-        message: expect.stringContaining("only a Bitrix24 administrator reads"),
+        message: expect.stringContaining("only the CRM's administrator reads"),
       })
     }
     expect(crm.calls.some(({ method }) => method === "crm.contact.list")).toBe(false)
@@ -110,7 +116,7 @@ describe("contacts and companies that are not the user's clients", () => {
       expect(ran.code, method).not.toBe(0)
       expect(ran.json().error, method).toMatchObject({
         code: "permission_error",
-        message: expect.stringContaining("only a Bitrix24 administrator reads"),
+        message: expect.stringContaining("only the CRM's administrator reads"),
       })
     }
     expect(crm.calls.some(({ method }) => method.startsWith("crm.lead.") || method === "crm.item.list")).toBe(false)

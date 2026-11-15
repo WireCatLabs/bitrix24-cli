@@ -6,7 +6,7 @@ import type { ItemType } from "./items.js"
  * https://apidocs.bitrix24.com/api-reference/crm/rest-v3/items/fields-deal.html (and fields-lead, -contact, -company)
  */
 const COMMON = ["id", "title", "createdTime", "updatedTime", "assignedById", "url", "phone", "email"]
-export const REST3_FIELDS: Record<ItemType<unknown>["type"], readonly string[]> = {
+export const REST3_FIELDS: Record<ItemType["type"], readonly string[]> = {
   deal: [
     ...COMMON,
     "categoryId",

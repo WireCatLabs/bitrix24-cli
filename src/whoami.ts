@@ -1,6 +1,8 @@
 import { isCliError } from "@wirecat/cli-base"
+import { crmValues } from "@wirecat/cli-core/crm"
 import type { BitrixCaller, BitrixTransport } from "./bitrix/transport.js"
-import { fieldOf, rawsOf } from "./crm/values.js"
+
+const { fieldOf, rawsOf } = crmValues
 
 const text = (value: unknown) => (typeof value === "string" ? value.trim() : "")
 

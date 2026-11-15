@@ -122,6 +122,22 @@ describe("sync scope", () => {
     expect(await titles(crm)).toEqual(["Own"])
   })
 
+  it("still reads people and organizations live under scope all, as its refusal says to", async () => {
+    const { crm } = portal()
+    crm.put("contact", {
+      name: "Stranger",
+      assignedById: OTHER,
+      phone: [{ valueType: "WORK", value: "+7 900 000-00-01" }],
+    })
+    crm.put("company", { title: "Stranger's", assignedById: OTHER })
+    await set(SCOPE, "all")
+    const people = await b24(["work", "people", "list", "--json"], { portal: crm })
+    expect(people.json().items).toEqual([expect.objectContaining({ name: "Stranger" })])
+    expect(people.json().items).toEqual([expect.not.objectContaining({ phones: expect.anything() })])
+    const organizations = await b24(["work", "organizations", "list", "--json"], { portal: crm })
+    expect(organizations.json().items).toEqual([expect.objectContaining({ name: "Stranger's" })])
+  })
+
   it("lets an employee choose only themselves, a dismissed user or a non-employee, re-checked every sync", async () => {
     const { crm } = portal()
     crm.putDepartment({ ID: "1", NAME: "Example company", UF_HEAD: String(OTHER) })
@@ -135,7 +151,7 @@ describe("sync scope", () => {
     expect(item.issues).toContainEqual(
       expect.objectContaining({
         reason: "crm.unassigned-dropped",
-        message: expect.stringContaining(`names user ${OTHER}, not counted as nobody's: a working colleague`),
+        message: expect.stringContaining(`names user ${OTHER}, not chosen: a working colleague`),
       }),
     )
     expect(await titles(crm)).toEqual(["Own", "Website form"])
@@ -260,6 +276,32 @@ describe("sync scope", () => {
     )
     expect(passes.length).toBeGreaterThan(0)
     for (const { body } of passes) expect(body.filter).toContainEqual(["assignedById", "in", [OWN]])
+  })
+
+  it("keeps a contact assigned to the user on no deal when the scope narrows, and through a rescan", async () => {
+    const { crm, ids } = portal()
+    crm.setAdmin(true)
+    crm.put("contact", { name: "Only mine", assignedById: OWN })
+    const theirs = crm.put("contact", { name: "On their deal", assignedById: OTHER })
+    crm.put("deal", { ...crm.row("deal", ids.other), contactsId: [theirs] })
+    const contacts = async () => {
+      const { openB24Store } = await import("../store.js")
+      const store = await openB24Store(process.env)
+      try {
+        return await store.crm.count({ provider: "bitrix24", account: "example.bitrix24.test" }, "person")
+      } finally {
+        await store.close()
+      }
+    }
+    await set(SCOPE, "mine")
+    await set(UNASSIGNED, `${OWN},${OTHER}`)
+    await sync(crm)
+    const both = await contacts()
+    await set(UNASSIGNED, String(OWN))
+    await sync(crm)
+    expect(await contacts()).toBe(both - 1)
+    expect((await b24(["work", "sync", "--rescan", "--json"], { portal: crm })).code).toBe(0)
+    expect(await contacts()).toBe(both - 1)
   })
 
   it("reads no unchanged client again at a sync of changes, and lists the deals for clients once a sync", async () => {

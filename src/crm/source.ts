@@ -1,34 +1,34 @@
 import { CliError, isCliError } from "@wirecat/cli-base"
-import type { CrmField, CrmItem, CrmKind, CrmOrganization, CrmPerson, CrmRecords } from "@wirecat/cli-core"
-import type { CrmCallContext, CrmChanges, CrmIdPage, CrmSource } from "@wirecat/cli-core/crm"
+import type { CrmField, CrmItem, CrmKind, CrmOrganization, CrmRecords, CrmValue } from "@wirecat/cli-core"
+import {
+  type CrmCallContext,
+  type CrmChanges,
+  type CrmCondition,
+  type CrmIdPage,
+  type CrmLiveKind,
+  type CrmSource,
+  crmValues,
+  crmWindowOf,
+} from "@wirecat/cli-core/crm"
 import type { BitrixCaller, BitrixTransport } from "../bitrix/transport.js"
 import { type Role, roleOf } from "../whoami.js"
 import { type ActivityOwners, ownersOf, readActivities } from "./activities.js"
-import { clientsOf as namedClients } from "./clients.js"
-import { DEAL } from "./deal.js"
-import { loadFields, metadataOf } from "./fields.js"
-import type { ItemType } from "./items.js"
-import { LEAD } from "./lead.js"
-import { ORGANIZATION } from "./organization.js"
+import { isAdmin, clientsOf as namedClients } from "./clients.js"
+import type { Condition } from "./conditions.js"
+import { DEAL, fromBitrixDeal } from "./deal.js"
+import { loadFields } from "./fields.js"
+import { type ItemType, listedRows } from "./items.js"
+import { fromBitrixLead, LEAD } from "./lead.js"
+import { ORGANIZATION, toOrganization } from "./organization.js"
 import { NO_MEMORY, type OwnMemory } from "./own-memory.js"
-import { PERSON } from "./person.js"
+import { PERSON, toPerson } from "./person.js"
 import { bitrixPipelines } from "./pipelines.js"
+import { rest3Rows } from "./rows.js"
 import { readStageHistory } from "./stage-history.js"
 import { activeEmployees, portalDepartments, portalUsers } from "./user.js"
-import {
-  contacts,
-  customFields,
-  fieldOf,
-  fullName,
-  id,
-  ids,
-  isRaw,
-  type Metadata,
-  portalTime,
-  type Raw,
-  text,
-} from "./values.js"
-import { rest3Rows } from "./walk.js"
+import { customFields, numericId, portalTime, type Raw } from "./values.js"
+
+const { crmValuesOf, fieldOf, id, isRaw, text } = crmValues
 
 /**
  * Re-read before the last cursor: rows the portal saved while the round ran, and this computer's clock running ahead
@@ -40,37 +40,15 @@ const PAGE = 500
 /** `crm.mycompany.basic.list`'s default page; the docs name no larger one. */
 const MY_PAGE = 50
 
-const TYPES: Record<CrmKind, Pick<ItemType<unknown>, "type" | "select">> = {
+const TYPES: Record<CrmKind, ItemType> = {
   deal: DEAL,
   lead: LEAD,
   person: PERSON,
   organization: ORGANIZATION,
 }
 
-/** `companiesId` lists the contact's companies, the primary one first (apidocs fields-contact). */
-const toPerson = (raw: Raw): CrmPerson => ({
-  externalId: id(raw.id) ?? "",
-  name: fullName(raw.name, raw.secondName, raw.lastName),
-  email: contacts(raw.email)[0]?.value ?? null,
-  phone: contacts(raw.phone)[0]?.value ?? null,
-  ...(Array.isArray(raw.phone) ? { phones: contacts(raw.phone).map(({ value }) => value) } : {}),
-  ...(Array.isArray(raw.email) ? { emails: contacts(raw.email).map(({ value }) => value) } : {}),
-  position: text(raw.post),
-  ...(Array.isArray(raw.companiesId)
-    ? { organizations: ids(raw.companiesId).map((externalId, at) => ({ externalId, primary: at === 0 })) }
-    : {}),
-})
-
-const toOrganization = (raw: Raw, metadata?: Metadata): CrmOrganization => ({
-  externalId: id(raw.id) ?? "",
-  name: text(raw.title) ?? "",
-  url: text(raw.url),
-  type: text(raw.typeId),
-  ...(metadata ? { metadata } : {}),
-})
-
 /** A list answer without `items` is refused: read as an empty page, it would end the round and empty an id pass. */
-const listedRows = (result: unknown): Raw[] => {
+const itemsOf = (result: unknown): Raw[] => {
   const items = (result as { items?: unknown })?.items
   if (!Array.isArray(items)) throw new CliError("invalid_response", "the portal answered a list without its items")
   return items as Raw[]
@@ -106,12 +84,51 @@ const isClient = (kind: CrmKind): kind is ClientKind => kind === "person" || kin
  */
 const LINKED = "l"
 
-const MAPPERS: { [K in CrmKind]: (raw: Raw, metadata?: Metadata) => CrmRecords[K] } = {
-  deal: DEAL.map,
-  lead: LEAD.map,
-  person: (raw) => toPerson(raw),
+const MAPPERS: { [K in CrmKind]: (raw: Raw, metadata?: Record<string, CrmValue>) => CrmRecords[K] } = {
+  deal: fromBitrixDeal,
+  lead: fromBitrixLead,
+  person: toPerson,
   organization: toOrganization,
 }
+
+/** The shared names a live list filters by, in REST 3.0's (apidocs fields-contact, fields-company). */
+export const LIVE_FIELDS: Record<CrmLiveKind, Readonly<Record<string, string>>> = {
+  person: { assigned_to: "assignedById", created_at: "createdTime", updated_at: "updatedTime" },
+  organization: { type: "typeId", assigned_to: "assignedById", created_at: "createdTime", updated_at: "updatedTime" },
+}
+const TIMES = new Set(["created_at", "updated_at"])
+/** `field.list` types a list field as `int`, and REST 3.0 checks a value's type against the field's. */
+const NUMBERS = new Set(["integer", "double"])
+
+const typed = (field: CrmField, value: string | number): string | number => {
+  const number = Number(value)
+  const numeric = field.options !== undefined || NUMBERS.has(field.type)
+  return numeric && String(value).trim() !== "" && Number.isFinite(number) ? number : value
+}
+
+/** core's conditions in Bitrix24's names and value types: an id and an option as a number, a time as the portal's. */
+const liveConditions = (kind: CrmLiveKind, conditions: readonly CrmCondition[], defined: readonly CrmField[]) =>
+  conditions.map(({ field, op, value }): Condition => {
+    const each = (convert: (one: string | number) => string | number): Condition["value"] =>
+      Array.isArray(value) ? value.map(convert) : convert(value)
+    const own = LIVE_FIELDS[kind][field]
+    if (own === undefined) {
+      const custom = defined.find((one) => one.code === field)
+      if (!custom)
+        throw new CliError("validation_error", `the portal cannot filter by ${field}`, {
+          reason: "query.unsupported-field",
+        })
+      return { field, op, value: each((one) => typed(custom, one)) }
+    }
+    if (TIMES.has(field)) return { field: own, op, value: each((one) => portalTime(Number(one))) }
+    if (field === "assigned_to") return { field: own, op, value: each((one) => numericId(String(one), field)) }
+    return { field: own, op, value }
+  })
+
+/** A record the webhook's employee may not open is one this sign-in cannot see: `get` answers null. */
+const unseen = (error: unknown) =>
+  isCliError(error) &&
+  (error.code === "not_found" || (error.code === "permission_error" && error.details.reason === "bitrix.access-denied"))
 
 /** `<last id>@<when the round started>`: keyset paging by id, so a row changed mid-round never shifts the rest. */
 const pageOf = (page: string | undefined, now: number) => {
@@ -173,12 +190,17 @@ export const bitrixCrmSource = (
     }
     return found
   }
-  // core's CrmPerson has no metadata, so a contact's values are not read; its definitions still are, for `fields list`.
+  // The copy keeps no contact's custom values, so a sync reads none; a live read and a write's answer do.
   const custom = async (kind: CrmKind, caller: BitrixCaller) => (kind === "person" ? [] : await fields(kind, caller))
   const mapped = <K extends CrmKind>(kind: K, raw: Raw, defined: readonly CrmField[]): CrmRecords[K] => {
     const values = customFields(raw)
-    return MAPPERS[kind](raw, Object.keys(values).length ? metadataOf(values, defined) : undefined)
+    return MAPPERS[kind](raw, Object.keys(values).length ? crmValuesOf(values, defined) : undefined)
   }
+  const selectOf = (kind: CrmKind, defined: readonly CrmField[]) => [
+    ...TYPES[kind].select,
+    ...defined.map(({ code }) => code),
+  ]
+  let clients: ReturnType<typeof namedClients> | undefined
   const list = (caller: BitrixCaller, kind: CrmKind, select: readonly string[], filter: unknown[]) =>
     caller.call(`crm.${TYPES[kind].type}.list`, {
       select,
@@ -383,7 +405,7 @@ export const bitrixCrmSource = (
       if (linked !== null && named) {
         const chunk = [...named].slice(linked, linked + PAGE)
         const rows = chunk.length
-          ? listedRows((await list(caller, kind, select, [["id", "in", chunk.map(Number)]])).result)
+          ? itemsOf((await list(caller, kind, select, [["id", "in", chunk.map(Number)]])).result)
           : []
         const ended = linked + PAGE >= named.size
         const items = await finish(rows, ended)
@@ -400,7 +422,7 @@ export const bitrixCrmSource = (
             : []
           : [["updatedTime", ">=", portalTime(since - OVERLAP_MS)]]),
       ]
-      const rows = listedRows((await list(caller, kind, select, filter)).result)
+      const rows = itemsOf((await list(caller, kind, select, filter)).result)
       const last = id(rows.at(-1)?.id)
       const kept =
         clients && assignees && since !== null
@@ -429,7 +451,7 @@ export const bitrixCrmSource = (
               : [],
         }
       const filter = [...(after ? [["id", ">", after]] : []), ...(assignees ? [["assignedById", "in", assignees]] : [])]
-      const rows = listedRows((await list(caller, kind, ["id"], filter)).result)
+      const rows = itemsOf((await list(caller, kind, ["id"], filter)).result)
       const listed = rows.map((raw) => id(raw.id)).filter((one): one is string => one !== null)
       const last = listed.at(-1)
       if (last !== undefined) return { items: listed, hasMore: true, nextCursor: last }
@@ -450,6 +472,41 @@ export const bitrixCrmSource = (
       const raw = fieldOf(answer.result, "item")
       if (!isRaw(raw)) throw new CliError("not_found", `the portal has no ${kind} ${externalId}`)
       return mapped(kind, raw, defined)
+    },
+    async list(kind, query, context) {
+      const caller = metered(context)
+      const defined = await fields(kind, caller)
+      const type = TYPES[kind]
+      const conditions: Condition[] = [
+        ...liveConditions(kind, query.conditions, defined),
+        ...(query.text ? [{ field: type.words[0] ?? "title", op: "like" as const, value: query.text }] : []),
+      ]
+      const { items, hasMore } = await listedRows(caller, type, conditions, crmWindowOf(query), selectOf(kind, defined))
+      return { items: items.map((raw) => mapped(kind, raw, defined)), hasMore }
+    },
+    async get(kind, externalId, context) {
+      if (!/^[1-9]\d*$/.test(externalId)) return null
+      const caller = metered(context)
+      const defined = await fields(kind, caller)
+      let answer: Awaited<ReturnType<BitrixCaller["call"]>>
+      try {
+        answer = await caller.call(`crm.${TYPES[kind].type}.get`, {
+          id: Number(externalId),
+          select: selectOf(kind, defined),
+        })
+      } catch (error) {
+        if (unseen(error)) return null
+        throw error
+      }
+      const raw = fieldOf(answer.result, "item")
+      return isRaw(raw) ? mapped(kind, raw, defined) : null
+    },
+    isAdmin: () => isAdmin(portal()),
+    // A client on any of the user's deals or leads, listed once per source: a hundred requests on a large portal.
+    async ownClients(kind, externalIds) {
+      clients ??= namedClients(portal(), [Number(portal().userId)])
+      const found = (await clients)[kind === "person" ? "contact" : "company"]
+      return new Set(externalIds.filter((one) => found.has(one)))
     },
     fields: (kind, context) => fields(kind, metered(context)),
     async users(context) {

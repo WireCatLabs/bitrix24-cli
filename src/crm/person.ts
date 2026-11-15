@@ -1,67 +1,43 @@
-import * as v from "valibot"
-import type { FieldMap } from "./conditions.js"
+import type { CrmPerson, CrmValue } from "@wirecat/cli-core"
+import { crmValues } from "@wirecat/cli-core/crm"
 import type { ItemType } from "./items.js"
-import {
-  contactSchema,
-  contacts,
-  fullName,
-  id,
-  ids,
-  type Metadata,
-  metadataSchema,
-  nullableTime,
-  type Raw,
-  text,
-  time,
-} from "./values.js"
+import { contacts, contactTypesOf, fullName, type Raw } from "./values.js"
 
-/** A Bitrix24 contact: a `people` record in WireCat's words. */
-export const personSchema = v.strictObject({
-  id: v.string(),
-  name: v.nullable(v.string()),
-  first_name: v.nullable(v.string()),
-  last_name: v.nullable(v.string()),
-  position: v.nullable(v.string()),
-  organization_ids: v.array(v.string()),
-  phones: v.optional(v.array(contactSchema)),
-  emails: v.optional(v.array(contactSchema)),
-  assigned_to: v.nullable(v.string()),
-  created_at: nullableTime,
-  updated_at: nullableTime,
-  url: v.nullable(v.string()),
-  provider_metadata: metadataSchema,
-})
+const { epoch, id, ids, text } = crmValues
 
-export type Person = v.InferOutput<typeof personSchema>
-
-export const PERSON_FIELDS: Record<string, FieldMap> = {
-  name: { field: "name", kind: "word" },
-  assigned_to: { field: "assignedById", kind: "id" },
-  created_at: { field: "createdTime", kind: "time" },
-  updated_at: { field: "updatedTime", kind: "time" },
-}
-
-export const fromBitrixPerson = (raw: Raw, metadata?: Metadata): Person => {
+/**
+ * A Bitrix24 contact; `companiesId` lists its companies, the primary one first (apidocs fields-contact). A field the
+ * read did not select is left out, so the copy keeps what it held.
+ */
+export const toPerson = (raw: Raw, metadata?: Record<string, CrmValue>): CrmPerson => {
+  const phones = contacts(raw.phone)
+  const emails = contacts(raw.email)
   const companies = ids(raw.companiesId)
   const first = id(raw.companyId)
+  const organizations = companies.length || first === null ? companies : [first]
   return {
-    id: id(raw.id) ?? "",
+    externalId: id(raw.id) ?? "",
     name: fullName(raw.name, raw.secondName, raw.lastName),
-    first_name: text(raw.name),
-    last_name: text(raw.lastName),
+    firstName: text(raw.name),
+    lastName: text(raw.lastName),
+    email: emails[0]?.value ?? null,
+    phone: phones[0]?.value ?? null,
+    ...(Array.isArray(raw.phone) ? { phones: phones.map(({ value }) => value) } : {}),
+    ...(Array.isArray(raw.email) ? { emails: emails.map(({ value }) => value) } : {}),
+    ...contactTypesOf([...phones, ...emails]),
     position: text(raw.post),
-    organization_ids: companies.length || first === null ? companies : [first],
-    ...(Array.isArray(raw.phone) ? { phones: contacts(raw.phone) } : {}),
-    ...(Array.isArray(raw.email) ? { emails: contacts(raw.email) } : {}),
-    assigned_to: id(raw.assignedById),
-    created_at: time(raw.createdTime),
-    updated_at: time(raw.updatedTime),
+    ...("companiesId" in raw || "companyId" in raw
+      ? { organizations: organizations.map((externalId, at) => ({ externalId, primary: at === 0 })) }
+      : {}),
+    ...("assignedById" in raw ? { assignee: id(raw.assignedById) } : {}),
+    createdAt: epoch(raw.createdTime),
+    updatedAt: epoch(raw.updatedTime),
     url: text(raw.url),
-    ...(metadata ? { provider_metadata: metadata } : {}),
+    ...(metadata ? { metadata } : {}),
   }
 }
 
-export const PERSON: ItemType<Person> = {
+export const PERSON: ItemType = {
   type: "contact",
   entityTypeId: 3,
   word: "person",
@@ -81,6 +57,4 @@ export const PERSON: ItemType<Person> = {
     "url",
   ],
   words: ["name", "lastName"],
-  nameOf: (person) => person.name,
-  map: fromBitrixPerson,
 }

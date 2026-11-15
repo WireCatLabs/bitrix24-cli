@@ -31,7 +31,7 @@ export const UNTESTED: { command: string; option?: string; reason: string }[] = 
   {
     command: "store apply",
     option: "--yes",
-    reason: "cli-core 0.662.0 src/crm/cli/commands.test.ts removes the counted contacts only with --yes",
+    reason: "cli-core 0.670.0 src/crm/cli/commands.test.ts removes the counted contacts only with --yes",
   },
   { command: "store recover", reason: SHARED_STORE },
   { command: "store recover run", reason: SHARED_STORE },

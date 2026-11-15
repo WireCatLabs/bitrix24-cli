@@ -1,6 +1,9 @@
 import type { CrmItem } from "@wirecat/cli-core"
+import { crmValues } from "@wirecat/cli-core/crm"
 import type { ItemType } from "./items.js"
-import { amountOf, epoch, id, ids, type Metadata, type Raw, text } from "./values.js"
+import type { Raw } from "./values.js"
+
+const { amountOf, epoch, id, ids, text } = crmValues
 
 /** The contacts on a deal or lead; the main one is `contactId`, which REST 3.0 keeps first in `contactsId`. */
 export const contactsOn = (raw: Raw): NonNullable<CrmItem["people"]> => {
@@ -14,7 +17,7 @@ export const contactsOn = (raw: Raw): NonNullable<CrmItem["people"]> => {
 }
 
 /** Bitrix24 ⇄ neutral for a deal: its pipeline is its category, `0` the default one. */
-export const fromBitrixDeal = (raw: Raw, metadata?: Metadata): CrmItem => ({
+export const fromBitrixDeal = (raw: Raw, metadata?: CrmItem["metadata"]): CrmItem => ({
   externalId: id(raw.id) ?? "",
   title: text(raw.title) ?? "",
   pipeline: text(raw.categoryId) ?? "0",
@@ -30,7 +33,7 @@ export const fromBitrixDeal = (raw: Raw, metadata?: Metadata): CrmItem => ({
   ...(metadata ? { metadata } : {}),
 })
 
-export const DEAL: ItemType<CrmItem> = {
+export const DEAL: ItemType = {
   type: "deal",
   entityTypeId: 2,
   word: "deal",
@@ -51,6 +54,4 @@ export const DEAL: ItemType<CrmItem> = {
     "assignedById",
   ],
   words: ["title"],
-  nameOf: (deal) => deal.title,
-  map: fromBitrixDeal,
 }

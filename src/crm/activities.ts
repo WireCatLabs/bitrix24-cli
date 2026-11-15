@@ -1,9 +1,12 @@
 import { isCliError } from "@wirecat/cli-base"
 import type { CrmActivity, CrmActivityKind } from "@wirecat/cli-core"
-import type { CrmCallContext, CrmPage } from "@wirecat/cli-core/crm"
+import { type CrmCallContext, type CrmPage, crmValues } from "@wirecat/cli-core/crm"
+import { htmlToText } from "@wirecat/cli-core/mail"
 import type { BitrixCaller } from "../bitrix/transport.js"
-import { epoch, fieldOf, id, isRaw, outcomeOf, portalTime, type Raw, rawsOf, text, yes } from "./values.js"
-import { rest3Rows } from "./walk.js"
+import { rest3Rows } from "./rows.js"
+import { outcomeOf, portalTime, type Raw, yes } from "./values.js"
+
+const { epoch, fieldOf, id, isRaw, rawsOf, text } = crmValues
 
 /** A change made while the last read ran is read again rather than missed: the portal's clock is not ours. */
 const OVERLAP_MS = 10 * 60_000
@@ -52,18 +55,7 @@ const TASK_DONE = "5"
 /** An e-mail's body is HTML when `DESCRIPTION_TYPE` is 3: kept as its text. */
 const plain = (raw: Raw): string | null => {
   const body = text(raw.DESCRIPTION)
-  if (body === null || String(raw.DESCRIPTION_TYPE) !== "3") return body
-  return text(
-    body
-      .replace(/<(br|\/p|\/div|\/li)\b[^>]*>/gi, "\n")
-      .replace(/<[^>]+>/g, "")
-      .replace(/&nbsp;/g, " ")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/&quot;/g, '"')
-      .replace(/&amp;/g, "&")
-      .replace(/\n{3,}/g, "\n\n"),
-  )
+  return body === null || String(raw.DESCRIPTION_TYPE) !== "3" ? body : text(htmlToText(body))
 }
 
 /** The deal or lead an activity's own owner is, if it is one. */

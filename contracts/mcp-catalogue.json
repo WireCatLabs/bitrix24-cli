@@ -1,18 +1,8 @@
 {
   "session status": "read",
   "session list": "read",
-  "people list": "read",
-  "people show": "read",
-  "people create": "write",
-  "people update": "write",
-  "organizations list": "read",
-  "organizations show": "read",
-  "organizations create": "write",
-  "organizations update": "write",
   "products list": "read",
   "products show": "read",
-  "users list": "read",
-  "users show": "read",
   "api list": "read",
   "api show": "read"
 }

@@ -1,7 +1,10 @@
 import type { CrmPipeline, CrmStage } from "@wirecat/cli-core"
+import { crmValues } from "@wirecat/cli-core/crm"
 import type { BitrixCaller } from "../bitrix/transport.js"
 import { LEAD_PIPELINE } from "./lead.js"
-import { fieldOf, number, outcomeOf, type Raw, rawsOf, text } from "./values.js"
+import { outcomeOf, type Raw } from "./values.js"
+
+const { fieldOf, number, rawsOf, text } = crmValues
 
 /** Lead stages are the `STATUS` directory; deal stages `DEAL_STAGE` for pipeline 0 and `DEAL_STAGE_<id>` for the rest. */
 const directoryOf = (pipeline: string) => (pipeline === "0" ? "DEAL_STAGE" : `DEAL_STAGE_${pipeline}`)

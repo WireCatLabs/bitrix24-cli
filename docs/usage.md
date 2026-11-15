@@ -263,19 +263,20 @@ every CRM tool. A deal or lead answers its `pipeline`, `stage`, `status`, `close
 its `currency`; `--offline` reads the same. Bitrix24's leads have no pipelines, so they stand in one pipeline named
 `Leads`.
 
-`people` and `organizations` read the portal itself. Their `show` gives the portal's own fields under
-`provider_metadata`, each by its code with its label; a list field gives its option's label, and the option's id as
-`option_id`. `b24 work fields list deals` lists those fields with their type and options, as the last `sync`
+`people`, `organizations` and `users` are shared CRM commands too, and read the portal itself, so `--offline` refuses
+them. A person or organization gives the portal's own fields under `provider_metadata`, each by its code with its
+label; a list field gives its option's label, and the option's id as `option_id`. A company's industry, revenue and
+currency are there too. `b24 work fields list deals` lists those fields with their type and options, as the last `sync`
 stored them; `leads`, `people` and `organizations` work the same way. Their lists filter by those fields too, by
 code or label, when the portal can filter by them, and `--json` can add them:
 
 ```sh
-b24 work organizations list industry:IT
+b24 work organizations list type:CUSTOMER
 b24 work organizations list --json=id,name,provider_metadata.UF_CRM_1745512486047
 ```
 
-A list shows the newest first: `--limit`, `--page` and, for `people` and `organizations`, `--all` change that. The
-fields a list can filter by are in its help, `b24 help deals list`.
+A list shows the newest first: `--limit` and `--page` change that. The fields a list can filter by are in its help,
+`b24 help deals list`.
 
 Phones and e-mails are your clients' only, unless you are a Bitrix24 administrator. Your clients are the contacts and
 companies assigned to you, and the ones on your deals and leads. A list shows anyone else's without them. `people show`
@@ -294,17 +295,18 @@ b24 work deals close deal:12 won
 b24 work deals delete deal:12                   # asks first
 b24 work leads update lead:7 --field UF_CRM_SOURCE=Website
 b24 work people create --first-name Anna --last-name Ivanova
-b24 work organizations update 9 --field "Lead source=Fair" --body '{"revenue":1000}'
+b24 work organizations update 9 --name "Example LLC" --field "Lead source=Fair"
 ```
 
-A deal or lead write sends one request, then reads the record back into the store. `--stage` takes a stage of the
+A write sends one request, then reads the record back into the store. `--stage` takes a stage of the
 record's own pipeline by name or id, and checks the `move` key too; a won or lost stage checks the `close` key as
 well. `close` moves it to the first won or lost stage of its pipeline. `--field <label or code>=<value>` sets one of the
 portal's own fields, as `fields list` names them; a list field takes its option's label or id, and an empty value
 clears the field. A field that names a stage, a pipeline or an owner is refused: those have their own options.
 
-For `people` and `organizations`, `--field "<label or code>=<value>"` takes the label too, and a field that holds
-several values takes `--field` once per value; `--body` takes the other fields in Bitrix24's own REST 3.0 names.
+A field that holds several values takes `--field` once per value. A label works once a `sync` has stored the
+fields; before that, name the field by its code. `people` and `organizations` take their names, `--position` and
+`--owner` as options; `api call` writes any other field.
 
 Each write answers an `operation_id`, which the run journal keeps. A write is sent once, and again only when the
 portal refused it for its request limit, which it does before making anything. If it ends with

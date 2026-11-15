@@ -9,15 +9,13 @@ import {
 } from "@wirecat/cli-base"
 import { hostFetch } from "@wirecat/cli-base/http"
 import {
+  accountTokenCodec,
   credentialStorage,
   type ExchangeContext,
   type OAuthClient,
   type OAuthProvider,
   oauthAccount,
   type SignInOptions as SignInSteps,
-  type StoredTokens,
-  standardCodec,
-  type TokenCodec,
   type TokenSet,
   type TokenStorage,
   tokenKeeper,
@@ -40,33 +38,8 @@ export interface AppAuth {
   accessToken: (refresh: boolean) => Promise<string>
 }
 
-interface Kept {
-  origin: string
-  userId: string
-}
-
-const standard = standardCodec(PROVIDER)
-
-/**
- * cli-core's entry keeps only WireCat's own secret, and a local application has no WireCat app: every refresh needs
- * the owner's secret, so the entry keeps it, as gcal's does. `origin` and `userId` ride along as extra fields.
- */
-const codec: TokenCodec = {
-  decode: (raw) => {
-    const stored = standard.decode(raw)
-    const entry: unknown = JSON.parse(raw)
-    if (!isRecord(entry) || typeof entry.origin !== "string" || typeof entry.userId !== "string") return stored
-    return { ...stored, kept: { origin: entry.origin, userId: entry.userId } }
-  },
-  encode: (input) => {
-    const entry: Record<string, unknown> = JSON.parse(standard.encode(input))
-    if (input.client.clientSecret) entry.clientSecret = input.client.clientSecret
-    else delete entry.clientSecret
-    return JSON.stringify(entry)
-  },
-}
-
-const keptOf = (stored: StoredTokens): Kept | undefined => (stored as StoredTokens & { kept?: Kept }).kept
+/** Every refresh needs the owner's secret, so the entry keeps it with the portal's address and the user. */
+const codec = accountTokenCodec(PROVIDER)
 
 const paths = (env: NodeJS.ProcessEnv) => resolvePaths({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env })
 
@@ -270,7 +243,7 @@ export const appSignIn = async <T extends { id: string }>(
       origin = originOf(endpoint, options.host)
       const token = tokens.accessToken ?? ""
       user = await options.check({ origin, userId: "", accessToken: async () => token })
-      return { origin, userId: user.id }
+      return { host: origin, userId: user.id }
     },
   })
   if (!user) throw new CliError("authentication_error", "Bitrix24 did not say whose sign-in this is")
@@ -288,12 +261,12 @@ export const appAuthOf = (options: {
   const storage = appStorage(options.env, options.profile, options.keyring)
   const stored = storage.read()
   if (!stored) return undefined
-  const kept = keptOf(stored)
+  const kept = stored.account
   if (!kept || !stored.client)
     throw new CliError("authentication_error", "the saved Bitrix24 sign-in cannot be read; sign in again", {
       reason: "oauth.invalid",
     })
-  const host = new URL(kept.origin).hostname
+  const host = new URL(kept.host).hostname
   const keeper = tokenKeeper({
     provider: appProvider(host, stored.client),
     storage,
@@ -302,5 +275,5 @@ export const appAuthOf = (options: {
     signInCommand: `${IDENTITY.command} ${options.profile} session start --portal ${host} --client-id ${stored.client.clientId}`,
     ...(options.signal ? { signal: options.signal } : {}),
   })
-  return { ...kept, accessToken: (refresh) => keeper.accessToken({ refresh }) }
+  return { origin: kept.host, userId: kept.userId, accessToken: (refresh) => keeper.accessToken({ refresh }) }
 }

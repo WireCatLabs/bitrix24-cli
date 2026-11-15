@@ -77,6 +77,11 @@ export const fakePortal = (script: Record<string, Reply | Reply[] | ((call: Port
     // reads as one, and that question stays out of `calls`, which then hold only what the test scripted.
     if (method === "user.admin" && !(method in script))
       return new Response(JSON.stringify({ result: true }), { headers: { "content-type": "application/json" } })
+    // Every live contact and company read asks for the custom fields too; unscripted, the portal has none.
+    if (/^crm\.(contact|company)\.(user)?field\.list$/.test(method) && !(method in script))
+      return new Response(JSON.stringify({ result: method.includes("userfield") ? [] : { items: [] } }), {
+        headers: { "content-type": "application/json" },
+      })
     calls.push(call)
     const undocumented = DOCUMENTED[method]?.(call.body) ?? []
     if (undocumented.length) throw new Error(`fake portal: ${method} has no ${undocumented.join(", ")} in its docs`)

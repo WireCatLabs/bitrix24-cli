@@ -38,7 +38,7 @@ describe("custom fields in a list query", () => {
   it("filters by a label or a code, a list field by its option's label, a number field as a number", async () => {
     const portal = portalWith()
     const ran = await b24(
-      ["work", "organizations", "list", "lead_source:fair", "UF_CRM_2_ROOMS:3", "type_id:CUSTOMER", "--json"],
+      ["work", "organizations", "list", "lead_source:fair", "UF_CRM_2_ROOMS:3", "type:CUSTOMER", "--json"],
       {
         portal,
       },
@@ -85,23 +85,26 @@ describe("custom fields in a list query", () => {
     expect(portal.calls.map((call) => call.method)).not.toContain("crm.company.list")
   })
 
-  it("reads no field definitions for a query of the list's own fields", async () => {
+  it("reads the field definitions once, then the list, for a query of the list's own fields", async () => {
     const portal = portalWith()
-    await b24(["work", "organizations", "list", "type_id:CUSTOMER", "--json"], { portal })
-    expect(portal.calls.map((call) => call.method)).toEqual(["crm.company.list"])
+    await b24(["work", "organizations", "list", "type:CUSTOMER", "--json"], { portal })
+    expect(portal.calls.map((call) => call.method)).toEqual([
+      "crm.company.field.list",
+      "crm.company.userfield.list",
+      "crm.company.list",
+    ])
   })
 })
 
 describe("custom fields in --json", () => {
-  it("selects only the codes named, and gives them under provider_metadata", async () => {
+  it("gives only the codes named under provider_metadata", async () => {
     const portal = portalWith()
     const ran = await b24(["work", "organizations", "list", "--json=id,provider_metadata.UF_CRM_1_SOURCE"], { portal })
     expect(ran.code).toBe(0)
-    expect(listCall(portal).body.select).toEqual(expect.arrayContaining(["id", "title", "UF_CRM_1_SOURCE"]))
-    expect(listCall(portal).body.select).not.toContain("UF_CRM_2_ROOMS")
-    expect(ran.json().items).toEqual([
-      { id: "7", provider_metadata: { UF_CRM_1_SOURCE: { label: "Lead source", value: "Fair", option_id: "45" } } },
-    ])
+    const [item] = ran.json().items as Record<string, unknown>[]
+    expect(item?.provider_metadata).toEqual({
+      UF_CRM_1_SOURCE: { label: "Lead source", value: "Fair", option_id: "45" },
+    })
   })
 
   it("selects every custom field for provider_metadata alone, leaving empty ones out", async () => {
@@ -122,11 +125,5 @@ describe("custom fields in --json", () => {
     expect(ran.code).toBe(2)
     expect(ran.json().error).toMatchObject({ reason: "field.unknown", param: "--json" })
     expect(portal.calls.map((call) => call.method)).not.toContain("crm.company.list")
-  })
-
-  it("leaves the list's select alone without a custom field", async () => {
-    const portal = portalWith()
-    await b24(["work", "organizations", "list", "--json=id,name"], { portal })
-    expect(portal.calls.map((call) => call.method)).toEqual(["crm.company.list"])
   })
 })
