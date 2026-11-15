@@ -326,9 +326,12 @@ export const bitrixCrmSource = (
     },
     pipelines: (kind, context) => bitrixPipelines(metered(context), kind),
     stageHistory: (kind, since, after, context) => readStageHistory(metered(context), kind, since, after, context),
-    activities(since, page, context) {
+    // `<page>@<when the round started>`, as `changes` does: a round spread over runs must end with its first page's
+    // time, or the next round's `since` skips what changed while it ran.
+    async activities(since, page, context) {
       const caller = metered(context)
-      const started = now()
+      const [at, begun] = (page ?? "").split("@")
+      const started = Number(begun) || now()
       const assignees = assigneesOf(context)
       const owners = assignees
         ? () => {
@@ -342,7 +345,8 @@ export const bitrixCrmSource = (
             return found
           }
         : undefined
-      return readActivities(caller, started, since, page, context, owners)
+      const read = await readActivities(caller, started, since, at || undefined, context, owners)
+      return read.hasMore ? { ...read, nextCursor: `${read.nextCursor}@${started}` } : read
     },
     async changes<K extends CrmKind>(
       kind: K,

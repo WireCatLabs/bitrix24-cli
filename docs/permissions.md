@@ -103,7 +103,8 @@ They never loosen the profile. See [MCP](mcp.md).
 - **An employee's webhook cannot delete or clear.** Unless the webhook's user is a Bitrix24 administrator, `b24`
   refuses every delete, an update that sets a field to nothing, an unbind, a merge of duplicates and `api call batch`
   (reason `employee.*`).
-- **Contact and company reads through `api call`** are an administrator's alone.
+- **Contact, company and lead reads through `api call`** are an administrator's alone: a lead holds its own phones
+  and e-mails.
 - **Phones and e-mails** of clients who are not the webhook user's own: at most 100 such contacts and companies a day
   through `people show` and `organizations show`, for the user and their agents together. The count is kept on this
   computer: it stops an accident or an agent, not someone who means to take the base.

@@ -1,6 +1,9 @@
 import { CliError } from "@wirecat/cli-base"
 import { describe, expect, it } from "vitest"
+import { BitrixTransport } from "../bitrix/transport.js"
+import { FAKE_WEBHOOK, fakePortal, ok } from "../testing/fake-portal.js"
 import { readActivities } from "./activities.js"
+import { bitrixCrmSource } from "./source.js"
 
 const NOW = Date.UTC(2026, 10, 12, 12)
 const SINCE = Date.UTC(2026, 10, 1)
@@ -261,5 +264,23 @@ describe("Bitrix24 activities and tasks", () => {
       nextCursor: "comment:0:0",
     })
     expect(gaps).toHaveLength(1)
+  })
+
+  it("ends a round spread over two runs with the time of its first page, so the next round rereads the gap", async () => {
+    const fake = fakePortal({
+      "crm.activity.list": ({ body }) => ok((body.filter as Record<string, number>)[">ID"] === 0 ? [ACTIVITY] : []),
+      "tasks.task.list": ok({ tasks: [] }),
+    })
+    const sourceAt = (at: number) =>
+      bitrixCrmSource(
+        () => new BitrixTransport({ auth: FAKE_WEBHOOK, fetch: fake.fetch, sleep: async () => {} }),
+        () => at,
+      )
+    const first = await sourceAt(NOW).activities?.(SINCE)
+    if (!first?.hasMore) throw new Error("the first run should stop after its first page")
+    const later = sourceAt(NOW + 6 * 3_600_000)
+    let page = await later.activities?.(SINCE, first.nextCursor)
+    while (page?.hasMore) page = await later.activities?.(SINCE, page.nextCursor)
+    expect(page).toMatchObject({ hasMore: false, cursor: String(NOW) })
   })
 })

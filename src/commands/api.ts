@@ -243,8 +243,9 @@ const callCommand = () =>
         if (readsClients(method.name, body) && !(await isAdmin(portal)))
           throw new CliError(
             "permission_error",
-            `${method.name} reads contacts or companies, which only a Bitrix24 administrator reads through api call: ` +
-              "your clients come with sync, and another one with people show or organizations show, " +
+            `${method.name} reads contacts, companies or leads, which only a Bitrix24 administrator reads through ` +
+              "api call: your clients and leads come with sync, and another client with people show or " +
+              "organizations show, " +
               `${DAILY_FOREIGN} a day`,
             { sent: false },
           )

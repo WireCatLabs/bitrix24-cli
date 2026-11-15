@@ -12,9 +12,20 @@ export const fieldOf = (value: unknown, key: string): unknown => (isRaw(value) ?
 
 export const rawsOf = (value: unknown): Raw[] => (Array.isArray(value) ? value.filter(isRaw) : [])
 
-/** Bitrix24's stage semantics: `S` success, `F` failure, anything else still in progress (apidocs crm.status.fields). */
-export const outcomeOf = (semantics: unknown): StageOutcome =>
-  semantics === "S" ? "won" : semantics === "F" ? "lost" : "open"
+/**
+ * Bitrix24's stage semantics, short (`S`, `F`) or as `EXTRA.SEMANTICS` (`success`, `failure`, `apology`, a lost group);
+ * anything else is still in progress (b24restdocs api-reference/crm/status/crm-status-list.md,
+ * tutorials/crm/how-to-get-lists/how-to-get-stages-with-semantics.md).
+ */
+const OUTCOMES = new Map<unknown, StageOutcome>([
+  ["S", "won"],
+  ["success", "won"],
+  ["F", "lost"],
+  ["failure", "lost"],
+  ["apology", "lost"],
+])
+
+export const outcomeOf = (semantics: unknown): StageOutcome => OUTCOMES.get(semantics) ?? "open"
 
 export const text = (value: unknown): string | null => {
   if (typeof value !== "string" && typeof value !== "number") return null
