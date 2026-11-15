@@ -6,3 +6,6 @@
 - **Won and lost stages read from `EXTRA.SEMANTICS` are won and lost, not open.** A stage the portal lists without
   the short `SEMANTICS` carries only `success`, `failure` or `apology`, which `sync` stored as open: their deals counted
   as open and `deals close` found no won stage.
+- **A round of activities spread over several `sync` runs no longer loses what changed while it ran.** It ended with
+  the last run's time, so the next round's `since` skipped every activity, task and comment changed in between: a
+  task completed then stayed open in the copy until it changed again. The round now ends with its first page's time.
