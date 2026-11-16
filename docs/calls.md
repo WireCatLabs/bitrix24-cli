@@ -16,7 +16,8 @@ The webhook needs the `telephony` scope, besides `crm`, `user_basic` and `depart
 resources → Other → Incoming webhook, tick Telephony, and save. A local application needs the same scope on its card.
 The employee who made the webhook also needs the portal's right to view call statistics.
 
-b24 only reads. No command places a call, changes a line or touches the call history.
+Copying calls only reads. No command places a call or changes a line. Only `calls export`, off until you turn it
+on, writes to the portal: see [Write other phone systems' calls into Bitrix24](#write-other-phone-systems-calls-into-bitrix24).
 
 ## Copy the calls
 
@@ -110,3 +111,30 @@ b24 work config set permissions.meetings.sync deny
 
 `api call voximplant.statistic.get` stays denied: its answer holds the recording links with their tokens. See
 [Permissions](permissions.md).
+
+## Write other phone systems' calls into Bitrix24
+
+Calls from another phone system, such as pbx, can land on the client's contact in Bitrix24, so the CRM shows them
+beside the portal's own calls. It is off until you turn it on, and it writes each call once.
+
+Bitrix24 lets only an application write a call, not a webhook. Sign the profile in as a local application first:
+`b24 work session start --portal <portal> --client-id <id>`. Then turn it on and allow its two methods:
+
+```sh
+b24 work config set export_calls true
+b24 work config set permissions.api.telephony.externalcall.register allow
+b24 work config set permissions.api.telephony.externalcall.finish allow
+b24 work calls export --since-time 7d --dry-run   # each call, the fields it would send, where it would land
+b24 work calls export --since-time 7d
+```
+
+A call lands only when its client is linked to exactly one contact of this portal, and its employee to one portal
+user (`memo people link` links them). Any other call is listed as skipped, with the reason. The portal's own calls
+are skipped: they are in Bitrix24 already.
+
+Each call is registered and finished with `telephony.externalCall.register` and `telephony.externalCall.finish`, with
+no new CRM record, no call card and no chat message. b24 keeps the calls it wrote in its state folder, under
+`calls-export/<portal>.json`, so a second run never writes a call again. Bitrix24 itself only notices a repeat within 30
+minutes.
+
+To stop it: `b24 work config set export_calls false`. Nothing written to the portal is taken back.

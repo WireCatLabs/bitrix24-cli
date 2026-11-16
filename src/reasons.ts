@@ -37,6 +37,10 @@ const OWN: [reason: string, code: string, message: string][] = [
   ["field.unknown", "validation_error", "no custom field has that label or code"],
   ["field.unknown-option", "validation_error", "the list field has no option with that label or id"],
   ["field.not-filterable", "validation_error", "the portal cannot filter a list by this custom field"],
+  ["calls-export.off", "configuration_error", "calls export is off until export_calls is on"],
+  ["calls-export.ledger-unreadable", "conflict", "the list of calls already written to Bitrix24 cannot be read"],
+  ["calls-export.outcome-unknown", "conflict", "an earlier run sent this call and got no answer"],
+  ["calls-export.no-call-id", "invalid_response", "Bitrix24 registered a call but gave no CALL_ID"],
   ...NAMED,
 ]
 

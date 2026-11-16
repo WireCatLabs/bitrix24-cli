@@ -47,8 +47,15 @@ const SCOPES = new Map([
 ])
 /** In scope `basic` (apidocs common/users: user-admin, user-access; common/system). */
 const BASIC = new Set(["user.admin", "user.access", ...READ_METHODS])
-/** `voximplant.*` spans two scopes: `voximplant.infocall.*` is `call`, the call history `telephony`. */
-const TELEPHONY = new Set(["voximplant.statistic.get"])
+/**
+ * `voximplant.*` spans two scopes: `voximplant.infocall.*` is `call`, the call history `telephony`. `calls export` writes
+ * a call with the two external-call methods, also `telephony`.
+ */
+const TELEPHONY = new Set([
+  "voximplant.statistic.get",
+  "telephony.externalcall.register",
+  "telephony.externalcall.finish",
+])
 
 export const scopeOf = (name: string): string =>
   BASIC.has(name)
