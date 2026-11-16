@@ -57,6 +57,7 @@ const mcpCommand = () =>
       "phone numbers, e-mail addresses and links",
       "whatever api call returns",
       "the messages, notes and events search all finds",
+      "call titles, descriptions and transcripts: a caller's own words",
     ],
     permissionExample: "deals.delete=deny",
     skill: SKILL,

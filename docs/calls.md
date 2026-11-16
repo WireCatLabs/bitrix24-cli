@@ -31,6 +31,9 @@ Each call is a meeting of kind call. It keeps its direction (incoming or outgoin
 employee, how long they talked, and how it ended: answered, not answered, busy or failed. It also keeps the CRM
 contact, company or lead the portal linked the call to, and the call's CRM activity, as numbers to look up.
 
+A first sync on a busy line reads many pages before it saves anything. If it stops at its time limit, give it a
+shorter window or more time: `meetings sync --since-time 7d`, or `--timeout 5m`.
+
 Each sync reads again the three hours before the last one, so a call that was still going on is found the next time.
 To keep it up to date, add a timer:
 
