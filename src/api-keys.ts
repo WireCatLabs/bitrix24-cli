@@ -32,6 +32,10 @@ export const DENIED_FAMILIES = [
   "user.add",
   "disk.file.getexternallink",
   "disk.folder.getexternallink",
+  "crm.documentgenerator.document.enablepublicurl",
+  "documentgenerator.document.enablepublicurl",
+  "crm.invoice.getexternallink",
+  "salescenter.payment.getpublicurl",
   "event.bind",
   "batch",
 ]

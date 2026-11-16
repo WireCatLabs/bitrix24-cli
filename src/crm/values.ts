@@ -1,6 +1,7 @@
 import { CliError } from "@wirecat/cli-base"
 import type { StageOutcome } from "@wirecat/cli-core"
 import { crmValues } from "@wirecat/cli-core/crm"
+import { fileIdsOf } from "../file-links.js"
 
 export type Raw = crmValues.CrmRaw
 
@@ -66,11 +67,16 @@ const empty = (value: unknown) => value === null || value === "" || (Array.isArr
 
 /**
  * The portal's own fields that hold a value, as it names them: their meaning is the portal owner's, so they stay
- * unmapped. `false` and `0` stay, since a yes/no field saying no is an answer.
+ * unmapped. `false` and `0` stay, since a yes/no field saying no is an answer. A file stays as its id (`fileIdsOf`).
  */
 export const customFields = (raw: unknown): Record<string, unknown> =>
   crmValues.isRaw(raw)
-    ? Object.fromEntries(Object.entries(raw).filter(([key, value]) => isCustom(key) && !empty(value)))
+    ? Object.fromEntries(
+        Object.entries(raw).flatMap(([key, value]) => {
+          const kept = isCustom(key) ? fileIdsOf(value) : undefined
+          return kept === undefined || empty(kept) ? [] : [[key, kept]]
+        }),
+      )
     : {}
 
 /**

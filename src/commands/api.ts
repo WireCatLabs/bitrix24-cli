@@ -40,6 +40,7 @@ import type { BitrixTransport } from "../bitrix/transport.js"
 import { type Body, parseBody } from "../body.js"
 import { permissions } from "../config.js"
 import { bitrixCrmSource } from "../crm/source.js"
+import { withoutFileLinks } from "../file-links.js"
 import { IDENTITY } from "../identity.js"
 import { contextOf, signInOf, transportFor, withPortal } from "../portal.js"
 
@@ -267,7 +268,7 @@ const callCommand = () =>
       const key = apiKey(method.name)
       const shown = (answer: { result: unknown; total?: number; next?: number }) => ({
         method: method.name,
-        result: answer.result,
+        result: withoutFileLinks(answer.result),
         ...(answer.total === undefined ? {} : { total: answer.total }),
         ...(answer.next === undefined ? {} : { next: answer.next }),
         untrusted: UNTRUSTED,

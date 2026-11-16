@@ -1,0 +1,183 @@
+import { existsSync, readFileSync } from "node:fs"
+import { describe, expect, it } from "vitest"
+import { customFields } from "./crm/values.js"
+import { fileIdsOf, REMOVED, withoutFileLinks } from "./file-links.js"
+import { fakeCrm } from "./testing/fake-crm.js"
+import { b24, synced } from "./testing/harness.js"
+
+const TOKEN = "FAKEFILETOKEN0123456789"
+const HOST = "https://example.bitrix24.test"
+
+/** The universal methods' file value (apidocs files/how-to-download-files#crm). */
+const universal = (id: number) => ({
+  id,
+  url: `${HOST}/bitrix/services/main/ajax.php?action=crm.controller.item.getFile&entityTypeId=2&fileId=${id}`,
+  urlMachine: `${HOST}/rest/crm.controller.item.getFile.json?auth=${TOKEN}&token=${TOKEN}`,
+})
+
+/** REST 2's file value (apidocs tutorials/crm/how-to-add-crm-objects/how-to-add-lead-with-files). */
+const rest2 = (id: number) => ({
+  id,
+  showUrl: `/bitrix/components/bitrix/crm.lead.show/show_file.php?ownerId=5&fileId=${id}`,
+  downloadUrl: `/bitrix/components/bitrix/crm.lead.show/show_file.php?auth=${TOKEN}&ownerId=5&fileId=${id}`,
+})
+
+describe("file values kept as ids", () => {
+  it("keeps a file as its id, in both shapes, single and multiple", () => {
+    expect(
+      customFields({
+        UF_CRM_ONE: universal(10),
+        UF_CRM_MANY: [universal(11), universal(12)],
+        ufCrm_5: rest2(37375),
+        UF_CRM_REST2_MANY: [rest2(37377)],
+        UF_CRM_NOTE: "plain",
+      }),
+    ).toEqual({
+      UF_CRM_ONE: 10,
+      UF_CRM_MANY: [11, 12],
+      ufCrm_5: 37375,
+      UF_CRM_REST2_MANY: [37377],
+      UF_CRM_NOTE: "plain",
+    })
+  })
+
+  it("leaves out a file with no id and a string holding a tokened link, and keeps other values whole", () => {
+    expect(fileIdsOf({ urlMachine: `${HOST}/x?auth=${TOKEN}` })).toBeUndefined()
+    expect(fileIdsOf([{ downloadUrl: "/x" }])).toBeUndefined()
+    expect(fileIdsOf(`${HOST}/rest/download?token=${TOKEN}`)).toBeUndefined()
+    expect(fileIdsOf({ amount: 1, nested: { at: [rest2(4)] } })).toEqual({ amount: 1, nested: { at: [4] } })
+    expect(fileIdsOf("https://example.test/?q=auth")).toBe("https://example.test/?q=auth")
+    expect(customFields({ UF_CRM_GONE: [{ urlMachine: `${HOST}/x?auth=${TOKEN}` }], UF_CRM_ZERO: 0 })).toEqual({
+      UF_CRM_ZERO: 0,
+    })
+  })
+
+  it("withoutFileLinks replaces download and tokened links, and leaves the rest as given", () => {
+    expect(
+      withoutFileLinks({
+        item: {
+          id: 1,
+          UF_CRM_1: [universal(10)],
+          UF_CRM_2: rest2(11),
+          title: "Kitchen",
+          empty: { DOWNLOAD_URL: null },
+        },
+        files: [{ DOWNLOAD_URL: `${HOST}/disk/download?x=1`, NAME: "a.pdf" }, `${HOST}/x?access_token=${TOKEN}`],
+      }),
+    ).toEqual({
+      item: {
+        id: 1,
+        UF_CRM_1: [{ id: 10, url: universal(10).url, urlMachine: REMOVED }],
+        UF_CRM_2: { id: 11, showUrl: rest2(11).showUrl, downloadUrl: REMOVED },
+        title: "Kitchen",
+        empty: { DOWNLOAD_URL: null },
+      },
+      files: [{ DOWNLOAD_URL: REMOVED, NAME: "a.pdf" }, REMOVED],
+    })
+  })
+})
+
+/** Every byte SQLite holds for the store: a fresh write may sit in the write-ahead log only. */
+const storeBytes = () =>
+  ["", "-wal", "-shm"]
+    .map((suffix) => `${process.env.MESSAGING_STORE}${suffix}`)
+    .filter((file) => existsSync(file))
+    .map((file) => readFileSync(file).toString("latin1"))
+    .join("")
+
+const withFiles = () => {
+  const crm = fakeCrm()
+  // Typed as a string: the value's shape decides, not the field's type.
+  crm.addField("deal", { code: "UF_CRM_SCAN", title: "Scan", type: "string" })
+  crm.addField("deal", { code: "UF_CRM_CONTRACT", title: "Contract", type: "file", multiple: true })
+  const deal = crm.put("deal", {
+    title: "Example kitchen",
+    categoryId: 0,
+    stageId: "PREPARATION",
+    UF_CRM_CONTRACT: [universal(10), universal(12)],
+    UF_CRM_SCAN: rest2(37375),
+  })
+  return { crm, deal }
+}
+
+describe("no file link in the copy or the output (RISK-2313)", () => {
+  it("sync stores a deal's files as ids, and deals show prints no link", async () => {
+    const { crm, deal } = withFiles()
+    const { ref } = await synced(crm)
+    const bytes = storeBytes()
+    expect(bytes).toContain("Example kitchen")
+    for (const leak of [TOKEN, "getFile", "show_file.php"]) expect(bytes).not.toContain(leak)
+
+    const offline = await b24(["work", "--offline", "deals", "show", ref("deals", deal), "--json"], { portal: crm })
+    const live = await b24(["work", "deals", "show", ref("deals", deal), "--json"], { portal: crm })
+    const human = await b24(["work", "deals", "show", ref("deals", deal)], { portal: crm })
+    for (const ran of [offline, live, human]) {
+      expect(ran.code).toBe(0)
+      expect(ran.out + ran.err).not.toContain(TOKEN)
+      expect(ran.out + ran.err).not.toContain("getFile")
+    }
+    expect((live.json().item as Record<string, Record<string, unknown>>).provider_metadata).toMatchObject({
+      UF_CRM_CONTRACT: { label: "Contract", value: [10, 12] },
+      UF_CRM_SCAN: { label: "Scan", value: 37375 },
+    })
+  })
+
+  it("api call prints no download link, from crm.item.get or a list", async () => {
+    const { crm, deal } = withFiles()
+    const item = await b24(
+      ["work", "api", "call", "crm.item.get", "--body", JSON.stringify({ entityTypeId: 2, id: deal }), "--json"],
+      { portal: crm },
+    )
+    const list = await b24(
+      ["work", "api", "call", "crm.deal.list", "--body", '{"select":["id","UF_CRM_CONTRACT","UF_CRM_SCAN"]}', "--json"],
+      { portal: crm },
+    )
+    for (const ran of [item, list]) {
+      expect(ran.code).toBe(0)
+      expect(ran.out + ran.err).not.toContain(TOKEN)
+      expect(ran.out).toContain(REMOVED)
+    }
+    expect(item.json().item).toMatchObject({
+      result: {
+        item: {
+          UF_CRM_CONTRACT: [
+            { id: 10, urlMachine: REMOVED },
+            { id: 12, urlMachine: REMOVED },
+          ],
+        },
+      },
+    })
+  })
+
+  it("sync --rescan rewrites a row stored with a link before this fix", async () => {
+    const { crm } = withFiles()
+    await synced(crm)
+    const { DatabaseSync } = await import("node:sqlite")
+    const database = new DatabaseSync(process.env.MESSAGING_STORE as string)
+    try {
+      database
+        .prepare("UPDATE deals SET metadata = ?")
+        .run(JSON.stringify({ UF_CRM_CONTRACT: { label: "Contract", value: [universal(10)] } }))
+    } finally {
+      database.close()
+    }
+    expect((await b24(["work", "sync", "--rescan", "--json"], { portal: crm })).code).toBe(0)
+    const reading = new DatabaseSync(process.env.MESSAGING_STORE as string, { readOnly: true })
+    try {
+      const rows = reading.prepare("SELECT metadata FROM deals").all() as { metadata: string | null }[]
+      expect(rows.length).toBeGreaterThan(0)
+      for (const { metadata } of rows) expect(metadata ?? "").not.toContain(TOKEN)
+    } finally {
+      reading.close()
+    }
+  })
+})
+
+describe("public link methods", () => {
+  it("api call refuses a document's public link, reads and writes alike", async () => {
+    for (const method of ["crm.documentgenerator.document.enablePublicUrl", "crm.invoice.getExternalLink"]) {
+      const ran = await b24(["work", "api", "call", method, "--body", '{"id":1}'])
+      expect(ran.code).toBe(5)
+    }
+  })
+})

@@ -29,6 +29,12 @@ e-mail addresses and `department` for the company structure; `meetings sync` rea
 employee, and the full `user` scope adds the right to invite and edit them. The sync stores each employee's name,
 e-mail address, position and department head in the local store, where every WireCat tool can read them.
 
+A file in a CRM record's custom field is kept as its file id only, in the copy and in every answer, never its
+links: Bitrix24's download link carries an access token, and anyone holding it gets the file. `api call` prints
+`[link removed]` in place of every download link and every link with `auth=` or `token=` in it. A copy synced
+before this rule may still hold such links: run `b24 work sync --rescan` once to rewrite every row. SQLite may keep the
+old bytes in the store file's free space until it reuses them.
+
 Unless the webhook's user is a Bitrix24 administrator, the sync copies only their own clients: the contacts and
 companies assigned to them or named on their deals and leads. Lists show phones and e-mails of those alone; `people
 show` and `organizations show` give them for anyone else's, at most 100 a day for the user and their agents together.
@@ -57,7 +63,8 @@ that names one field twice in any spelling (`assignedById` and `ASSIGNED_BY_ID`,
 anything is sent. A delete asks. Every other method asks too, and is refused without a terminal unless you pass
 `--yes`. Methods that message people, publish or send data out are refused until you allow them: `im`,
 `imopenlines`, `imbot`, `imconnector`, `log.blogpost`, SMS, mail, telephony, workflows, CRM activities, tasks,
-`user.add`, public file links, `event.bind` and `batch`. Their reads are refused too, since they hold messages,
+`user.add`, public file and document links (`disk.*.getExternalLink`, `enablePublicUrl` of generated documents,
+`crm.invoice.getExternalLink`, `salescenter.payment.getPublicUrl`), `event.bind` and `batch`. Their reads are refused too, since they hold messages,
 e-mails and tasks. `api show <method>` names a method's level. `api call` is
 not offered over MCP.
 
