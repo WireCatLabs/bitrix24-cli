@@ -76,8 +76,8 @@ const unchosen = (context: CrmCallContext | undefined, raw: Raw) => {
 }
 
 /**
- * A contact a round of changes saw that is no longer the user's (given to a colleague, or off the user's deals) is
- * saved again with its new assignee and no phones or e-mails, so the next narrowing or `--rescan` removes it: cli-core
+ * A contact in the copy that a round of changes saw is no longer the user's (given to a colleague, or off the user's
+ * deals) is saved again with its new assignee and no phones or e-mails, so the next narrowing or `--rescan` removes it: cli-core
  * removes contacts only then, since they have no id pass. Until then it keeps the one phone and e-mail cli-core holds
  * beside the lists, which a save without them leaves.
  */
@@ -170,6 +170,12 @@ export const bitrixCrmSource = (
     setting: "scope",
     chosen: "unassigned",
   }),
+  copy: {
+    /** The definitions the last sync stored: a live read uses them, and reads the portal's only before the first sync. */
+    fields?: (kind: CrmKind) => Promise<CrmField[]>
+    /** Which of these contacts the copy holds. */
+    contacts?: (externalIds: readonly string[]) => Promise<ReadonlySet<string>>
+  } = {},
 ): BitrixCrmSource => {
   let role: Promise<Role> | undefined
   const roleNow = () => (role ??= roleOf(portal(), portal().userId))
@@ -197,6 +203,10 @@ export const bitrixCrmSource = (
       loaded.set(kind, found)
     }
     return found
+  }
+  const known = async (kind: CrmKind, caller: BitrixCaller) => {
+    const found = (await copy.fields?.(kind)) ?? []
+    return found.length ? found : await fields(kind, caller)
   }
   // The copy keeps no contact's custom values, so a sync reads none; a live read and a write's answer do.
   const custom = async (kind: CrmKind, caller: BitrixCaller) => (kind === "person" ? [] : await fields(kind, caller))
@@ -432,12 +442,15 @@ export const bitrixCrmSource = (
       ]
       const rows = itemsOf((await list(caller, kind, select, filter)).result)
       const last = id(rows.at(-1)?.id)
-      const kept =
-        clients && assignees && since !== null
-          ? rows.flatMap((raw) =>
-              mineOnly(raw, assignees, clients) ? [raw] : kind === "person" ? [givenAway(raw)] : [],
-            )
-          : rows.filter((raw) => !unchosen(context, raw))
+      const narrowed = clients && assignees && since !== null
+      const kept = narrowed
+        ? rows.filter((raw) => mineOnly(raw, assignees, clients))
+        : rows.filter((raw) => !unchosen(context, raw))
+      if (narrowed && kind === "person") {
+        const gone = rows.filter((raw) => !mineOnly(raw, assignees, clients))
+        const held = gone.length ? await copy.contacts?.(gone.map((raw) => id(raw.id) ?? "")) : undefined
+        kept.push(...gone.filter((raw) => held?.has(id(raw.id) ?? "")).map(givenAway))
+      }
       // An empty page ends the round, not a short one: a portal that caps pages below PAGE still lists every row.
       // Every round ends with the named clients: a deal given to the user brings a client whose row did not change.
       if (last === null && clients)
@@ -485,7 +498,7 @@ export const bitrixCrmSource = (
     },
     async list(kind, query, context) {
       const caller = metered(context)
-      const defined = await fields(kind, caller)
+      const defined = await known(kind, caller)
       const type = TYPES[kind]
       const conditions: Condition[] = [
         ...liveConditions(kind, query.conditions, defined),
@@ -497,7 +510,7 @@ export const bitrixCrmSource = (
     async get(kind, externalId, context) {
       if (!/^[1-9]\d*$/.test(externalId)) return null
       const caller = metered(context)
-      const defined = await fields(kind, caller)
+      const defined = await known(kind, caller)
       let answer: Awaited<ReturnType<BitrixCaller["call"]>>
       try {
         answer = await caller.call(`crm.${TYPES[kind].type}.get`, {

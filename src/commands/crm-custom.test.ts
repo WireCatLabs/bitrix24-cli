@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { fakePortal, ok, type PortalCall, type Reply } from "../testing/fake-portal.js"
-import { b24 } from "../testing/harness.js"
+import { b24, synced } from "../testing/harness.js"
 
 const definitions = {
   "crm.company.field.list": ok({
@@ -83,6 +83,13 @@ describe("custom fields in a list query", () => {
     const option = await b24(["work", "organizations", "list", "lead_source:radio", "--json"], { portal })
     expect(option.json().error).toMatchObject({ reason: "field.unknown-option", param: "--query" })
     expect(portal.calls.map((call) => call.method)).not.toContain("crm.company.list")
+  })
+
+  it("reads the field definitions the last sync stored, and the portal's only before the first sync", async () => {
+    const { portal } = await synced()
+    const before = portal.calls.length
+    expect((await b24(["work", "people", "list", "--json"], { portal })).code).toBe(0)
+    expect(portal.calls.slice(before).map((call) => call.method)).toEqual(["crm.contact.list", "user.admin"])
   })
 
   it("reads the field definitions once, then the list, for a query of the list's own fields", async () => {
