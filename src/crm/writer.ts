@@ -61,16 +61,17 @@ export const bitrixCrmWriter = (portal: () => BitrixTransport, source: BitrixCrm
   }
 
   /**
-   * Bitrix24 keeps a contact's name in parts: a whole name is its first word and the rest. Phones and e-mails are
-   * multifields an update would add to rather than replace (apidocs data-types#crm_multifield), so only a create sets
-   * them.
+   * Bitrix24 keeps a contact's name in parts: a whole name is its first word and the rest, and one word clears the last
+   * name; a middle name (`secondName`) stays, since clearing it would refuse every `--name` of an employee's webhook.
+   * Phones and e-mails are multifields an update would add to rather than replace (apidocs data-types#crm_multifield),
+   * so only a create sets them; the shared commands offer no option for them yet, but core's port carries them.
    */
   const personFields = (given: CrmPersonFields, create: boolean): Raw => {
     const fields: Raw = {}
     if (given.name !== undefined) {
       const [first, ...rest] = given.name.trim().split(/\s+/)
       fields.name = first ?? ""
-      if (rest.length) fields.lastName = rest.join(" ")
+      fields.lastName = rest.join(" ")
     }
     if (given.firstName !== undefined) fields.name = given.firstName ?? ""
     if (given.lastName !== undefined) fields.lastName = given.lastName ?? ""

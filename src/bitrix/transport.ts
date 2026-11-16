@@ -61,6 +61,12 @@ export interface BitrixAnswer {
   next?: number
 }
 
+/** A failure before the request left, such as the sign-in server's: nothing reached the portal. */
+const unsent = (error: unknown): never => {
+  if (!isCliError(error)) throw error
+  throw new CliError(error.code, error.message, { ...error.details, sent: false })
+}
+
 /**
  * Bitrix24's REST API over an incoming webhook, method by method.
  *
@@ -194,7 +200,7 @@ export class BitrixTransport {
   ): Promise<BitrixAnswer> {
     const auth = this.#auth
     const app = "accessToken" in auth
-    const token = app ? await auth.accessToken(run.refresh) : undefined
+    const token = app ? await auth.accessToken(run.refresh).catch(unsent) : undefined
     const path = `/rest/${run.api === 3 ? "api/" : ""}`
     // Not AbortSignal.timeout: its timer holds the run's async context until the deadline (tg-cli, 2026-11-05).
     const deadline = new AbortController()

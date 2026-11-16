@@ -116,6 +116,17 @@ describe("BitrixTransport", () => {
     expect(portal.calls[1]?.headers["Idempotency-Key"]).toBeUndefined()
   })
 
+  it("answers a token refresh lost on the network as that, not as a write that may have been made", async () => {
+    const accessToken = async () => {
+      throw new CliError("network_error", "could not reach the sign-in server")
+    }
+    const auth = { origin: "https://example.bitrix24.test", userId: "7", accessToken }
+    const portal = fakePortal({ "crm.contact.add": ok({ id: 5 }) })
+    const write = transportOf(portal, { auth }).transport.call("crm.contact.add", { fields: { name: "WireCat test" } })
+    expect(await failureOf(write)).toMatchObject({ code: "network_error", details: { sent: false } })
+    expect(portal.calls).toEqual([])
+  })
+
   it("sends an application's write once more with a refreshed token after a 401, and only once", async () => {
     const accessToken = vi.fn(async (refresh: boolean) => (refresh ? "wirecatfake0new" : "wirecatfake0old"))
     const auth = { origin: "https://example.bitrix24.test", userId: "7", accessToken }

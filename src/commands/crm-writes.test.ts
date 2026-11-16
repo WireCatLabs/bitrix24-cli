@@ -153,6 +153,12 @@ describe("a person's and an organization's own options", () => {
     const fields = { name: "Anna", lastName: "Maria Ivanova", post: "Buyer", assignedById: 7 }
     expect(sent(fake)).toEqual([fields, fields, { assignedById: 7 }])
   })
+
+  it("gives --name of one word no last name, rather than keep the old one", async () => {
+    const fake = portal()
+    expect((await b24(["work", "people", "update", "4", "--name", "Anna"], { portal: fake })).code).toBe(0)
+    expect(sent(fake)).toEqual([{ name: "Anna", lastName: "" }])
+  })
 })
 
 /** One type's custom fields, as `field.list` and `userfield.list` give them. */
