@@ -10,6 +10,7 @@ describe("every option of the CRM commands runs against the fake portal", () => 
       ["leads", "list", "--limit", "5", "--page", "1"],
       ["pipelines", "list", "kind:deal"],
       ["pipelines", "show", "Example sales"],
+      ["pipelines", "show", "Example sales", "--since-time", "2026-01-01", "--until-time", "2026-12-31"],
       ["search", "all", "kitchen", "--only", "crm", "--limit", "5", "--page", "1", "--exact", "--timezone", "UTC"],
       ["search", "all", "kitchen", "--source", "bitrix24"],
     ])

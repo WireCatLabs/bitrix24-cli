@@ -417,7 +417,7 @@ b24 deals list [query] [options]
 | `--page <n>` | which page, starting at 1. Default: `1`. |
 | `--format <format>` | csv: this page as a table for a spreadsheet; --json=a,b picks its columns. One of: `csv`. |
 
-**Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 29 more; every field: b24 commands info deals list
+**Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 30 more; every field: b24 commands info deals list
 
 **Example:** `b24 work deals list status:open --json`, `b24 work deals list stage:"Quote sent"`, `b24 work deals list status:open --format csv > deals.csv`
 
@@ -433,7 +433,7 @@ b24 deals show <deal>
 |---|---|---|
 | `deal` | required | deal:<id>, as a list shows it. |
 
-**Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 29 more; every field: b24 commands info deals show
+**Returns:** deal — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 30 more; every field: b24 commands info deals show
 
 **Example:** `b24 work deals show deal:12`
 
@@ -573,7 +573,7 @@ b24 leads list [query] [options]
 | `--page <n>` | which page, starting at 1. Default: `1`. |
 | `--format <format>` | csv: this page as a table for a spreadsheet; --json=a,b picks its columns. One of: `csv`. |
 
-**Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 29 more; every field: b24 commands info leads list
+**Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 30 more; every field: b24 commands info leads list
 
 **Example:** `b24 work leads list status:open --json`, `b24 work leads list stage:"Quote sent"`, `b24 work leads list status:open --format csv > leads.csv`
 
@@ -589,7 +589,7 @@ b24 leads show <lead>
 |---|---|---|
 | `lead` | required | lead:<id>, as a list shows it. |
 
-**Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 29 more; every field: b24 commands info leads show
+**Returns:** lead — id, ref, kind, title, summary, pipeline, pipeline_name, stage, and 30 more; every field: b24 commands info leads show
 
 **Example:** `b24 work leads show lead:12`
 
@@ -723,7 +723,7 @@ b24 pipelines list [query]
 |---|---|---|
 | `query` | optional | field:value terms that narrow the list — the fields are below. |
 
-**Returns:** pipeline — id, ref, name, kind, account, external_id, stages, created_at, and 3 more; every field: b24 commands info pipelines list
+**Returns:** pipeline — id, ref, name, kind, account, external_id, stages, created_at, and 9 more; every field: b24 commands info pipelines list
 
 **Example:** `b24 work pipelines list --json`, `b24 work pipelines list kind:lead`
 
@@ -732,16 +732,21 @@ b24 pipelines list [query]
 one pipeline as a board and a funnel: how many stand in each stage and their sum per currency, never converted, how many reached it and went on, and the win rate; won and lost stages are marked by outcome
 
 ```sh
-b24 pipelines show [pipeline]
+b24 pipelines show [pipeline] [options]
 ```
 
 | Argument | | What it is |
 |---|---|---|
 | `pipeline` | optional | pipeline:<id>, or a name only one of the CRM's pipelines has; needed unless the CRM has one pipeline in all. |
 
-**Returns:** pipeline — id, ref, name, kind, account, external_id, stages, created_at, and 3 more; every field: b24 commands info pipelines show
+| Option | What it does |
+|---|---|
+| `--since-time <time>` | count the rows made at or after this date or time (ISO 8601, or 30d ago). |
+| `--until-time <time>` | count the rows made at or before this date or time; a date alone is that whole day. |
 
-**Example:** `b24 work pipelines show pipeline:3`, `b24 work pipelines show Sales --json`
+**Returns:** pipeline — id, ref, name, kind, account, external_id, stages, created_at, and 9 more; every field: b24 commands info pipelines show
+
+**Example:** `b24 work pipelines show pipeline:3`, `b24 work pipelines show Sales --since-time 30d --json`
 
 ## `b24 stages`
 
@@ -759,7 +764,7 @@ b24 stages list [query]
 |---|---|---|
 | `query` | optional | field:value terms that narrow the list — the fields are below. |
 
-**Returns:** stage — name, position, outcome, external_id, open, pipeline, pipeline_name, kind, and 5 more; every field: b24 commands info stages list
+**Returns:** stage — name, position, outcome, external_id, open, pipeline, pipeline_name, kind, and 7 more; every field: b24 commands info stages list
 
 **Example:** `b24 work stages list --json`, `b24 work stages list kind:lead`
 
@@ -821,10 +826,12 @@ b24 people create [options]
 | `--first-name <name>` | the first name; empty clears it. |
 | `--last-name <name>` | the last name; empty clears it. |
 | `--position <title>` | the job title; empty clears it. |
+| `--email <address>` | an e-mail address to give it; repeat it for more; replaces its list, and an empty one clears it. |
+| `--phone <phone>` | a phone number to give it, in international form starting with +; repeat it for more; replaces its list, and an empty one clears it. |
 | `--owner <user>` | the CRM user it is assigned to; anyone but the sign-in's own user checks crm.assign-others. |
 | `--field <key=value>` | one of the CRM's own fields, by its code or label as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field; an empty value clears it. Default: ``. |
 
-**Returns:** crm record write — operation_id, stored, untrusted, person, organization; every field: b24 commands info people create
+**Returns:** crm record write — operation_id, stored, untrusted, removed, person, organization; every field: b24 commands info people create
 
 **Example:** `b24 work people create --first-name Anna --last-name Example --position Buyer`
 
@@ -848,10 +855,12 @@ b24 people update <person> [options]
 | `--first-name <name>` | the first name; empty clears it. |
 | `--last-name <name>` | the last name; empty clears it. |
 | `--position <title>` | the job title; empty clears it. |
+| `--email <address>` | an e-mail address to give it; repeat it for more; replaces its list, and an empty one clears it. |
+| `--phone <phone>` | a phone number to give it, in international form starting with +; repeat it for more; replaces its list, and an empty one clears it. |
 | `--owner <user>` | the CRM user it is assigned to; anyone but the sign-in's own user checks crm.assign-others. |
 | `--field <key=value>` | one of the CRM's own fields, by its code or label as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field; an empty value clears it. Default: ``. |
 
-**Returns:** crm record write — operation_id, stored, untrusted, person, organization; every field: b24 commands info people update
+**Returns:** crm record write — operation_id, stored, untrusted, removed, person, organization; every field: b24 commands info people update
 
 **Example:** `b24 work people update 42 --position Buyer`
 
@@ -899,7 +908,7 @@ b24 organizations show <organization>
 
 ### `b24 organizations create`
 
-make a organization in the CRM, then store the CRM's copy of it
+make an organization in the CRM, then store the CRM's copy of it
 
 **Changes something in the service.**
 
@@ -910,10 +919,12 @@ b24 organizations create [options]
 | Option | What it does |
 |---|---|
 | `--name <name>` | the company's name. |
+| `--email <address>` | an e-mail address to give it; repeat it for more; replaces its list, and an empty one clears it. |
+| `--phone <phone>` | a phone number to give it, in international form starting with +; repeat it for more; replaces its list, and an empty one clears it. |
 | `--owner <user>` | the CRM user it is assigned to; anyone but the sign-in's own user checks crm.assign-others. |
 | `--field <key=value>` | one of the CRM's own fields, by its code or label as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field; an empty value clears it. Default: ``. |
 
-**Returns:** crm record write — operation_id, stored, untrusted, person, organization; every field: b24 commands info organizations create
+**Returns:** crm record write — operation_id, stored, untrusted, removed, person, organization; every field: b24 commands info organizations create
 
 **Example:** `b24 work organizations create --name "Example LLC"`
 
@@ -934,10 +945,12 @@ b24 organizations update <organization> [options]
 | Option | What it does |
 |---|---|
 | `--name <name>` | the company's name. |
+| `--email <address>` | an e-mail address to give it; repeat it for more; replaces its list, and an empty one clears it. |
+| `--phone <phone>` | a phone number to give it, in international form starting with +; repeat it for more; replaces its list, and an empty one clears it. |
 | `--owner <user>` | the CRM user it is assigned to; anyone but the sign-in's own user checks crm.assign-others. |
 | `--field <key=value>` | one of the CRM's own fields, by its code or label as `fields list` prints them, and its value; a list field takes its option's label or id; repeat it for more fields, or for each value of a multiple field; an empty value clears it. Default: ``. |
 
-**Returns:** crm record write — operation_id, stored, untrusted, person, organization; every field: b24 commands info organizations update
+**Returns:** crm record write — operation_id, stored, untrusted, removed, person, organization; every field: b24 commands info organizations update
 
 **Example:** `b24 work organizations update 9 --name "Example Ltd"`
 

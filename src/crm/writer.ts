@@ -63,8 +63,6 @@ export const bitrixCrmWriter = (portal: () => BitrixTransport, source: BitrixCrm
   /**
    * Bitrix24 keeps a contact's name in parts: a whole name is its first word and the rest, and one word clears the last
    * name; a middle name (`secondName`) stays, since clearing it would refuse every `--name` of an employee's webhook.
-   * Phones and e-mails are multifields an update would add to rather than replace (apidocs data-types#crm_multifield),
-   * so only a create sets them; the shared commands offer no option for them yet, but core's port carries them.
    */
   const personFields = (given: CrmPersonFields, create: boolean): Raw => {
     const fields: Raw = {}
@@ -76,13 +74,27 @@ export const bitrixCrmWriter = (portal: () => BitrixTransport, source: BitrixCrm
     if (given.firstName !== undefined) fields.name = given.firstName ?? ""
     if (given.lastName !== undefined) fields.lastName = given.lastName ?? ""
     if (given.position !== undefined) fields.post = given.position ?? ""
-    if (!create && (given.emails !== undefined || given.phones !== undefined))
-      throw refused("b24 does not change a contact's phones or e-mails yet; Bitrix24 would add them to the old ones")
-    const multi = (values: readonly string[]) => values.map((value) => ({ valueTypeId: "WORK", value }))
-    if (given.emails?.length) fields.email = multi(given.emails)
-    if (given.phones?.length) fields.phone = multi(given.phones)
-    return fields
+    return { ...fields, ...reachOf(given, create) }
   }
+
+  /**
+   * Phones and e-mails are multifields an update would add to rather than replace (apidocs data-types#crm_multifield),
+   * so only a create sets them.
+   */
+  const reachOf = (given: CrmPersonFields | CrmOrganizationFields, create: boolean): Raw => {
+    if (!create && (given.emails !== undefined || given.phones !== undefined))
+      throw refused("b24 does not change a record's phones or e-mails yet; Bitrix24 would add them to the old ones")
+    const multi = (values: readonly string[]) => values.map((value) => ({ valueTypeId: "WORK", value }))
+    return {
+      ...(given.emails?.length ? { email: multi(given.emails) } : {}),
+      ...(given.phones?.length ? { phone: multi(given.phones) } : {}),
+    }
+  }
+
+  const organizationFields = (given: CrmOrganizationFields, create: boolean): Raw => ({
+    ...(given.name === undefined ? {} : { title: given.name }),
+    ...reachOf(given, create),
+  })
 
   /** Every check comes before the first request: a custom code that is a standard field would get round its key. */
   const fieldsOf = async (kind: CrmKind, given: AnyFields, create = false): Promise<Raw> => {
@@ -95,9 +107,7 @@ export const bitrixCrmWriter = (portal: () => BitrixTransport, source: BitrixCrm
       kind === "person"
         ? personFields(given as CrmPersonFields, create)
         : kind === "organization"
-          ? (given as CrmOrganizationFields).name === undefined
-            ? {}
-            : { title: (given as CrmOrganizationFields).name }
+          ? organizationFields(given as CrmOrganizationFields, create)
           : itemFields(kind, given as CrmFields)
     if (given.owner != null) fields.assignedById = numericId(given.owner, "--owner")
     if (custom.length === 0) return fields

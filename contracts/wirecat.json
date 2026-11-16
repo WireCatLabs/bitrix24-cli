@@ -596,7 +596,7 @@
         "organizations",
         "create"
       ],
-      "summary": "make a organization in the CRM, then store the CRM's copy of it",
+      "summary": "make an organization in the CRM, then store the CRM's copy of it",
       "effects": {
         "remote": "write",
         "local": "write"

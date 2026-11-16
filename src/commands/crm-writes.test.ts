@@ -42,6 +42,30 @@ describe("create", () => {
     expect(portal.calls[1]).toMatchObject({ method: "crm.company.get", body: { id: 80 } })
   })
 
+  it("sends a create's --email and --phone as Bitrix24 multifields, and refuses them on an update", async () => {
+    const portal = added()
+    const reach = ["--email", "office@example.test", "--phone", "+34 600 000 001"]
+    for (const argv of [
+      ["people", "create", "--first-name", "Anna", ...reach],
+      ["organizations", "create", "--name", "Example", ...reach],
+    ])
+      expect((await b24(["work", ...argv, "--json"], { portal })).code, argv.join(" ")).toBe(0)
+    const sent = portal.calls.filter(({ method }) => method.endsWith(".add")).map(({ body }) => body.fields)
+    for (const fields of sent)
+      expect(fields).toMatchObject({
+        email: [{ valueTypeId: "WORK", value: "office@example.test" }],
+        phone: [{ valueTypeId: "WORK", value: expect.stringMatching(/^\+34/) }],
+      })
+    for (const argv of [
+      ["people", "update", "78", "--email", "office@example.test"],
+      ["people", "update", "78", "--phone", "+34 600 000 001"],
+      ["organizations", "update", "80", "--email", "office@example.test"],
+      ["organizations", "update", "80", "--phone", "+34 600 000 001"],
+    ])
+      expect((await b24(["work", ...argv, "--json"], { portal })).code, argv.join(" ")).toBe(2)
+    expect(portal.calls.filter(({ method }) => method.endsWith(".update")).length).toBe(0)
+  })
+
   it("refuses a create without its name, and --operation-id, before the portal", async () => {
     const portal = added()
     expect((await b24(["work", "people", "create"], { portal })).code).toBe(2)

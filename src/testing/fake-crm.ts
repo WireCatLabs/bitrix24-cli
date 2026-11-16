@@ -382,6 +382,8 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
       Number(body.start ?? 0),
     )
   methods["crm.category.list"] = () => ok({ categories: CATEGORIES })
+  // cli-core reads the stage history at every sync; this portal keeps none, so the copy's own changes count.
+  methods["crm.stagehistory.list"] = () => ok({ items: [] })
   methods["crm.status.list"] = ({ body }) => {
     const directory = (body.filter as { ENTITY_ID?: string } | undefined)?.ENTITY_ID
     const start = Number(body.start ?? 0)
