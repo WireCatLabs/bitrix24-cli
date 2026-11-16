@@ -34,13 +34,13 @@ the detail behind them.
 
 ## Activities, tasks and comments on a deal
 
-When the owner turned on `crm.bitrix24:<portal>.activities` (off by default; only the owner can, an agent is
+When the owner set `crm.bitrix24:<portal>.activities` to `on` (off by default; only the owner can, an agent is
 refused), each `sync` also reads the calls, e-mails, meetings and to-dos on the deals and leads it keeps, the Bitrix24
 tasks bound to them (they need the `task` scope; without it the sync says tasks were not read) and the comments in
 their timelines. `deals show` and `leads show` list them, open ones first, with their text; `search all` finds a deal
 by their words. The first sync reads 90 days. The client's phone or e-mail on an activity is never copied. A comment
-on a closed deal that nothing else changed waits until the deal changes. Activities on contacts and companies are not
-read.
+on a closed deal that nothing else changed waits until the deal changes. An activity on a contact or a company is read
+only when it is also bound to a kept deal or lead.
 
 ## Who is who
 
@@ -86,19 +86,4 @@ The portal allows about 2 requests a second for all its apps together. `b24` kee
 by default (`--timeout 2m` changes it); a `sync` stops before its deadline, says `complete: false`, and the next one
 goes on from there.
 
-## The usual path, in full
-
-The ids below are made up: use the ones from the previous answer.
-
-```sh
-b24 work store status --json                      # how old the copy is; sync first if it is
-b24 work sync --json                              # what changed; read complete, scope and issues
-b24 work pipelines show Sales --json              # the board: how many deals stand in each stage
-b24 work deals list status:open --json=ref,title,stage,amount,currency
-b24 work deals show deal:12 --json                # the deal, its contacts and its owner
-b24 work people show "Anna Ivanova" --json        # a contact live from the portal, by id or exact name
-b24 work search all kitchen --json                # stored deals and leads beside messages and notes
-b24 work deals move deal:12 "Quote sent" --dry-run --json   # the keys the move checks, sends nothing
-b24 work deals move deal:12 "Quote sent" --json   # only when the owner asked for this move
-b24 work runs list --json                         # what ran, refused writes too
-```
+The usual read path is in [SKILL.md](../SKILL.md); the write steps that follow it are in [writing.md](writing.md).

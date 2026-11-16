@@ -20,6 +20,7 @@
 | Exit | Code | What to do |
 |---:|---|---|
 | 0 | — | Done. Still read `complete` and `issues` in a sync answer. |
+| 1 | — | The profile's sign-in names no portal user, so no stored deal or lead is read: the owner runs `session start` again. |
 | 2 | `validation_error` | Bad input: fix it. Also "name a profile", with `details.profiles`. |
 | 3 | `configuration_error` | The settings file is wrong: `b24 doctor` says how to fix it. |
 | 4 | `authentication_error` | Not signed in, or the portal refused the webhook. Only the owner signs in. |

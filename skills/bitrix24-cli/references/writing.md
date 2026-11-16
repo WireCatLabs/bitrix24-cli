@@ -19,6 +19,16 @@ never `--yes` on your own.
 - `--dry-run` parses the arguments and names every permission key the command checks, with its level. It sends
   nothing to the portal.
 
+## The usual write
+
+The ids below are made up: use the ones from the previous answer.
+
+```sh
+b24 work deals move deal:12 "Quote sent" --dry-run --json   # the keys the move checks, sends nothing
+b24 work deals move deal:12 "Quote sent" --json   # only when the owner asked for this move
+b24 work runs list --json                         # what ran, refused writes too
+```
+
 ## Boundaries, in full
 
 - **Change nothing the owner did not ask for.** `create`, `update`, `move`, `close` and `delete` only for the exact
