@@ -6,6 +6,7 @@ import type { Pacer } from "@wirecat/cli-core/sends"
 import { type EmployeeRule, employeeRuleOf } from "../api-keys.js"
 import { isRecord } from "../body.js"
 import { isAdmin } from "../crm/clients.js"
+import { loggedPath } from "../file-links.js"
 import { bitrixError } from "./errors.js"
 import { methodOf, type RestVersion } from "./methods.js"
 import type { AppAuth } from "./oauth.js"
@@ -184,7 +185,7 @@ export class BitrixTransport {
     if (at > 0) await this.#wait(at, "a download")
     const end = providerRequest("download", this.#events ?? providerEvent, {
       method: "GET",
-      endpointTemplate: url.pathname,
+      endpointTemplate: loggedPath(url),
       transport: "http",
     })
     const deadline = new AbortController()

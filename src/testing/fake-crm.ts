@@ -11,7 +11,7 @@ const ENTITY_TYPES: Record<number, Type> = { 1: "lead", 2: "deal", 3: "contact",
 interface CustomField {
   code: string
   title: string
-  type: "string" | "enumeration"
+  type: "string" | "enumeration" | "file"
   multiple?: boolean
   options?: { ID: string; VALUE: string }[]
 }
@@ -202,9 +202,10 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
   const departments = new Map<string, Raw>([["1", { ID: "1", NAME: "Example company", SORT: 500, UF_HEAD: "7" }]])
   const withheld = new Set<Scope | "user_basic">()
   const denied = new Set<string>()
+  const fields = structuredClone(CUSTOM)
 
   const known = (type: Type, name: string) =>
-    REST3_FIELDS[type].includes(name) || CUSTOM[type].some((field) => field.code === name)
+    REST3_FIELDS[type].includes(name) || fields[type].some((field) => field.code === name)
   const firstUnknown = (type: Type, names: readonly string[]) => names.find((name) => !known(type, name))
   const stagesOf = (type: Type, row: Raw) =>
     STATUSES.filter((one) =>
@@ -304,17 +305,17 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
       writing(() => (rows[type].delete(Number(call.body.id)) ? ok({ result: true }) : missing()))
     methods[`crm.${type}.field.list`] = () =>
       ok({
-        items: CUSTOM[type].map((field) => ({
+        items: fields[type].map((field) => ({
           name: field.code,
           title: field.title,
-          type: field.type === "enumeration" ? "int" : "string",
+          type: field.type === "enumeration" ? "int" : field.type,
           multiple: field.multiple === true,
           filterable: true,
         })),
       })
     methods[`crm.${type}.userfield.list`] = () =>
       ok(
-        CUSTOM[type].map((field) => ({
+        fields[type].map((field) => ({
           FIELD_NAME: field.code,
           USER_TYPE_ID: field.type,
           MULTIPLE: field.multiple ? "Y" : "N",
@@ -445,6 +446,8 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
     deny: (method: string) => denied.add(method),
     allow: (method: string) => denied.delete(method),
     row: (type: Type, id: number) => rows[type].get(id),
+    /** One more custom field on this portal, as its two field lists describe it. */
+    addField: (type: Type, field: CustomField) => fields[type].push(field),
     /** Sets the portal's clock, so a row put after a sync is newer than its cursor. */
     setClock: (ms: number) => {
       clock = ms

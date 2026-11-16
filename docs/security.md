@@ -29,6 +29,17 @@ e-mail addresses and `department` for the company structure; `meetings sync` rea
 employee, and the full `user` scope adds the right to invite and edit them. The sync stores each employee's name,
 e-mail address, position and department head in the local store, where every WireCat tool can read them.
 
+A file in a CRM record's custom field is kept as its file id only, in the copy and in every answer, never its
+links: Bitrix24's download link carries an access token, and anyone holding it gets the file. A file with no id, and a
+portal link with a token in it (`/rest/…?auth=`, a webhook's `/rest/<user>/<code>/`), show as `[link removed]`. A
+site or a link field you typed yourself stays as it is. `api call` prints `[link removed]` in place of every download
+link, every generated document's public link (`publicUrl`), and every portal link with a token. A copy synced
+before this rule may still hold such links. `b24 work sync --rescan` rewrites every record the portal still lists
+for the profile; a large copy may take several runs, and `b24 work store status` shows how far it got. A record
+deleted in the portal, or outside the sync's scope, keeps what it held: `b24 work account remove --delete-data`
+removes the account's whole copy, and the next sync after signing in again builds it anew. SQLite may keep old bytes
+in the store file's free space until it reuses them.
+
 Unless the webhook's user is a Bitrix24 administrator, the sync copies only their own clients: the contacts and
 companies assigned to them or named on their deals and leads. Lists show phones and e-mails of those alone; `people
 show` and `organizations show` give them for anyone else's, at most 100 a day for the user and their agents together.
@@ -57,7 +68,8 @@ that names one field twice in any spelling (`assignedById` and `ASSIGNED_BY_ID`,
 anything is sent. A delete asks. Every other method asks too, and is refused without a terminal unless you pass
 `--yes`. Methods that message people, publish or send data out are refused until you allow them: `im`,
 `imopenlines`, `imbot`, `imconnector`, `log.blogpost`, SMS, mail, telephony, workflows, CRM activities, tasks,
-`user.add`, public file links, `event.bind` and `batch`. Their reads are refused too, since they hold messages,
+`user.add`, public file and document links (`disk.*.getExternalLink`, `enablePublicUrl` of generated documents,
+`crm.invoice.getExternalLink`, `salescenter.payment.getPublicUrl`), `event.bind` and `batch`. Their reads are refused too, since they hold messages,
 e-mails and tasks. `api show <method>` names a method's level. `api call` is
 not offered over MCP.
 
