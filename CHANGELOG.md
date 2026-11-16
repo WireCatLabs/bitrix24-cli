@@ -2,6 +2,122 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## 0.24.0 — 17.11.2026
+
+### Added
+
+- **Built on cli-core 0.683.0** (was 0.670.0), with its CRM additions: `deals list` and `leads list` take `updated:`,
+  `created:`, `closed:` and `owner:` (`owner:me` is your own portal user); `pipelines show --since-time --until-time`
+  answers the funnel of a window with closed deals, cycle time, owners and lost reasons; `deals show` answers
+  `stage_history` from the portal's own stage history; `stages list` answers `stage_task`. See the
+  [cli-core changelog](https://github.com/WireCatLabs/cli-core/blob/main/CHANGELOG.md).
+- **`people create` and `organizations create` take `--email` and `--phone`.** A phone is taken only in international
+  form (`+…`). `people update` and `organizations update` still refuse them: Bitrix24 would add the new ones to the
+  old ones rather than replace them.
+- **`calls export` writes the calls of other phone systems onto the client's contact in Bitrix24**, once each, with
+  `telephony.externalCall.register` and `finish`. Off by default: it needs the setting `export_calls`, the two methods'
+  permissions, and the local application sign-in, since Bitrix24 lets no webhook write a call. `--dry-run` shows each
+  call's fields and where it lands, and sends nothing. See [Calls](docs/calls.md).
+- **Bitrix24 telephony calls in the store.** `meetings sync` copies the portal's call history: each call is a meeting
+  of kind call with its direction, the client's number, the employee, the talk time and how it ended, for the
+  signed-in user or the users chosen in `unassigned`, never the whole portal. The employee is the portal's user in
+  the copy; the client joins the contact, messenger account or other phone system's calls with the same mobile
+  number. `meetings list`, `show`, `transcript`, `export` and `people` read them, and `memo context` shows them in a
+  person's history. The webhook needs the `telephony` scope. See [Calls](docs/calls.md).
+- **`meetings transcribe` and `models`** turn call recordings into text with a local speech model, on this computer.
+- **`download_recordings`** keeps each call's recording in the state folder, for WireCat Desktop to play;
+  **`phone_region`** reads the numbers the portal writes without `+`.
+- **`b24 setup` walks you through connecting a portal**, and WireCat Desktop draws the same steps: create an inbound
+  webhook, tick its permissions, paste its address. `b24 setup show --json` prints the steps (setup format v1),
+  `b24 work setup apply` checks the address against the portal the way `session start` does and only then keeps it.
+  A local application stays one `session start --portal … --client-id …` away, shown at the end.
+- **The permissions to tick now name `task` for Bitrix24 tasks, `telephony` for calls, and `disk` and
+  `documentgenerator` for client files and documents**, beside `crm`, `user_basic` and `department`. Ticking `disk`
+  now saves editing the webhook again when the files feature comes.
+- **`changes list`** from cli-core 0.678.0: what changed in the CRM copy in a window, and `--format report` for a
+  morning digest.
+- **`sync` copies the portal's calls too**, after the CRM, as `meetings sync` does, so WireCat Desktop's sync and the
+  sync after install bring calls. A calls step that fails, such as a webhook without the telephony scope, is a note,
+  and the CRM sync still succeeds. The setting `sync_calls` (on when not set) leaves them out. When calls came in and
+  `phone_region` is not set, the note says how to set it. See [Calls](docs/calls.md).
+
+### Changed — may break callers
+
+- **`sync` reads the portal's stage history every time**, 90 days back at first, so the funnel and `deals show` count
+  the stages a deal really passed. A webhook without the right to `crm.stagehistory.list` names it as an issue.
+- **Offline CRM reads read the stored sign-in to know your portal user**, from `B24_TOKEN`, the OS keyring or the
+  credentials file, without the network. Where no keyring can be reached, the read warns and uses the file; with no
+  sign-in found it shows no deals or leads.
+- **`pipelines list`, `stages list` and `pipelines show` leave out a stage the portal removed** unless a deal stands in
+  it.
+- **The agent skill is shorter.** `SKILL.md` keeps what an agent needs on every turn (the profile rule, answering
+  from the CRM, the limits on writes, MCP's `ask` that does not ask, output) in about 8 KB instead of 18 KB, and links
+  the rest in `skills/bitrix24-cli/references/`: reading, writing, MCP, output and setup. No rule was dropped. The
+  skill now says what changed since it was written: activities, tasks and comments on deals are read when the owner
+  turns them on, `deals list` takes `updated:`, `created:`, `closed:` and `owner:me`, `pipelines show` counts a
+  window's funnel, `people create` and `organizations create` take `--email` and `--phone` while `update` refuses
+  them, and a profile that is not the administrator reads offline only its own deals and leads. An agent that reads
+  the skill pays about 2,500 fewer tokens on every turn.
+- **`people`, `organizations` and `users` are WireCat's shared CRM commands now**, the same words, query and answer
+  as in every CRM tool. An organization answers `type` and `own` instead of `type_id`; its industry, revenue and
+  currency move under `provider_metadata`, and `industry_id:` is no longer a filter. Every live list and show gives
+  the custom fields under `provider_metadata`, every item names its `untrusted` fields, and `--offline` still refuses
+  them. A user is the `crm_user` entity, not `user`. A name that fits several records is `crm.record-ambiguous`, not
+  `organization.ambiguous` or `person.ambiguous`.
+- **These three lists page with `--limit` (1 to 250, 50 when left out) and `--page`.** `--all`, a limit above 250 and
+  the profile's `defaults.limit` no longer apply to them. `users list name:` matches part of the whole name across
+  every employee, not the portal's own name search.
+- **`people create`, `people update`, `organizations create` and `organizations update` are the shared writes.** They
+  take `--name`, `--owner`, `--field`, and for people `--first-name`, `--last-name` and `--position`; `--body` is
+  gone (`api call` writes any other field). Each answers the record as the portal holds it, and stores it.
+- **A label in `--field` needs a `sync` first.** Before one, name the field by its code, as `fields list` prints it.
+- **The 100-a-day count of other people's contacts and companies is cli-core's** and starts again from zero. Its
+  message and its reason (`crm.foreign-contacts-spent`) are the shared ones, and `api call` refuses client reads with
+  `crm.client-reads-admin-only`.
+- **Sign in again after an upgrade with a local application (`session start --app`).** The stored sign-in moved to
+  cli-core's shape; the old one no longer reads. A webhook sign-in is not affected.
+- **A run with moved folders (`B24_CONFIG_DIR`, `B24_STATE_DIR`) no longer renews an expired application sign-in.**
+  Bitrix24 replaces the refresh token on every renewal, so a moved run that renewed it would sign the owner's own
+  runs out. It says so; renew it in a run without moved folders.
+
+### Fixed
+
+- **A contact given to a colleague leaves the copy at the next `sync`**, with its phone and e-mail. Before, its one
+  phone and e-mail stayed until `sync --rescan`.
+- **A field the portal will not describe still shows**, from `userfield.list`, with no label: `sync` stores it and
+  `--field` can set it.
+- **`api call` refuses lead reads to anyone but a Bitrix24 administrator**, as it refuses contact and company reads.
+  A lead holds its own name, phones and e-mails, so `crm.lead.list` handed an employee the whole portal's lead contact
+  data past the 100-a-day rule.
+- **Won and lost stages read from `EXTRA.SEMANTICS` are won and lost, not open.** A stage the portal lists without
+  the short `SEMANTICS` carries only `success`, `failure` or `apology`, which `sync` stored as open: their deals counted
+  as open and `deals close` found no won stage.
+- **A round of activities spread over several `sync` runs no longer loses what changed while it ran.** It ended with
+  the last run's time, so the next round's `since` skipped every activity, task and comment changed in between: a
+  task completed then stayed open in the copy until it changed again. The round now ends with its first page's time.
+
+### Security
+
+- **A profile that is not the portal's administrator reads offline only the deals and leads assigned to it.** The copy
+  is kept per portal, so an ordinary employee's profile on the same portal as the administrator's read every deal the
+  administrator synced, and `search all` found them by their contacts' e-mails and phones. Now another user's deal is
+  `not_found` and the reports count only its own. A profile whose sign-in names no portal user reads none of the
+  copy's deals, says so and exits 1; sign in again with `session start`. The administrator, as its last `sync` found,
+  reads the whole copy as before. Until a `sync` of this version runs, every profile reads only its own deals and
+  leads: run `sync` once after upgrading.
+- **No file download link in the copy or the output.** A file in a CRM record's custom field is now kept as its
+  file id, in `sync` and in every `show`, `list` and write answer: Bitrix24's download link (`urlMachine`,
+  `downloadUrl`) carries an access token. A file with no id and a portal link with a token show as `[link removed]`;
+  a site or link field typed by hand stays. `api call` prints `[link removed]` in place of every download link, every
+  generated document's `publicUrl`, and every portal link with a token. A copy synced before this version may still
+  hold such links: `b24 work sync --rescan` rewrites the records the portal still lists; a record deleted or outside
+  the sync's scope keeps what it held until `account remove --delete-data`. See [Security](docs/security.md).
+- **`api call` refuses the methods that make a public link**: `enablePublicUrl` of generated documents,
+  `crm.invoice.getExternalLink` and `salescenter.payment.getPublicUrl`, reads and writes alike, as it already refused
+  `disk.*.getExternalLink`.
+- **A call recording's download is logged without the webhook's code**: its run record keeps
+  `/rest/:user/:token/…`, never the link.
+
 ## 0.23.0 — 14.11.2026
 
 ### Changed — may break callers
