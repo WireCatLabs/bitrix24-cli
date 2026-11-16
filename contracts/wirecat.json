@@ -645,6 +645,19 @@
     },
     {
       "path": [
+        "changes",
+        "list"
+      ],
+      "summary": "deals and leads made, moved, won, lost and given another owner, activities…",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "changes.list",
+      "entity": "crm_change"
+    },
+    {
+      "path": [
         "fields",
         "list"
       ],
@@ -1231,6 +1244,53 @@
     },
     {
       "path": [
+        "setup"
+      ],
+      "summary": "connect this profile, question by question",
+      "effects": {
+        "remote": "read",
+        "local": "write"
+      },
+      "permission": "setup"
+    },
+    {
+      "path": [
+        "setup",
+        "show"
+      ],
+      "summary": "print the connection flow as JSON, for WireCat Desktop",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "setup.show"
+    },
+    {
+      "path": [
+        "setup",
+        "apply"
+      ],
+      "summary": "check the answers on stdin against the flow, and save them",
+      "effects": {
+        "remote": "read",
+        "local": "write"
+      },
+      "permission": "setup.apply"
+    },
+    {
+      "path": [
+        "setup",
+        "run"
+      ],
+      "summary": "run one step of the flow, as WireCat Desktop does",
+      "effects": {
+        "remote": "read",
+        "local": "write"
+      },
+      "permission": "setup.run"
+    },
+    {
+      "path": [
         "complete"
       ],
       "summary": "shell completion: `b24 complete zsh` prints the script to source",
@@ -1340,6 +1400,11 @@
         "position",
         "active",
         "department_ids"
+      ]
+    },
+    "crm_change": {
+      "fields": [
+        "change"
       ]
     },
     "crm_field": {
@@ -1508,12 +1573,11 @@
     "search": null,
     "setup": [
       "{profile}",
-      "session",
-      "start"
+      "setup"
     ],
     "signIn": {
       "gives": "Lets your agent read and change the portal's CRM with the rights of the employee who made the webhook, or who signed in through a local application.",
-      "asks": "An incoming webhook address, from Developer resources → Other → Incoming webhook, with the crm, user_basic and department scopes, and telephony for calls; or a local application's code and key."
+      "asks": "An inbound webhook address, from Developer resources → Common use cases → Other → Inbound webhook, with the crm, user_basic and department scopes, task for tasks, telephony for calls, disk and documentgenerator for files; or a local application's code and key."
     },
     "skill": {
       "status": [

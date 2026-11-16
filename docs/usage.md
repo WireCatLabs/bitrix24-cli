@@ -15,11 +15,20 @@ command without one stops with exit code 2 and lists the profiles on this comput
 
 ## Sign in
 
-Make an incoming webhook in Bitrix24 (Developer resources → Other → Incoming webhook) with the scopes `crm`,
-`user_basic` (or `user`) and `department`, and copy its address. Without `user_basic` the sync gets no employee's
-e-mail; without `department` it gets no reporting lines; see [Who is who](#who-is-who). Add `task` to read the
-Bitrix24 tasks on your deals ([Activities and tasks](#activities-and-tasks-on-a-deal)), and `telephony` to copy
-the portal's calls ([Calls](calls.md)). Then:
+Make an inbound webhook in Bitrix24 (Developer resources → Common use cases → Other → Inbound webhook). Under
+**Assign permissions** (in Russian «права доступа»), tick these, and copy the webhook's address:
+
+| Scope | In Bitrix24 (EN / RU) | Needed for |
+|---|---|---|
+| `crm` | CRM | Required: deals, leads, contacts, companies, products and activities. |
+| `user_basic` (or `user`) | Users (basic) / Пользователи (базовый) | Required: who made the webhook, and employees' names and e-mails. |
+| `department` | Company Structure / Структура компании | Reporting lines; see [Who is who](#who-is-who). |
+| `task` | Tasks / Задачи | The Bitrix24 tasks on your deals ([Activities and tasks](#activities-and-tasks-on-a-deal)). |
+| `telephony` | Telephony / Телефония | The portal's calls ([Calls](calls.md)). The employee also needs the right to view call statistics. |
+| `disk` | Drive / Диск | Client documents, the files of deals and their attachments, for the files feature that comes next. |
+| `documentgenerator` | Document Generator / Генератор документов | Documents made from templates. Bitrix24's docs name `crm` on the method pages and this scope in the scope table, so tick both. |
+
+`b24 work setup` shows the same steps in the terminal, and WireCat Desktop draws them. Or sign in directly:
 
 ```sh
 b24 work session start
@@ -51,8 +60,7 @@ last only an hour, renewed by `b24`. A Bitrix24 administrator, or an employee al
 2. Choose **Server** mode. Set **Your handler path** to `https://wirecat.dev/webhooks/apps/b24-callback`. Leave
    **Initial installation path** and the menu item texts empty, and **Application completes the installation itself**
    off, so the portal installs it on save.
-3. Tick the access permissions `crm`, `user_basic` (or `user`) and `department`, `task` too for Bitrix24 tasks, `telephony`
-   for calls, and save.
+3. Under **Assign permissions**, tick the same scopes as for a webhook (the table above), and save.
 4. Copy the **Application ID (client_id)** and the **Application key (client_secret)** Bitrix24 shows.
 
 Then sign in:

@@ -12,8 +12,8 @@ Words this page uses:
 
 ## Before the first sync
 
-The webhook needs the `telephony` scope, besides `crm`, `user_basic` and `department`. Open the webhook in Developer
-resources → Other → Incoming webhook, tick Telephony, and save. A local application needs the same scope on its card.
+The webhook needs the `telephony` scope, besides `crm`, `user_basic` and `department`. Edit the webhook in Developer
+resources → Integrations, tick Telephony, and save. A local application needs the same scope on its card.
 The employee who made the webhook also needs the portal's right to view call statistics.
 
 Copying calls only reads. No command places a call or changes a line. Only `calls export`, off until you turn it

@@ -13,9 +13,14 @@ cli-core; an item here names it when b24 only adopts it.
 
 ## Now (P1)
 
-- **B24-1** · P1 · ops · **Do not release before this:** build on the cli-base that installs a skill's `references/`
-  (`skill install`, `skill show <part>`; WC-DOC-22, cli-base 0.106.0 or later) and the cli-core that serves them over
-  MCP (`skillResources`; cli-core 0.676.0 serves only SKILL.md). The skill now links
-  `skills/bitrix24-cli/references/*.md`; with cli-base 0.103.0 `b24 skill install` copies only SKILL.md and
-  `b24 skill show reading` fails. After the bump check all three: install into a temporary HOME and list the folder,
-  `b24 skill show reading`, and the MCP resource list.
+Nothing.
+
+## Next (P2)
+
+- **B24-2** · P2 · setup · **Screenshots for the setup flow** ([src/setup/flow.ts](../../src/setup/flow.ts)): capture
+  `webhook-menu` (Developer resources → Common use cases → Other), `webhook-permissions` (the Assign permissions
+  block with the scopes ticked), `webhook-address` (the created webhook and its address, secret blurred), `app-form`
+  (the local application form in Server mode), `app-permissions` and `app-keys` (Application ID and key, blurred), on a
+  Russian and an English portal. PNG, JPEG or WebP, at most 2 MB. `package.json` `files` publishes no `src/`, so put
+  them in a published folder (or add one), declare them in `assets` with an `image` block each, and keep
+  `setupFileProblems` in [flow.test.ts](../../src/setup/flow.test.ts) at `[]`.

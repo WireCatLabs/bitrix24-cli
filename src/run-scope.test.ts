@@ -91,6 +91,9 @@ describe("every remote command runs inside cli-core's run", () => {
         "off until export_calls is on and two denied methods are allowed, and needs the application sign-in; " +
         "src/calls/export.test.ts runs it against a strict fake",
       "models download": "cli-core's modelCatalogueCommand downloads hundreds of MB; cli-core tests it",
+      setup: "asks its questions in a terminal; its check is the same checkedWebhook that session start runs here",
+      "setup apply": "takes its answers as JSON on stdin; src/setup/flow.test.ts drives it against the fake",
+      "setup run": "takes its answers as JSON on stdin; src/setup/flow.test.ts drives it against the fake",
       doctor: "cli-core's appDoctorCommand: 0.598.0 answers --online under the process run, a cli-core fix",
     },
     answering: () => options(portal().fetch),

@@ -5,8 +5,9 @@ Gemini CLI and OpenClaw look; `--for hermes` adds Hermes Agent too.
 
 1. **Install:** `npm install -g @wirecat/bitrix24-cli`. It needs Node.js 22.16 or later. Another package, `b24-cli`,
    also installs a `b24`: if the wrong tool answers, call `wcat-b24`, the same program.
-2. **The webhook.** The owner makes an incoming webhook in Bitrix24: Developer resources → Other → Incoming webhook,
-   with the scopes `crm`, `user_basic` and `department` (and `task` for tasks on deals). Its address is the password:
+2. **The webhook.** The owner makes an inbound webhook in Bitrix24: Developer resources → Common use cases → Other →
+   Inbound webhook, with the scopes `crm`, `user_basic` and `department` (and `task` for tasks on deals, `telephony`
+   for calls, `disk` and `documentgenerator` for files and documents). `b24 work setup`, in the owner's terminal or in WireCat Desktop, walks them through it. Its address is the password:
    anyone who has it acts as the employee who made it. **Never ask the owner to paste it into the conversation.**
 3. **Sign in:** the owner runs `b24 work session start` in their own terminal, which asks for the address hidden and
    checks it against the portal. `work` is the profile, a name the owner picks for this portal. Then

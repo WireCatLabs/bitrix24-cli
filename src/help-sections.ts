@@ -5,6 +5,7 @@ import type { Command } from "commander"
 const SECTIONS: Record<string, HelpSection> = {
   session: "setup",
   sync: "automate",
+  changes: "read",
   pipelines: "read",
   stages: "read",
   fields: "read",

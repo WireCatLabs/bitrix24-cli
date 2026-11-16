@@ -32,7 +32,7 @@ export const DESKTOP: ManifestIdentity = {
   signIn: {
     gives:
       "Lets your agent read and change the portal's CRM with the rights of the employee who made the webhook, or who signed in through a local application.",
-    asks: "An incoming webhook address, from Developer resources → Other → Incoming webhook, with the crm, user_basic and department scopes, and telephony for calls; or a local application's code and key.",
+    asks: "An inbound webhook address, from Developer resources → Common use cases → Other → Inbound webhook, with the crm, user_basic and department scopes, task for tasks, telephony for calls, disk and documentgenerator for files; or a local application's code and key.",
   },
 }
 

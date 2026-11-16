@@ -19,12 +19,14 @@ exist, and whether other users of the computer can read the settings. Next: [use
 
 ## Sign in
 
-The quick way is an incoming webhook: `b24 work session start` asks for its address. The steps are in
+The quick way is an inbound webhook. `b24 work setup` walks you through it step by step, the same steps WireCat
+Desktop shows; `b24 work session start` just asks for the address. The steps and the scopes to tick are in
 [sign in](usage.md#sign-in).
 
 With a local application, `b24` acts with the rights of the employee who signs in, not of the one who made a
 webhook. Create it once in the portal (Developer resources → Common use cases → Other → Local application), in
 **Server** mode, with **Your handler path** `https://wirecat.dev/webhooks/apps/b24-callback`, an empty **Initial
-installation path**, no menu item text, and the access permissions `crm`, `user_basic` and `department`. Then run
+installation path**, no menu item text, and the access permissions `crm`, `user_basic` and `department`, `task` for
+tasks, `telephony` for calls, and `disk` and `documentgenerator` for files and documents. Then run
 `b24 work session start --portal example.bitrix24.ru --client-id <Application ID>` and give it the Application key
 when it asks. The steps are in [with a local application](usage.md#with-a-local-application).

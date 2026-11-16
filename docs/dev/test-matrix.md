@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**218 ✅ · 87 ⛔ · 0 ❌** — 104 commands, 201 options.
+**227 ✅ · 88 ⛔ · 0 ❌** — 109 commands, 206 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -152,6 +152,10 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `users list` | `--limit` | ✅ |  |
 | `users list` | `--page` | ✅ |  |
 | `users show` |  | ✅ |  |
+| `changes list` |  | ✅ |  |
+| `changes list` | `--limit` | ✅ |  |
+| `changes list` | `--cursor` | ✅ |  |
+| `changes list` | `--format` | ✅ |  |
 | `fields list` |  | ✅ |  |
 | `fields list` | `--limit` | ✅ |  |
 | `fields list` | `--page` | ✅ |  |
@@ -288,6 +292,12 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `config migrate` |  | ✅ |  |
 | `config repair` |  | ✅ |  |
 | `config repair` | `--dry-run` | ✅ |  |
+| `setup` |  | ⛔ | cli-core's setupCommand asks the flow's questions in a terminal; its setup-command tests drive that, and src/setup/flow.test.ts runs this flow through setup apply and setup run apply |
+| `setup show` |  | ✅ |  |
+| `setup apply` |  | ✅ |  |
+| `setup apply` | `--dry-run` | ✅ |  |
+| `setup run` |  | ✅ |  |
+| `setup run` | `--answer-stdin` | ✅ |  |
 | `complete` |  | ⛔ | cli-core's appCompleteCommand; its complete-command test drives every shell and word |
 | `runs list` |  | ✅ |  |
 | `runs list` | `--limit` | ✅ |  |

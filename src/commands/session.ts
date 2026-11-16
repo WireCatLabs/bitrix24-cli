@@ -60,10 +60,37 @@ const userScopeMissing = (portal: string) =>
     "permission_error",
     "this webhook may not read who made it: it lacks the Users (basic) right, user_basic, which b24 needs to know " +
       `whose rights it acts with. On ${portal}, open Developer resources → Integrations, edit this webhook, tick ` +
-      '"Users (basic)" (in Russian «Пользователи (базовый)») under the permissions, and save. Then run session start ' +
-      "again with the address the webhook shows: an administrator who edits a colleague's webhook gets a new address",
+      '"Users (basic)" (in Russian «Пользователи (базовый)») under the permissions, and save. Then sign in again ' +
+      "with the address the webhook shows: an administrator who edits a colleague's webhook gets a new address",
     { reason: "webhook.scope-missing", operation: "user.current", scope: "user_basic" },
   )
+
+/** Neither sign-in may name a profile after a command, or reach the portal under --offline. */
+export const refuseSignInHere = (command: Command) => {
+  refuseCommandName(contextOf(command).profile, commandWords(rootOf(command)), IDENTITY.command)
+  refuseOffline(command, "the Bitrix24 portal")
+}
+
+/**
+ * What `session start` proves before it keeps a webhook, and `setup apply` too: its address is one, no other profile
+ * here uses it, and the portal answers who made it. Keeps nothing.
+ */
+export const checkedWebhook = async (command: Command, address: string) => {
+  const { env, profile, keyring, run } = contextOf(command)
+  const webhook = parseWebhook(address)
+  const portal = new URL(webhook.origin).host
+  refuseDuplicate(env, keyring, profile, webhook)
+  const user = await run((events) => webhookUser(transportFor(command, webhook, events))).catch((error: unknown) => {
+    if (
+      isCliError(error) &&
+      error.details.reason === "webhook.scope-missing" &&
+      USER_METHODS.has(String(error.details.operation))
+    )
+      throw userScopeMissing(portal)
+    throw error
+  })
+  return { portal, user, account: `${portal}:${webhook.userId}` }
+}
 
 const answer = (command: Command, item: unknown) => renderAnswer(command, outputFor(command), itemOf(item))
 
@@ -167,8 +194,8 @@ const startCommand = () =>
   )
     .summary("sign in with a Bitrix24 incoming webhook, or with a local application")
     .description(
-      "sign this profile in: the incoming webhook's address (Bitrix24 → Developer resources → Other → Incoming " +
-        "webhook) is asked hidden or read from stdin, checked against the portal, and only then kept in the keyring, " +
+      "sign this profile in: the inbound webhook's address (Bitrix24 → Developer resources → Common use cases → " +
+        "Other → Inbound webhook) is asked hidden or read from stdin, checked against the portal, and only then kept in the keyring, " +
         "or in a private file when the keyring fails; the webhook acts with the rights of the employee who made it. " +
         "With --portal and --client-id it signs in through a local application in the browser instead: its key is " +
         "asked hidden or read from stdin, and its tokens act with the rights of the employee who signs in",
@@ -189,29 +216,17 @@ const startCommand = () =>
       const storage = args.credentialStorage
       if (storage !== "keyring" && storage !== "file")
         throw new CliError("validation_error", "--credential-storage takes keyring or file")
-      const { env, profile, tokens, run, keyring } = contextOf(this)
-      refuseCommandName(profile, commandWords(rootOf(this)), IDENTITY.command)
-      refuseOffline(this, "the Bitrix24 portal")
+      const { env, profile, tokens, keyring } = contextOf(this)
+      refuseSignInHere(this)
       if (args.portal !== undefined) return answer(this, await startWithApp(this, args, storage))
       if (args.clientId !== undefined)
         throw new CliError("validation_error", "--client-id needs --portal: the portal the local application is in")
       const address = (await readSecret("Bitrix24 webhook address: ", secretInputOf(this))).trim()
       if (!address) throw new CliError("validation_error", "no webhook address was given")
-      const webhook = parseWebhook(address)
-      const portal = new URL(webhook.origin).host
-      refuseDuplicate(env, keyring, profile, webhook)
-      const user = await run((events) => webhookUser(transportFor(this, webhook, events))).catch((error: unknown) => {
-        if (
-          isCliError(error) &&
-          error.details.reason === "webhook.scope-missing" &&
-          USER_METHODS.has(String(error.details.operation))
-        )
-          throw userScopeMissing(portal)
-        throw error
-      })
+      const { portal, user, account } = await checkedWebhook(this, address)
       const stored = tokens.write(profile, address, storage)
       appStorage(env, profile, keyring).remove()
-      rememberAccount(IDENTITY, profile, `${portal}:${webhook.userId}`, env)
+      rememberAccount(IDENTITY, profile, account, env)
       answer(this, { profile, state: "saved", kind: "webhook", stored_in: stored, verified: true, portal, user })
     })
 

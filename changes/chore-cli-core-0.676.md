@@ -1,6 +1,6 @@
 ### Added
 
-- **Built on cli-core 0.676.0** (was 0.670.0), with its CRM additions: `deals list` and `leads list` take `updated:`,
+- **Built on cli-core 0.683.0** (was 0.670.0), with its CRM additions: `deals list` and `leads list` take `updated:`,
   `created:`, `closed:` and `owner:` (`owner:me` is your own portal user); `pipelines show --since-time --until-time`
   answers the funnel of a window with closed deals, cycle time, owners and lost reasons; `deals show` answers
   `stage_history` from the portal's own stage history; `stages list` answers `stage_task`. See the
