@@ -243,6 +243,7 @@ export const appSignIn = async <T extends { id: string }>(
       origin = originOf(endpoint, options.host)
       const token = tokens.accessToken ?? ""
       user = await options.check({ origin, userId: "", accessToken: async () => token })
+      // cli-core's account entry names it `host`; Bitrix24's app endpoints need the whole origin, so it holds that.
       return { host: origin, userId: user.id }
     },
   })
@@ -262,6 +263,7 @@ export const appAuthOf = (options: {
   const stored = storage.read()
   if (!stored) return undefined
   const kept = stored.account
+  // The codec refuses an entry without them before this; the stored type still allows both absent.
   if (!kept || !stored.client)
     throw new CliError("authentication_error", "the saved Bitrix24 sign-in cannot be read; sign in again", {
       reason: "oauth.invalid",

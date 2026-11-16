@@ -570,7 +570,7 @@ describe("an id that is not a number is refused before any request", () => {
     expect(portal.calls).toHaveLength(0)
   })
 
-  it("users show abc looks for an employee by that name, and finds none", async () => {
+  it("users show abc is not_found", async () => {
     const ran = await b24(["work", "users", "show", "abc", "--json"], { portal: seededCrm() })
     expect(ran.json().error).toMatchObject({ code: "not_found" })
   })

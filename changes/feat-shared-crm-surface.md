@@ -2,10 +2,13 @@
 
 - **`people`, `organizations` and `users` are WireCat's shared CRM commands now**, the same words, query and answer
   as in every CRM tool. An organization answers `type` and `own` instead of `type_id`; its industry, revenue and
-  currency move under `provider_metadata`. A person answers `first_name`, `last_name` and `position` beside `name`.
-  Every live list and show gives the custom fields under `provider_metadata`, and `--offline` still refuses them.
-  `--all` is gone from these three lists: page with `--limit` and `--page`. A name that fits several records is
-  `crm.record-ambiguous`, not `organization.ambiguous` or `person.ambiguous`.
+  currency move under `provider_metadata`, and `industry_id:` is no longer a filter. Every live list and show gives
+  the custom fields under `provider_metadata`, every item names its `untrusted` fields, and `--offline` still refuses
+  them. A user is the `crm_user` entity, not `user`. A name that fits several records is `crm.record-ambiguous`, not
+  `organization.ambiguous` or `person.ambiguous`.
+- **These three lists page with `--limit` (1 to 250, 50 when left out) and `--page`.** `--all`, a limit above 250 and
+  the profile's `defaults.limit` no longer apply to them. `users list name:` matches part of the whole name across
+  every employee, not the portal's own name search.
 - **`people create`, `people update`, `organizations create` and `organizations update` are the shared writes.** They
   take `--name`, `--owner`, `--field`, and for people `--first-name`, `--last-name` and `--position`; `--body` is
   gone (`api call` writes any other field). Each answers the record as the portal holds it, and stores it.

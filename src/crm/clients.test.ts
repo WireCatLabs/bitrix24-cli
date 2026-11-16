@@ -85,7 +85,7 @@ describe("contacts and companies that are not the user's clients", () => {
     expect(item.stored).toBe(false)
     expect(item.person).toMatchObject({ name: "Stranger", position: "Buyer" })
     expect(item.person).not.toHaveProperty("phones")
-    expect(crm.row("contact", ids.stranger).post).toBe("Buyer")
+    expect(crm.row("contact", ids.stranger)?.post).toBe("Buyer")
   })
 
   it("refuses api call reads of contacts and companies to anyone but an administrator", async () => {

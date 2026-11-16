@@ -189,7 +189,7 @@ export const bitrixCrmWriter = (portal: () => BitrixTransport, source: BitrixCrm
       return update(kind, externalId, { stageId: stage.externalId }, options)
     },
     async remove(kind, externalId, options) {
-      await portal().call(`crm.${kind}.delete`, { id: numericId(externalId, `the ${kind} id`) }, keyed(options))
+      await portal().call(`crm.${TYPES[kind]}.delete`, { id: numericId(externalId, `the ${kind} id`) }, keyed(options))
     },
   }
 }

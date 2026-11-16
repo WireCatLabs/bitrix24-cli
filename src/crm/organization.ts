@@ -9,6 +9,7 @@ const { epoch, id, ids, number, text } = crmValues
  * Bitrix24's own company fields the shared entity has no place for, kept in `provider_metadata` under their REST 3.0
  * names (apidocs fields-company), as the portal's custom fields are.
  */
+// WireCat's own labels, in English like the rest of the answer: the portal names these standard fields itself.
 const OWN: [code: string, label: string, read: (value: unknown) => unknown][] = [
   ["industryId", "Industry", text],
   ["revenue", "Revenue", number],
@@ -23,6 +24,7 @@ const ownValues = (raw: Raw): Record<string, CrmValue> =>
     }),
   )
 
+/** `own` stays false: REST 3.0's `crm.company.*` never returns the account's own companies (apidocs fields-my-company). */
 export const toOrganization = (raw: Raw, metadata?: Record<string, CrmValue>): CrmOrganization => {
   const phones = contacts(raw.phone)
   const emails = contacts(raw.email)
