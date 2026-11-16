@@ -23,6 +23,7 @@ export const permissions = commandPermissions({
 export const DOWNLOAD_RECORDINGS = "download_recordings"
 export const PHONE_REGION = "phone_region"
 export const EXPORT_CALLS = "export_calls"
+export const SYNC_CALLS = "sync_calls"
 
 const REGIONS = /^\s*[a-z]{2}(\s*,\s*[a-z]{2})*\s*$/i
 
@@ -31,6 +32,7 @@ export const configuration: Configuration = settingsFor(IDENTITY, {
   profile: {
     [DOWNLOAD_RECORDINGS]: v.optional(v.boolean(plain("has to be true or false"))),
     [EXPORT_CALLS]: v.optional(v.boolean(plain("has to be true or false"))),
+    [SYNC_CALLS]: v.optional(v.boolean(plain("has to be true or false"))),
     [PHONE_REGION]: v.optional(
       v.pipe(
         v.string(plain("has to be a country code, or several: ru,kz")),
@@ -46,6 +48,13 @@ export const configuration: Configuration = settingsFor(IDENTITY, {
       description:
         "download each call's recording to this computer at meetings sync and meetings transcribe, so WireCat " +
         "Desktop plays it; recordings can be large",
+    },
+    {
+      key: SYNC_CALLS,
+      default: true,
+      description:
+        "sync copies the portal's calls too, as meetings sync does; a webhook without the telephony scope gets a note, " +
+        "and the CRM sync goes on",
     },
     {
       key: EXPORT_CALLS,

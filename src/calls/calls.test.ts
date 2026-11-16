@@ -365,3 +365,40 @@ describe("models", () => {
     expect(ran.out).toContain("gigaam-v3")
   })
 })
+
+describe("sync brings the calls too", () => {
+  it("copies the calls after the CRM, keeps the CRM's answer the only one, and says how to read bare numbers", async () => {
+    const portal = portalWith([row(1, { PHONE_NUMBER: "79000000001" })])
+    const ran = await b24(["work", "sync", "--json"], { portal })
+    expect(ran.code, ran.err).toBe(0)
+    expect(ran.json().item).toMatchObject({ provider: "bitrix24" })
+    expect(ran.err).toContain("calls: 1 copied")
+    expect(ran.err).toContain("config set phone_region ru")
+    expect(statistic(portal).length).toBeGreaterThan(0)
+    const listed = (await b24(["work", "meetings", "list", "--json"])).json() as { items: unknown[] }
+    expect(listed.items).toHaveLength(1)
+  })
+
+  it("keeps the CRM sync when the calls fail, with a note, and skips them with sync_calls off", async () => {
+    const refused = portalWith([], {
+      "voximplant.statistic.get": {
+        status: 401,
+        body: { error: "insufficient_scope", error_description: "The request requires higher privileges" },
+      },
+    })
+    const ran = await b24(["work", "sync", "--json"], { portal: refused })
+    expect(ran.code, ran.err).toBe(0)
+    expect(ran.err).toContain("calls not copied")
+    expect(ran.err).toContain("config set sync_calls false")
+    expect((await b24(["work", "config", "set", "sync_calls", "false"])).code).toBe(0)
+    const off = portalWith([row(1)])
+    expect((await b24(["work", "sync", "--json"], { portal: off })).code).toBe(0)
+    expect(statistic(off)).toHaveLength(0)
+  })
+
+  it("leaves the calls alone on a dry run", async () => {
+    const portal = portalWith([row(1)])
+    expect((await b24(["work", "sync", "--dry-run", "--json"], { portal })).code).toBe(0)
+    expect(statistic(portal)).toHaveLength(0)
+  })
+})

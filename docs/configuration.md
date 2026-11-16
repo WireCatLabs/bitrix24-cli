@@ -21,7 +21,9 @@ writes yours are on [Permissions](permissions.md).
 
 `download_recordings` (`true` or `false`, `false` when not set) downloads each call's recording at `meetings sync`
 and keeps it in the state folder. `phone_region` (a country code, such as `ru`, or several: `ru,kz`) is the country
-of a caller's number the portal writes without `+`. Both are on [Calls](calls.md).
+of a caller's number the portal writes without `+`. `sync_calls` (`true` when not set) makes `sync` copy the calls
+too. `export_calls` (`false` when not set) lets `calls export` write other phone systems' calls into Bitrix24. All
+four are on [Calls](calls.md).
 
 ## CRM relationships
 

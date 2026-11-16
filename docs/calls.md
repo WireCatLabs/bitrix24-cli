@@ -21,6 +21,10 @@ on, writes to the portal: see [Write other phone systems' calls into Bitrix24](#
 
 ## Copy the calls
 
+`b24 work sync` copies the calls after the CRM, and says how many under its answer. If they cannot be copied, for
+example because the webhook has no telephony scope, it says why in a note and the CRM sync still succeeds. To leave
+the calls out of `sync`: `b24 work config set sync_calls false`. `meetings sync` copies only the calls:
+
 ```sh
 b24 work meetings sync                                   # calls since the last sync; the first reads 30 days
 b24 work meetings sync --since-time 2026-11-01T00:00:00Z # calls from a date on
@@ -36,11 +40,7 @@ A first sync on a busy line reads many pages before it saves anything. If it sto
 shorter window or more time: `meetings sync --since-time 7d`, or `--timeout 5m`.
 
 Each sync reads again the three hours before the last one, so a call that was still going on is found the next time.
-To keep it up to date, add a timer:
-
-```sh
-b24 work schedule command calls --every 1h -- meetings sync
-```
+A timer that runs `sync` keeps the calls up to date too.
 
 ### Whose calls
 
