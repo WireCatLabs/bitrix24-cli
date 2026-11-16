@@ -57,7 +57,7 @@ keep this profile's Bitrix24 webhook or app sign-in in the OS keyring
 
 ### `b24 session start`
 
-sign this profile in: the incoming webhook's address (Bitrix24 → Developer resources → Other → Incoming webhook) is asked hidden or read from stdin, checked against the portal, and only then kept in the keyring, or in a private file when the keyring fails; the webhook acts with the rights of the employee who made it. With --portal and --client-id it signs in through a local application in the browser instead: its key is asked hidden or read from stdin, and its tokens act with the rights of the employee who signs in
+sign this profile in: the inbound webhook's address (Bitrix24 → Developer resources → Common use cases → Other → Inbound webhook) is asked hidden or read from stdin, checked against the portal, and only then kept in the keyring, or in a private file when the keyring fails; the webhook acts with the rights of the employee who made it. With --portal and --client-id it signs in through a local application in the browser instead: its key is asked hidden or read from stdin, and its tokens act with the rights of the employee who signs in
 
 **Changes something on this computer only.**
 
@@ -995,6 +995,32 @@ b24 users show <user>
 
 **Example:** `b24 work users show 7`
 
+## `b24 changes`
+
+what changed in the CRM's deals, leads, activities and contacts, as the syncs copied it
+
+### `b24 changes list`
+
+deals and leads made, moved, won, lost and given another owner, activities added and done, and contacts added, newest first; the last day unless at: says otherwise
+
+```sh
+b24 changes list [query] [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+| Option | What it does |
+|---|---|
+| `--limit <n>` | changes per page, 1–500. Default: `50`. |
+| `--cursor <cursor>` | the next page, as the last answer's page.next gave it. |
+| `--format <format>` | csv: this page as a table; report: the window as a morning digest document, for schedule command. Run by a schedule, the report starts where that schedule's last one ended. One of: `csv`, `report`. |
+
+**Returns:** crm change — change, at, kind, ref, external_id, account, title, pipeline, and 10 more; every field: b24 commands info changes list
+
+**Example:** `b24 work changes list "at>=1d"`, `b24 work changes list change:won at>=7d --json`, `b24 work changes list "at>=1d" --format report`
+
 ## `b24 fields`
 
 the CRM's own fields on deals, leads, people and organizations, as last synced
@@ -1651,8 +1677,12 @@ the instructions an agent is given for this tool
 print SKILL.md — `b24 skill install` puts it where Claude Code, Codex, Gemini CLI and OpenClaw look for it, and where Hermes does on request; --for prints the copy already there
 
 ```sh
-b24 skill show [options]
+b24 skill show [name] [options]
 ```
+
+| Argument | | What it is |
+|---|---|---|
+| `name` | optional | a part of this skill, or a skill shipped for a task: writing, setup, reading, output, mcp. |
 
 | Option | What it does |
 |---|---|
@@ -1941,6 +1971,56 @@ b24 config repair [options]
 | `--dry-run` | say what it would fix, and change nothing. |
 
 **Example:** `b24 config repair`, `b24 config repair --dry-run`
+
+## `b24 setup`
+
+connect this profile to b24: the same questions WireCat Desktop shows, asked in the terminal, checked, and saved only when the check succeeds; show, apply and run are the same flow for programs
+
+### `b24 setup show`
+
+print the connection flow as a WireCat setup document: steps, texts in every language, and each setting's own JSON Schema; with a profile it adds the profile's current values, a secret only as { set: true }
+
+```sh
+b24 setup show
+```
+
+**Example:** `b24 personal setup show --json`, `b24 office setup show --json`
+
+### `b24 setup apply`
+
+read the answers as one JSON object on stdin (input id → value), keep only those on the path they lead to, check each with its setting's own schema, then run the CLI's check and save the settings and secrets; --dry-run only checks and saves nothing
+
+**Changes something on this computer only.**
+
+```sh
+b24 setup apply [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--dry-run` | check the answers, and save nothing. |
+
+**Example:** `b24 office setup apply --dry-run --json`, `b24 office setup apply --json`
+
+### `b24 setup run`
+
+run one run step of the flow: apply checks the answers, runs the CLI's check and saves; the sign-in events go to stderr as JSON lines and the result to stdout; with --answer-stdin the answers are stdin's first line
+
+**Changes something on this computer only.**
+
+```sh
+b24 setup run <action> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `action` | required | the step's action: apply. |
+
+| Option | What it does |
+|---|---|
+| `--answer-stdin` | with --json and no terminal: print each question as a `needs` line on stderr and read its answer, one line, from stdin. |
+
+**Example:** `b24 office setup run apply --json --answer-stdin`
 
 ## `b24 complete`
 

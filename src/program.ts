@@ -16,6 +16,7 @@ import {
   type RunOptions,
   run as runShared,
   runsCommand,
+  setupCommand,
   skillCommand,
   upgradeCommand,
 } from "@wirecat/cli-core/cli"
@@ -35,6 +36,7 @@ import { syncCalls } from "./commands/sync-calls.js"
 import { configuration } from "./config.js"
 import { placeInSections } from "./help-sections.js"
 import { IDENTITY, PACKAGE, SKILL } from "./identity.js"
+import { b24Setup } from "./setup/flow.js"
 
 const update = appUpdate({
   packageName: PACKAGE,
@@ -126,6 +128,7 @@ export const definition = (): ProgramDefinition => {
         install: (argv) => update.runUpdate(argv, {}),
       })),
       configCommand(IDENTITY, configuration),
+      setupCommand(b24Setup),
       appCompleteCommand(IDENTITY, configuration),
       runsCommand(IDENTITY),
     ],

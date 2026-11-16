@@ -17,6 +17,12 @@ const TRANSCRIBE_HELPER = "src/calls/calls.test.ts passes it through its transcr
 const LONG_RUNNING = `starts an HTTP server or a background process that runs until stopped; ${SHARED_MCP}`
 
 export const UNTESTED: { command: string; option?: string; reason: string }[] = [
+  {
+    command: "setup",
+    reason:
+      "cli-core's setupCommand asks the flow's questions in a terminal; its setup-command tests drive that, and " +
+      "src/setup/flow.test.ts runs this flow through setup apply and setup run apply",
+  },
   { command: "store info", reason: SHARED_STORE },
   { command: "store check", reason: SHARED_STORE },
   { command: "store migrate", reason: SHARED_STORE },
