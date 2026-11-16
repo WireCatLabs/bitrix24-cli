@@ -43,7 +43,9 @@ run it yourself in a terminal.
 
 The families denied through `api call` are `im`, `imopenlines`, `imbot`, `imconnector`, `log.blogpost`, SMS
 (`messageservice`), mail (`mailservice`), telephony (`telephony`, `voximplant`), workflows (`bizproc`,
-`crm.automation`), CRM activities (`crm.activity`), tasks (`tasks`, `task`), `user.add`, public file links,
+`crm.automation`), CRM activities (`crm.activity`), tasks (`tasks`, `task`), `user.add`, public file and document links
+(`disk.*.getexternallink`, `crm.documentgenerator.document.enablepublicurl`,
+`documentgenerator.document.enablepublicurl`, `crm.invoice.getexternallink`, `salescenter.payment.getpublicurl`),
 `event.bind` and `batch`. `b24 work api show <method>` names a method's key, its level and the keys it also checks.
 
 The call history stays denied through `api call` too (`api.voximplant.statistic.get`): its answer holds the

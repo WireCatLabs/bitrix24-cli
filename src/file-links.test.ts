@@ -149,9 +149,12 @@ describe("no file link in the copy or the output (RISK-2313)", () => {
     })
   })
 
-  it("sync --rescan rewrites a row stored with a link before this fix", async () => {
+  it("sync --rescan rewrites a listed row stored with a link before this fix, not a deleted one", async () => {
     const { crm } = withFiles()
+    const gone = crm.put("deal", { title: "Example gone", categoryId: 0, stageId: "PREPARATION" })
     await synced(crm)
+    crm.remove("deal", gone)
+    expect((await b24(["work", "sync", "--json"], { portal: crm })).code).toBe(0)
     const { DatabaseSync } = await import("node:sqlite")
     const database = new DatabaseSync(process.env.MESSAGING_STORE as string)
     try {
@@ -164,9 +167,16 @@ describe("no file link in the copy or the output (RISK-2313)", () => {
     expect((await b24(["work", "sync", "--rescan", "--json"], { portal: crm })).code).toBe(0)
     const reading = new DatabaseSync(process.env.MESSAGING_STORE as string, { readOnly: true })
     try {
-      const rows = reading.prepare("SELECT metadata FROM deals").all() as { metadata: string | null }[]
-      expect(rows.length).toBeGreaterThan(0)
-      for (const { metadata } of rows) expect(metadata ?? "").not.toContain(TOKEN)
+      const rows = reading.prepare("SELECT title, deleted_at, metadata FROM deals").all() as {
+        title: string
+        deleted_at: number | null
+        metadata: string | null
+      }[]
+      // A record gone from the portal is only marked deleted, so no later sync rewrites it: docs/security.md says so.
+      expect(rows.map((row) => [row.title, row.deleted_at !== null, (row.metadata ?? "").includes(TOKEN)])).toEqual([
+        ["Example kitchen", false, false],
+        ["Example gone", true, true],
+      ])
     } finally {
       reading.close()
     }

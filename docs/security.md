@@ -32,8 +32,11 @@ e-mail address, position and department head in the local store, where every Wir
 A file in a CRM record's custom field is kept as its file id only, in the copy and in every answer, never its
 links: Bitrix24's download link carries an access token, and anyone holding it gets the file. `api call` prints
 `[link removed]` in place of every download link and every link with `auth=` or `token=` in it. A copy synced
-before this rule may still hold such links: run `b24 work sync --rescan` once to rewrite every row. SQLite may keep the
-old bytes in the store file's free space until it reuses them.
+before this rule may still hold such links. `b24 work sync --rescan` rewrites every record the portal still lists
+for the profile; a large copy may take several runs, and `b24 work store status` shows how far it got. A record
+deleted in the portal, or outside the sync's scope, keeps what it held: `b24 work account remove --delete-data`
+removes the account's whole copy, and the next sync after signing in again builds it anew. SQLite may keep old bytes
+in the store file's free space until it reuses them.
 
 Unless the webhook's user is a Bitrix24 administrator, the sync copies only their own clients: the contacts and
 companies assigned to them or named on their deals and leads. Lists show phones and e-mails of those alone; `people

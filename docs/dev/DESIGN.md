@@ -191,8 +191,11 @@ and `type`); field names are from the REST 3.0 field pages and the `user.get` an
      `delete` and every other method are `ask`; the families that reach people, publish or send data out are
      `deny`, reads included, until the owner allows them: `im`, `imopenlines`, `imbot`, `imconnector`, `log.blogpost`,
      `messageservice`, `mailservice`, `telephony`, `voximplant`, `bizproc`, `crm.automation`, `crm.activity`,
-     `tasks`, `task`, `user.add`, `disk.file.getexternallink`, `disk.folder.getexternallink`, `event.bind` and
-     `batch`, which can hold any of them.
+     `tasks`, `task`, `user.add`, `disk.file.getexternallink`, `disk.folder.getexternallink`,
+     `crm.documentgenerator.document.enablepublicurl`, `documentgenerator.document.enablepublicurl`,
+     `crm.invoice.getexternallink`, `salescenter.payment.getpublicurl`, `event.bind` and `batch`, which can hold any
+     of them. `api call` answers pass through `withoutFileLinks` (`src/file-links.ts`), and a custom field's file
+     value is kept as its id (RISK-2313).
    - Never allowed, whatever the permissions: a bulk or filtered delete. A delete takes one id.
    - Only a Bitrix24 administrator's webhook, whatever the permissions (the owner, 2026-11-10: employees delete
      nothing in the CRM and blank no field): a delete (a method whose name ends in `delete`, `deletefieldvalue` or
