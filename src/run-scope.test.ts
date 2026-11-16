@@ -87,6 +87,9 @@ describe("every remote command runs inside cli-core's run", () => {
       "meetings list": "reads the store only: the portal's call history has no search for a live list",
       "meetings show": "reads the store only: the portal's call history has no search for a live list",
       "meetings transcribe": "needs a local speech model first; src/calls/calls.test.ts runs it with a fake one",
+      "calls export":
+        "off until export_calls is on and two denied methods are allowed, and needs the application sign-in; " +
+        "src/calls/export.test.ts runs it against a strict fake",
       "models download": "cli-core's modelCatalogueCommand downloads hundreds of MB; cli-core tests it",
       doctor: "cli-core's appDoctorCommand: 0.598.0 answers --online under the process run, a cli-core fix",
     },

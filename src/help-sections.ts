@@ -14,6 +14,7 @@ const SECTIONS: Record<string, HelpSection> = {
   meetings: "read",
   events: "read",
   models: "setup",
+  calls: "write",
 }
 
 const SPLIT = new Set(["deals", "leads", "people", "organizations"])

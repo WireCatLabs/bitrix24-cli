@@ -274,3 +274,13 @@ and `type`); field names are from the REST 3.0 field pages and the `user.get` an
 - A `leads` table in cli-core, or leads only as source records: the owner's portal runs its main funnel on leads
   (NEED-2279).
 - A cli-base view noun for counts per value, shared by `tasks counts` and a deal funnel (NEED-2280).
+
+**Calls export (2026-11-16).** `calls export` writes calls of other phone systems onto a contact with
+`telephony.externalCall.register` and `finish`, which only an application may call (apidocs: "The method works only
+in the context of an application"). Three gates, all off by default: `export_calls`, the two methods' `api.*` keys (denied
+with the `telephony` family), and the application sign-in. The client must be linked to exactly one contact of the
+portal and the employee to one portal user; nothing is guessed. Bitrix24 merges a repeated `register` only within 30
+minutes, so b24 keeps `<state>/calls-export/<portal>.json`, written after each step: a call registered but not finished is
+finished next time, never registered twice. `--dry-run` reads only the store, never the keyring, so it lists every
+portal in the store. Not verified on a portal: whether a call registered with a past `CALL_START_DATE` shows at that
+date.

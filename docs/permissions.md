@@ -49,6 +49,11 @@ The families denied through `api call` are `im`, `imopenlines`, `imbot`, `imconn
 The call history stays denied through `api call` too (`api.voximplant.statistic.get`): its answer holds the
 recording links with their tokens. `meetings sync` reads it under its own key, `meetings.sync`; see [Calls](calls.md).
 
+`calls export` writes a call with `telephony.externalCall.register` and `finish`. It checks `calls.export` and both
+methods' own keys, `api.telephony.externalcall.register` and `api.telephony.externalcall.finish`, which stay denied
+with the rest of `telephony` until you allow these two. Allowing them opens only these two methods; see
+[Calls](calls.md#write-other-phone-systems-calls-into-bitrix24).
+
 ## One command can check several keys
 
 A command checks its own key, and the keys of what it does on the way. `--dry-run` names each one with its level, and

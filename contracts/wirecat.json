@@ -697,6 +697,18 @@
     },
     {
       "path": [
+        "calls",
+        "export"
+      ],
+      "summary": "write the calls of other phone systems onto the client's contact in Bitrix24",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "calls.export"
+    },
+    {
+      "path": [
         "meetings",
         "list"
       ],

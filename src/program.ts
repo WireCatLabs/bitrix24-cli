@@ -24,6 +24,7 @@ import type { Command } from "commander"
 import { appSourceOf } from "./bitrix/oauth.js"
 import { accountCommand } from "./commands/account.js"
 import { apiCommand } from "./commands/api.js"
+import { callsCommand } from "./commands/calls.js"
 import { crmSharedCommands } from "./commands/crm-shared.js"
 import { meetingsMount } from "./commands/meetings.js"
 import { modelsCommand } from "./commands/models.js"
@@ -105,6 +106,7 @@ export const definition = (): ProgramDefinition => {
       accountCommand(),
       ...crmSharedCommands(),
       productsCommand(),
+      callsCommand(),
       ...meetings.commands(),
       modelsCommand(),
       apiCommand(),
