@@ -449,7 +449,7 @@ export const bitrixCrmSource = (
       if (narrowed && kind === "person") {
         const gone = rows.filter((raw) => !mineOnly(raw, assignees, clients))
         const held = gone.length ? await copy.contacts?.(gone.map((raw) => id(raw.id) ?? "")) : undefined
-        kept.push(...gone.filter((raw) => held?.has(id(raw.id) ?? "")).map(givenAway))
+        for (const raw of gone) if (held?.has(id(raw.id) ?? "")) kept.push(givenAway(raw))
       }
       // An empty page ends the round, not a short one: a portal that caps pages below PAGE still lists every row.
       // Every round ends with the named clients: a deal given to the user brings a client whose row did not change.
