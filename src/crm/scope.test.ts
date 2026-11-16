@@ -35,6 +35,23 @@ const titles = async (crm: ReturnType<typeof fakeCrm>, kind = "deals") =>
 const saved = (item: Record<string, unknown>, kind: string) =>
   (item.synced as { kind: string; saved: number }[]).find((one) => one.kind === kind)?.saved
 
+/** Whether any row of the store holds the text, in any table: what the copy keeps, whatever its schema. */
+const holds = async (text: string) => {
+  const { DatabaseSync } = await import("node:sqlite")
+  const database = new DatabaseSync(process.env.MESSAGING_STORE as string, { readOnly: true })
+  try {
+    const tables = database.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as { name: string }[]
+    return tables.some(({ name }) =>
+      database
+        .prepare(`SELECT * FROM "${name}"`)
+        .all()
+        .some((row) => JSON.stringify(row).includes(text)),
+    )
+  } finally {
+    database.close()
+  }
+}
+
 const set = async (setting: string, value: string) =>
   expect((await b24(["work", "config", "set", setting, value, "--json"])).code).toBe(0)
 
@@ -302,6 +319,33 @@ describe("sync scope", () => {
     expect(await contacts()).toBe(both - 1)
     expect((await b24(["work", "sync", "--rescan", "--json"], { portal: crm })).code).toBe(0)
     expect(await contacts()).toBe(both - 1)
+  })
+
+  it("drops a contact given to a colleague at the next rescan, phone and all", async () => {
+    const { crm } = portal()
+    const mine = crm.put("contact", {
+      name: "Given away",
+      assignedById: OWN,
+      phone: [{ valueType: "WORK", value: "+7 900 000-00-02" }],
+    })
+    const stored = async () => {
+      const { openB24Store } = await import("../store.js")
+      const store = await openB24Store(process.env)
+      try {
+        return await store.crm.count({ provider: "bitrix24", account: "example.bitrix24.test" }, "person")
+      } finally {
+        await store.close()
+      }
+    }
+    await sync(crm)
+    expect(await holds("+7 900 000-00-02")).toBe(true)
+    const before = await stored()
+    crm.setClock(Date.now())
+    crm.put("contact", { ...crm.row("contact", mine), assignedById: OTHER })
+    await sync(crm)
+    expect((await b24(["work", "sync", "--rescan", "--json"], { portal: crm })).code).toBe(0)
+    expect(await stored()).toBe(before - 1)
+    expect(await holds("+7 900 000-00-02")).toBe(false)
   })
 
   it("reads no unchanged client again at a sync of changes, and lists the deals for clients once a sync", async () => {

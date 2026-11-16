@@ -75,6 +75,14 @@ const unchosen = (context: CrmCallContext | undefined, raw: Raw) => {
   return scope?.mode === "mine" && !chosenOf(scope).includes(scope.self) && String(raw.assignedById) === scope.self
 }
 
+/**
+ * A contact a round of changes saw that is no longer the user's (given to a colleague, or off the user's deals) is
+ * saved again with its new assignee and no phones or e-mails, so the next narrowing or `--rescan` removes it: cli-core
+ * removes contacts only then, since they have no id pass. Until then it keeps the one phone and e-mail cli-core holds
+ * beside the lists, which a save without them leaves.
+ */
+const givenAway = (raw: Raw): Raw => ({ ...raw, phone: [], email: [] })
+
 type ClientKind = "person" | "organization"
 const isClient = (kind: CrmKind): kind is ClientKind => kind === "person" || kind === "organization"
 
@@ -426,7 +434,9 @@ export const bitrixCrmSource = (
       const last = id(rows.at(-1)?.id)
       const kept =
         clients && assignees && since !== null
-          ? rows.filter((raw) => mineOnly(raw, assignees, clients))
+          ? rows.flatMap((raw) =>
+              mineOnly(raw, assignees, clients) ? [raw] : kind === "person" ? [givenAway(raw)] : [],
+            )
           : rows.filter((raw) => !unchosen(context, raw))
       // An empty page ends the round, not a short one: a portal that caps pages below PAGE still lists every row.
       // Every round ends with the named clients: a deal given to the user brings a client whose row did not change.
