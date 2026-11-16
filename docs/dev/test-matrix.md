@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**221 ✅ · 88 ⛔ · 0 ❌** — 108 commands, 201 options.
+**227 ✅ · 88 ⛔ · 0 ❌** — 109 commands, 206 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -172,6 +172,12 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `products list` | `--page` | ✅ |  |
 | `products list` | `--all` | ✅ |  |
 | `products show` |  | ✅ |  |
+| `calls export` |  | ✅ |  |
+| `calls export` | `--since-time` | ✅ |  |
+| `calls export` | `--meeting` | ✅ |  |
+| `calls export` | `--contact` | ✅ |  |
+| `calls export` | `--phone` | ✅ |  |
+| `calls export` | `--dry-run` | ✅ |  |
 | `meetings list` |  | ✅ |  |
 | `meetings list` | `--backend` | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |
 | `meetings list` | `--limit` | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |

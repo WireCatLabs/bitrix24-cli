@@ -1,6 +1,7 @@
+import { CliError } from "@wirecat/cli-base"
 import { defineSetup, type SetupCheck } from "@wirecat/cli-core/cli"
 import { appStorage } from "../bitrix/oauth.js"
-import { checkedWebhook } from "../commands/session.js"
+import { checkedWebhook, refuseSignInHere } from "../commands/session.js"
 import { configuration } from "../config.js"
 import { IDENTITY } from "../identity.js"
 import { contextOf, storedSignIn, withPortal } from "../portal.js"
@@ -19,13 +20,15 @@ const scopeBlocks = SCOPES.map((code) => ({ type: "text" as const, text: `scope.
 
 /** The same proof and the same account `session start` keeps; editing a profile without a new address checks the kept one. */
 const check: SetupCheck = async ({ command, secrets }) => {
-  const typed = secrets.token?.trim()
-  if (typed) {
+  refuseSignInHere(command)
+  if (secrets.token !== undefined) {
+    const typed = secrets.token.trim()
+    if (!typed) throw new CliError("validation_error", "no webhook address was given", { param: "webhook" })
     const { portal, user, account } = await checkedWebhook(command, typed)
     const { env, profile, keyring } = contextOf(command)
     // A request prefers an application's sign-in to the webhook, so it would hide the webhook just proven.
     appStorage(env, profile, keyring).remove()
-    return { portal, user, keep: { account } }
+    return { portal, user, keep: { secrets: { token: typed }, account } }
   }
   const portal = new URL(storedSignIn(command).origin).host
   const user = await withPortal(command, webhookUser)

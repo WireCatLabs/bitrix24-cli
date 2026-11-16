@@ -60,10 +60,16 @@ const userScopeMissing = (portal: string) =>
     "permission_error",
     "this webhook may not read who made it: it lacks the Users (basic) right, user_basic, which b24 needs to know " +
       `whose rights it acts with. On ${portal}, open Developer resources → Integrations, edit this webhook, tick ` +
-      '"Users (basic)" (in Russian «Пользователи (базовый)») under the permissions, and save. Then run session start ' +
-      "again with the address the webhook shows: an administrator who edits a colleague's webhook gets a new address",
+      '"Users (basic)" (in Russian «Пользователи (базовый)») under the permissions, and save. Then sign in again ' +
+      "with the address the webhook shows: an administrator who edits a colleague's webhook gets a new address",
     { reason: "webhook.scope-missing", operation: "user.current", scope: "user_basic" },
   )
+
+/** Neither sign-in may name a profile after a command, or reach the portal under --offline. */
+export const refuseSignInHere = (command: Command) => {
+  refuseCommandName(contextOf(command).profile, commandWords(rootOf(command)), IDENTITY.command)
+  refuseOffline(command, "the Bitrix24 portal")
+}
 
 /**
  * What `session start` proves before it keeps a webhook, and `setup apply` too: its address is one, no other profile
@@ -211,8 +217,7 @@ const startCommand = () =>
       if (storage !== "keyring" && storage !== "file")
         throw new CliError("validation_error", "--credential-storage takes keyring or file")
       const { env, profile, tokens, keyring } = contextOf(this)
-      refuseCommandName(profile, commandWords(rootOf(this)), IDENTITY.command)
-      refuseOffline(this, "the Bitrix24 portal")
+      refuseSignInHere(this)
       if (args.portal !== undefined) return answer(this, await startWithApp(this, args, storage))
       if (args.clientId !== undefined)
         throw new CliError("validation_error", "--client-id needs --portal: the portal the local application is in")

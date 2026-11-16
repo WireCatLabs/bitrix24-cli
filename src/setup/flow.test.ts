@@ -19,6 +19,9 @@ const portal = () =>
     "user.admin": ok(true),
   })
 
+const APP_ENTRY = ["bitrix24-cli", "oauth:bitrix24:work"] as const
+const APP_KEY = APP_ENTRY.join(":")
+
 const configs = () => ({ B24_CONFIG_DIR: mkdtempSync(join(tmpdir(), "b24-setup-")) })
 
 const apply = async (
@@ -27,9 +30,15 @@ const apply = async (
     keyring = memoryKeyring(),
     fake = portal(),
     env = configs(),
-  }: { keyring?: KeyringStore; fake?: ReturnType<typeof fakePortal>; env?: Record<string, string> } = {},
+    argv = ["work", "setup", "run", "apply", "--json", "--answer-stdin"],
+  }: {
+    keyring?: KeyringStore
+    fake?: ReturnType<typeof fakePortal>
+    env?: Record<string, string>
+    argv?: string[]
+  } = {},
 ) => {
-  const ran = await b24(["work", "setup", "run", "apply", "--json", "--answer-stdin"], {
+  const ran = await b24(argv, {
     keyring,
     env,
     portal: fake,
@@ -87,16 +96,22 @@ describe("the setup flow", () => {
 
   it("**a webhook the portal refuses keeps nothing**", async () => {
     const refused = fakePortal({ "user.current": { status: 401, body: { error: "INVALID_CREDENTIALS" } } })
-    const { code, error, keyring, out } = await apply({ webhook: FAKE_HOOK }, { fake: refused })
+    const { code, error, keyring, out, err } = await apply(
+      { webhook: FAKE_HOOK },
+      { fake: refused, keyring: memoryKeyring({ [APP_KEY]: "app sign-in" }) },
+    )
+    expect(out + err).not.toContain(FAKE_SECRET)
     expect(code).not.toBe(0)
     expect(error()).toMatchObject({ code: "authentication_error" })
     expect(out).toBe("")
     expect(keyring.get("bitrix24-cli", "token:work")).toBeNull()
+    expect(keyring.get(...APP_ENTRY)).toBe("app sign-in")
   })
 
   it("**a webhook without Users (basic) is a permission error**, which sends the owner back to the permissions", async () => {
     const scopeless = fakePortal({ "user.current": { status: 401, body: { error: "INSUFFICIENT_SCOPE" } } })
-    const { code, error, keyring } = await apply({ webhook: FAKE_HOOK }, { fake: scopeless })
+    const { code, error, keyring, out, err } = await apply({ webhook: FAKE_HOOK }, { fake: scopeless })
+    expect(out + err).not.toContain(FAKE_SECRET)
     expect(code).not.toBe(0)
     expect(error()).toMatchObject({ code: "permission_error", reason: "webhook.scope-missing" })
     expect(keyring.get("bitrix24-cli", "token:work")).toBeNull()
@@ -108,9 +123,10 @@ describe("the setup flow", () => {
     const keyring = memoryKeyring()
     const env = configs()
     expect((await b24(["home", "session", "start"], { keyring, env, portal: portal(), stdin: FAKE_HOOK })).code).toBe(0)
-    const { code, error } = await apply({ webhook: FAKE_HOOK }, { keyring, env })
+    const { code, error, out, err } = await apply({ webhook: FAKE_HOOK }, { keyring, env })
     expect(code).not.toBe(0)
     expect(error()).toMatchObject({ code: "conflict", reason: "session.duplicate" })
+    expect(out + err).not.toContain(FAKE_SECRET)
   })
 
   it("**editing without a new address checks the kept one**, and with none kept asks for it", async () => {
@@ -134,5 +150,49 @@ describe("the setup flow", () => {
     expect(dry.json()).toMatchObject({ item: { valid: true } })
     expect(fake.calls).toEqual([])
     expect(keyring.get("bitrix24-cli", "token:work")).toBeNull()
+  })
+
+  it("**keeps the address trimmed**, and a local application's sign-in gives way to it", async () => {
+    const saved = await apply({ webhook: `  ${FAKE_HOOK}\n` }, { keyring: memoryKeyring({ [APP_KEY]: "app sign-in" }) })
+    expect([saved.code, saved.error()]).toEqual([0, undefined])
+    expect(saved.keyring.get("bitrix24-cli", "token:work")).toBe(FAKE_HOOK)
+    expect(saved.keyring.get(...APP_ENTRY)).toBeNull()
+  })
+
+  it("**a blank address is refused and leaves the kept one alone**", async () => {
+    const fake = portal()
+    const { code, error, keyring } = await apply({ webhook: "   " }, { keyring: signedIn(), fake })
+    expect(code).not.toBe(0)
+    expect(error()).toMatchObject({ code: "validation_error", param: "webhook" })
+    expect(fake.calls).toEqual([])
+    expect(keyring.get("bitrix24-cli", "token:work")).toBe(FAKE_HOOK)
+  })
+
+  it("**--offline asks the portal nothing and saves nothing**, as session start refuses it", async () => {
+    const fake = portal()
+    const argv = ["work", "setup", "run", "apply", "--json", "--answer-stdin", "--offline"]
+    for (const answers of [{ webhook: FAKE_HOOK }, {}]) {
+      const keyring = answers.webhook ? memoryKeyring() : signedIn()
+      const { code, error, out, err } = await apply(answers, { fake, argv, keyring })
+      expect(code).not.toBe(0)
+      expect(error()).toMatchObject({ code: "permission_error", reason: "offline.refused" })
+      expect(out + err).not.toContain(FAKE_SECRET)
+      if (answers.webhook) expect(keyring.get("bitrix24-cli", "token:work")).toBeNull()
+    }
+    expect(fake.calls).toEqual([])
+  })
+
+  it("**a profile named after a command is refused**, with a new address or the kept one", async () => {
+    const fake = portal()
+    const argv = ["setup", "run", "apply", "--json", "--answer-stdin"]
+    for (const answers of [{ webhook: FAKE_HOOK }, {}]) {
+      const keyring = memoryKeyring(answers.webhook ? {} : { "bitrix24-cli:token:deals": FAKE_HOOK })
+      const { code, error } = await apply(answers, { fake, argv, keyring, env: { ...configs(), B24_PROFILE: "deals" } })
+      expect(code).not.toBe(0)
+      expect(error()).toMatchObject({ code: "validation_error" })
+      expect(error().message).toContain("is a command")
+      if (answers.webhook) expect(keyring.get("bitrix24-cli", "token:deals")).toBeNull()
+    }
+    expect(fake.calls).toEqual([])
   })
 })

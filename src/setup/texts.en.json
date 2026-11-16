@@ -8,7 +8,7 @@
   "scope.department": "**Company Structure** (`{code}`): recommended. Departments and their heads, so the copy knows who reports to whom.",
   "scope.task": "**Tasks** (`{code}`): optional. The Bitrix24 tasks on your deals and leads.",
   "scope.telephony": "**Telephony** (`{code}`): optional, for calls. The portal's call history. The employee also needs the right to view call statistics.",
-  "scope.disk": "**Drive** (`{code}`): optional, for files. Client documents, the files of deals and their attachments. b24 uses it from its files feature, coming next.",
+  "scope.disk": "**Drive** (`{code}`): optional, for files: client documents, the files of deals and their attachments. Useful once b24 can work with files.",
   "scope.documentgenerator": "**Document Generator** (`{code}`): optional, for documents made from templates. Bitrix24's docs place the CRM's document methods under `crm` on one page and under this scope on another, so tick both.",
   "webhook.access": "No **Inbound webhook** item? An administrator allows it in **Settings** → **Bitrix24 settings** → **Security** → **Bitrix24 integrations**, in the field **Who can create inbound webhooks**.",
   "address.title": "Paste the webhook's address",
