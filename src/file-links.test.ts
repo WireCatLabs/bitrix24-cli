@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import { customFields } from "./crm/values.js"
 import { fileIdsOf, REMOVED, withoutFileLinks } from "./file-links.js"
 import { fakeCrm } from "./testing/fake-crm.js"
+import { fakePortal, ok } from "./testing/fake-portal.js"
 import { b24, synced } from "./testing/harness.js"
 
 const TOKEN = "FAKEFILETOKEN0123456789"
@@ -41,15 +42,25 @@ describe("file values kept as ids", () => {
     })
   })
 
-  it("leaves out a file with no id and a string holding a tokened link, and keeps other values whole", () => {
-    expect(fileIdsOf({ urlMachine: `${HOST}/x?auth=${TOKEN}` })).toBeUndefined()
-    expect(fileIdsOf([{ downloadUrl: "/x" }])).toBeUndefined()
-    expect(fileIdsOf(`${HOST}/rest/download?token=${TOKEN}`)).toBeUndefined()
+  it("marks a file with no id and a tokened portal link, and keeps the owner's own values whole", () => {
+    expect(fileIdsOf({ urlMachine: `${HOST}/x?auth=${TOKEN}` })).toBe(REMOVED)
+    expect(fileIdsOf([{ downloadUrl: "/x" }])).toEqual([REMOVED])
+    expect(fileIdsOf(`${HOST}/rest/download.json?token=${TOKEN}`)).toBe(REMOVED)
+    expect(fileIdsOf(`${HOST}/rest/7/${TOKEN}/disk.file.get?id=1`)).toBe(REMOVED)
+    expect(fileIdsOf(`see ${HOST}/rest/download.json?x=1&amp;auth=${TOKEN}`)).toBe(REMOVED)
+    expect(fileIdsOf(`${HOST}/crm_show_file.php?fileId=1&auth=${TOKEN}`)).toBe(REMOVED)
     expect(fileIdsOf({ amount: 1, nested: { at: [rest2(4)] } })).toEqual({ amount: 1, nested: { at: [4] } })
-    expect(fileIdsOf("https://example.test/?q=auth")).toBe("https://example.test/?q=auth")
     expect(customFields({ UF_CRM_GONE: [{ urlMachine: `${HOST}/x?auth=${TOKEN}` }], UF_CRM_ZERO: 0 })).toEqual({
+      UF_CRM_GONE: [REMOVED],
       UF_CRM_ZERO: 0,
     })
+    const own = {
+      UF_CRM_SITE: "https://shop.example/?token=promo",
+      UF_CRM_LINK: { url: "https://shop.example/catalog", title: "Catalog" },
+      UF_CRM_LINKS: [{ id: 5, URL: "https://shop.example/a", title: "A" }],
+      UF_CRM_TIMELINE: { id: 9, urlShow: `${HOST}/disk/downloadFile/9/`, urlDownload: `${HOST}/disk/downloadFile/9/` },
+    }
+    expect(customFields(own)).toEqual(own)
   })
 
   it("withoutFileLinks replaces download and tokened links, and leaves the rest as given", () => {
@@ -62,7 +73,9 @@ describe("file values kept as ids", () => {
           title: "Kitchen",
           empty: { DOWNLOAD_URL: null },
         },
-        files: [{ DOWNLOAD_URL: `${HOST}/disk/download?x=1`, NAME: "a.pdf" }, `${HOST}/x?access_token=${TOKEN}`],
+        files: [{ DOWNLOAD_URL: `${HOST}/disk/download?x=1`, NAME: "a.pdf" }, `${HOST}/rest/x?access_token=${TOKEN}`],
+        document: { id: 51, publicUrl: `${HOST}/~bat5R`, printUrlMachine: `${HOST}/rest/x.json?auth=${TOKEN}` },
+        site: "https://shop.example/?token=promo",
       }),
     ).toEqual({
       item: {
@@ -73,6 +86,8 @@ describe("file values kept as ids", () => {
         empty: { DOWNLOAD_URL: null },
       },
       files: [{ DOWNLOAD_URL: REMOVED, NAME: "a.pdf" }, REMOVED],
+      document: { id: 51, publicUrl: REMOVED, printUrlMachine: REMOVED },
+      site: "https://shop.example/?token=promo",
     })
   })
 })
@@ -180,6 +195,31 @@ describe("no file link in the copy or the output (RISK-2313)", () => {
     } finally {
       reading.close()
     }
+  })
+})
+
+describe("generated documents through api call", () => {
+  it("prints no public or download link of a document", async () => {
+    const portal = fakePortal({
+      "crm.documentgenerator.document.get": ok({
+        document: {
+          id: 51,
+          title: "Contract",
+          publicUrl: `${HOST}/~bat5R`,
+          downloadUrlMachine: `${HOST}/rest/d?auth=${TOKEN}`,
+        },
+      }),
+    })
+    const ran = await b24(
+      ["work", "api", "call", "crm.documentgenerator.document.get", "--body", '{"id":51}', "--json"],
+      {
+        portal,
+      },
+    )
+    expect(ran.code).toBe(0)
+    expect(ran.out).not.toContain("~bat5R")
+    expect(ran.out).not.toContain(TOKEN)
+    expect(ran.json().item).toMatchObject({ result: { document: { id: 51, title: "Contract", publicUrl: REMOVED } } })
   })
 })
 

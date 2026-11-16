@@ -98,6 +98,16 @@ describe("BitrixTransport", () => {
     expect(JSON.stringify(events)).toContain("/rest/api/:user/:token/crm.deal.list")
   })
 
+  it("records a download's path with the webhook's code hidden, never its query", async () => {
+    const portal = fakePortal({ "download.json": { text: "audio", headers: { "content-type": "audio/mpeg" } } })
+    const events: RequestEvent[] = []
+    const { transport } = transportOf(portal, { events: (event) => events.push(event as RequestEvent) })
+    await transport.download(`/rest/7/${FAKE_SECRET}/download.json?auth=fakeauth0`, 1_000)
+    expect(JSON.stringify(events)).not.toContain(FAKE_SECRET)
+    expect(JSON.stringify(events)).not.toContain("fakeauth0")
+    expect(JSON.stringify(events)).toContain("/rest/:user/:token/download.json")
+  })
+
   it("keeps REST 2's total and next", async () => {
     const portal = fakePortal({ "user.get": ok([{ ID: "1" }], { total: 120, next: 50 }) })
     expect(await transportOf(portal).transport.call("user.get")).toEqual({
