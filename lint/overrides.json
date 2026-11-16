@@ -5,12 +5,5 @@
     "reason": "Names the portal the local application lives in, which the browser sign-in must open before any token exists; a webhook carries its portal in its address, so only the application sign-in needs it. Review with --client-id when the vocabulary names an app credential: https://github.com/WireCatLabs/cli-base/issues/424",
     "owner": "@WireCatLabs",
     "review_after": "2027-02-11"
-  },
-  {
-    "rule": "unknown-verb",
-    "target": "meetings people",
-    "reason": "cli-core's addMeetingCommands names this view, the people on the stored calls, as pbx and beeline-cli do; a rename belongs in cli-core for all three.",
-    "owner": "@WireCatLabs",
-    "review_after": "2027-02-16"
   }
 ]
