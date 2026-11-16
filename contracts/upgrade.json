@@ -1,11 +1,17 @@
 {
   "command": "node",
-  "args": ["../dist/bin/b24.js"],
+  "args": ["--env-file=contract.env", "../dist/bin/b24.js"],
   "previous": {
     "entry": "./previous/node_modules/@wirecat/previous-cli/dist/bin/b24.js",
     "version": "0.17.0"
   },
   "canaries": ["wirecat-synthetic-deal-canary"],
+  "fixtures": [
+    {
+      "path": "contract.env",
+      "text": "B24_TOKEN=https://synthetic.bitrix24.example/rest/1/wirecatfake0secret42/\n"
+    }
+  ],
   "cases": [
     {
       "id": "seed-previous-sync",
@@ -40,8 +46,9 @@
     {
       "id": "candidate-deals",
       "args": ["contract", "deals", "list", "--offline", "--json"],
-      "exit": 0,
+      "exit": 1,
       "stream": "stdout",
+      "diagnosticPattern": "[\\s\\S]*no sync of this version recorded[\\s\\S]*",
       "kind": "json",
       "allowSensitiveOutput": true,
       "json": {
@@ -62,8 +69,9 @@
     {
       "id": "candidate-sync-cursor",
       "args": ["contract", "store", "status", "--json"],
-      "exit": 0,
+      "exit": 1,
       "stream": "stdout",
+      "diagnosticPattern": "[\\s\\S]*no sync of this version recorded[\\s\\S]*",
       "kind": "json",
       "json": {
         "items": [
@@ -91,8 +99,9 @@
     {
       "id": "candidate-pipelines",
       "args": ["contract", "pipelines", "list", "--offline", "--json"],
-      "exit": 0,
+      "exit": 1,
       "stream": "stdout",
+      "diagnosticPattern": "[\\s\\S]*no sync of this version recorded[\\s\\S]*",
       "kind": "json",
       "allowSensitiveOutput": true,
       "json": {

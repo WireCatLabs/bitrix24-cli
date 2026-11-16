@@ -13,6 +13,9 @@
 
 - **`sync` reads the portal's stage history every time**, 90 days back at first, so the funnel and `deals show` count
   the stages a deal really passed. A webhook without the right to `crm.stagehistory.list` names it as an issue.
+- **Offline CRM reads read the stored sign-in to know your portal user**, from `B24_TOKEN`, the OS keyring or the
+  credentials file, without the network. Where no keyring can be reached, the read warns and uses the file; with no
+  sign-in found it shows no deals or leads.
 - **`pipelines list`, `stages list` and `pipelines show` leave out a stage the portal removed** unless a deal stands in
   it.
 
