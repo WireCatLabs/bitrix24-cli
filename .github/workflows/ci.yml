@@ -35,6 +35,7 @@ jobs:
         pnpm peers check
         bash scripts/audit.sh
         pnpm smoke:node
+        pnpm check:agent-docs
 
   # WC-TOOL-6: engines allows ^22.16.0; node-ci.yml runs Node 24 only.
   node-22:
