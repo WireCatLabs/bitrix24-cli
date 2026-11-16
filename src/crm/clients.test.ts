@@ -74,6 +74,20 @@ describe("contacts and companies that are not the user's clients", () => {
     expect((await show(other)).code).toBe(0)
   })
 
+  it("answers a write of someone else's client without its phones, stores nothing and spends no show", async () => {
+    const { crm, ids } = portal()
+    used(DAILY_FOREIGN_CONTACTS)
+    const ran = await b24(["work", "people", "update", String(ids.stranger), "--position", "Buyer", "--json"], {
+      portal: crm,
+    })
+    expect(ran.code).toBe(0)
+    const item = ran.json().item as { stored: boolean; person: Record<string, unknown> }
+    expect(item.stored).toBe(false)
+    expect(item.person).toMatchObject({ name: "Stranger", position: "Buyer" })
+    expect(item.person).not.toHaveProperty("phones")
+    expect(crm.row("contact", ids.stranger).post).toBe("Buyer")
+  })
+
   it("refuses api call reads of contacts and companies to anyone but an administrator", async () => {
     const { crm } = portal()
     const call = (method: string, body = "{}") =>

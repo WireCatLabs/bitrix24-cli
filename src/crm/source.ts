@@ -69,12 +69,6 @@ const assigneesOf = (context?: CrmCallContext): number[] | null => {
   return [...new Set(chosenOf(scope).map(Number))].filter(Number.isFinite)
 }
 
-/** Core keeps the webhook's own user in every `mine` scope; their rows stay out unless they are among the chosen. */
-const unchosen = (context: CrmCallContext | undefined, raw: Raw) => {
-  const scope = context?.scope
-  return scope?.mode === "mine" && !chosenOf(scope).includes(scope.self) && String(raw.assignedById) === scope.self
-}
-
 /**
  * A contact in the copy that a round of changes saw is no longer the user's (given to a colleague, or off the user's
  * deals) is saved again with its new assignee and no phones or e-mails, so the next narrowing or `--rescan` removes it: cli-core
@@ -443,9 +437,7 @@ export const bitrixCrmSource = (
       const rows = itemsOf((await list(caller, kind, select, filter)).result)
       const last = id(rows.at(-1)?.id)
       const narrowed = clients && assignees && since !== null
-      const kept = narrowed
-        ? rows.filter((raw) => mineOnly(raw, assignees, clients))
-        : rows.filter((raw) => !unchosen(context, raw))
+      const kept = narrowed ? rows.filter((raw) => mineOnly(raw, assignees, clients)) : rows
       if (narrowed && kind === "person") {
         const gone = rows.filter((raw) => !mineOnly(raw, assignees, clients))
         const held = gone.length ? await copy.contacts?.(gone.map((raw) => id(raw.id) ?? "")) : undefined
