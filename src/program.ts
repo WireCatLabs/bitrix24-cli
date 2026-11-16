@@ -31,6 +31,7 @@ import { modelsCommand } from "./commands/models.js"
 import { productsCommand } from "./commands/products.js"
 import { scheduleCommand } from "./commands/schedule.js"
 import { sessionCommand } from "./commands/session.js"
+import { syncCalls } from "./commands/sync-calls.js"
 import { configuration } from "./config.js"
 import { placeInSections } from "./help-sections.js"
 import { IDENTITY, PACKAGE, SKILL } from "./identity.js"
@@ -80,6 +81,9 @@ export const definition = (): ProgramDefinition => {
     configure: (program) => {
       placeInSections(program)
       meetings.configure(program)
+      program.commands
+        .find((one) => one.name() === "sync")
+        ?.hook("postAction", syncCalls(run as Parameters<typeof syncCalls>[0]))
     },
     prepare: meetings.prepare,
     // The whole object: cli-core refuses a command by its key only when it gets the permission table too.
