@@ -144,7 +144,8 @@ describe("recordings", () => {
     const folder = join(process.env.B24_STATE_DIR as string, "recordings", "work")
     expect(readdirSync(folder)).toEqual(["externalCall.1.mp3"])
     expect(readFileSync(join(folder, "externalCall.1.mp3"), "utf8")).toBe(AUDIO)
-    expect(statSync(join(folder, "externalCall.1.mp3")).mode & 0o777).toBe(0o600)
+    // Windows has no POSIX mode bits: Node reports 0o666 for any writable file.
+    if (process.platform !== "win32") expect(statSync(join(folder, "externalCall.1.mp3")).mode & 0o777).toBe(0o600)
     const shown = (await b24(["work", "meetings", "show", "1", "--json"])).json() as {
       item: { attachments: { local_path: string; mime: string }[] }
     }
