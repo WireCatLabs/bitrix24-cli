@@ -41,7 +41,7 @@ Kept from the template, the same for every service:
 - **Permissions**, `src/config.ts` and `src/api-keys.ts`: the program hands cli-core the whole `configuration`, and
   each command path is its own key (WC-PERM-22). `api call` also checks the key of the command it does the same as,
   with `alsoChecks`.
-- **Writes**, `src/commands/write.ts` and `src/commands/crm-writes.ts`: the guard asks or refuses by the command's
+- **Writes**, cli-core's shared writes over `src/crm/writer.ts`, and `src/commands/api.ts` for `api call`: the guard asks or refuses by the command's
   key, the send journal records the attempt, the answer carries `operation_id`, and a write is tried again only when
   the portal refused its rate: one that got no answer is `outcome_unknown` (WC-PERM-13, WC-PERM-17, WC-OUT-10,
   WC-LIFE-9). `--dry-run` and
@@ -59,8 +59,9 @@ Bitrix24's own:
   (WC-SECR-6, WC-SECR-7, WC-OUT-20). `src/bitrix/errors.ts` maps the portal's errors.
 - **Wire shapes and mappers**, `src/crm/` and `src/bitrix/methods.ts`: each field name from the Bitrix24 REST
   documentation or a captured answer, never from memory; no wire type leaves them (WC-ARCH-3).
-- **The commands**, `src/commands/crm.ts`, `crm-shared.ts`, `crm-writes.ts` and `api.ts`: the shared CRM commands
-  are cli-core's; b24 adds the portal's own reads and writes.
+- **The commands**, `src/commands/crm-shared.ts`, `products.ts` and `api.ts`: the shared CRM commands, `people`,
+  `organizations` and `users` among them, are cli-core's over b24's source and writer; b24 adds `products` and
+  `api call`.
 - **The strict fakes**, `src/testing/fake-portal.ts` and `src/testing/fake-crm.ts`: they refuse an unknown method,
   parameter or field, so a name typed from memory fails a test instead of reaching the owner's portal.
 

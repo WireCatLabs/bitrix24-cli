@@ -24,9 +24,8 @@ import type { Command } from "commander"
 import { appSourceOf } from "./bitrix/oauth.js"
 import { accountCommand } from "./commands/account.js"
 import { apiCommand } from "./commands/api.js"
-import { crmCommands } from "./commands/crm.js"
 import { crmSharedCommands } from "./commands/crm-shared.js"
-import { addWrites } from "./commands/crm-writes.js"
+import { productsCommand } from "./commands/products.js"
 import { scheduleCommand } from "./commands/schedule.js"
 import { sessionCommand } from "./commands/session.js"
 import { configuration } from "./config.js"
@@ -95,7 +94,7 @@ export const definition = (): ProgramDefinition => ({
     sessionCommand(),
     accountCommand(),
     ...crmSharedCommands(),
-    ...crmCommands().map(addWrites),
+    productsCommand(),
     apiCommand(),
     scheduleCommand(),
     appDoctorCommand(IDENTITY, configuration, { packageName: PACKAGE }),

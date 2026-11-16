@@ -515,6 +515,136 @@
     },
     {
       "path": [
+        "people",
+        "list"
+      ],
+      "summary": "contacts in the CRM, newest first; another client is found here, never in…",
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "people.list",
+      "entity": "crm_person"
+    },
+    {
+      "path": [
+        "people",
+        "show"
+      ],
+      "summary": "one of the CRM's contacts, read live, with its phones and e-mails; one that…",
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "people.show",
+      "entity": "crm_person"
+    },
+    {
+      "path": [
+        "people",
+        "create"
+      ],
+      "summary": "make a person in the CRM, then store the CRM's copy of it",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "people.create",
+      "entity": "crm_record_write"
+    },
+    {
+      "path": [
+        "people",
+        "update"
+      ],
+      "summary": "change a person in the CRM; what is left out keeps its value; the CRM's copy…",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "people.update",
+      "entity": "crm_record_write"
+    },
+    {
+      "path": [
+        "organizations",
+        "list"
+      ],
+      "summary": "companies in the CRM, newest first; another client is found here, never in…",
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "organizations.list",
+      "entity": "crm_organization"
+    },
+    {
+      "path": [
+        "organizations",
+        "show"
+      ],
+      "summary": "one of the CRM's companies, read live, with its phones and e-mails; one that…",
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "organizations.show",
+      "entity": "crm_organization"
+    },
+    {
+      "path": [
+        "organizations",
+        "create"
+      ],
+      "summary": "make a organization in the CRM, then store the CRM's copy of it",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "organizations.create",
+      "entity": "crm_record_write"
+    },
+    {
+      "path": [
+        "organizations",
+        "update"
+      ],
+      "summary": "change a organization in the CRM; what is left out keeps its value; the…",
+      "effects": {
+        "remote": "write",
+        "local": "write"
+      },
+      "permission": "organizations.update",
+      "entity": "crm_record_write"
+    },
+    {
+      "path": [
+        "users",
+        "list"
+      ],
+      "summary": "the CRM's users, read live, in the CRM's order",
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "users.list",
+      "entity": "crm_user"
+    },
+    {
+      "path": [
+        "users",
+        "show"
+      ],
+      "summary": "one of the CRM's users, read live",
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "users.show",
+      "entity": "crm_user"
+    },
+    {
+      "path": [
         "fields",
         "list"
       ],
@@ -541,110 +671,6 @@
     },
     {
       "path": [
-        "people",
-        "list"
-      ],
-      "summary": "list contacts on the portal, newest first",
-      "effects": {
-        "remote": "read",
-        "local": "read"
-      },
-      "permission": "people.list",
-      "entity": "crm_person"
-    },
-    {
-      "path": [
-        "people",
-        "show"
-      ],
-      "summary": "show one of the contacts on the portal",
-      "effects": {
-        "remote": "read",
-        "local": "read"
-      },
-      "permission": "people.show",
-      "entity": "crm_person"
-    },
-    {
-      "path": [
-        "people",
-        "create"
-      ],
-      "summary": "create one person on the portal",
-      "effects": {
-        "remote": "write",
-        "local": "write"
-      },
-      "permission": "people.create",
-      "entity": "crm_record_created"
-    },
-    {
-      "path": [
-        "people",
-        "update"
-      ],
-      "summary": "change one person on the portal; options left out keep their values",
-      "effects": {
-        "remote": "write",
-        "local": "write"
-      },
-      "permission": "people.update",
-      "entity": "crm_record_updated"
-    },
-    {
-      "path": [
-        "organizations",
-        "list"
-      ],
-      "summary": "list companies on the portal, newest first",
-      "effects": {
-        "remote": "read",
-        "local": "read"
-      },
-      "permission": "organizations.list",
-      "entity": "crm_organization"
-    },
-    {
-      "path": [
-        "organizations",
-        "show"
-      ],
-      "summary": "show one of the companies on the portal",
-      "effects": {
-        "remote": "read",
-        "local": "read"
-      },
-      "permission": "organizations.show",
-      "entity": "crm_organization"
-    },
-    {
-      "path": [
-        "organizations",
-        "create"
-      ],
-      "summary": "create one organization on the portal",
-      "effects": {
-        "remote": "write",
-        "local": "write"
-      },
-      "permission": "organizations.create",
-      "entity": "crm_record_created"
-    },
-    {
-      "path": [
-        "organizations",
-        "update"
-      ],
-      "summary": "change one organization on the portal; options left out keep their values",
-      "effects": {
-        "remote": "write",
-        "local": "write"
-      },
-      "permission": "organizations.update",
-      "entity": "crm_record_updated"
-    },
-    {
-      "path": [
         "products",
         "list"
       ],
@@ -668,32 +694,6 @@
       },
       "permission": "products.show",
       "entity": "product"
-    },
-    {
-      "path": [
-        "users",
-        "list"
-      ],
-      "summary": "list employees on the portal, newest first",
-      "effects": {
-        "remote": "read",
-        "local": "read"
-      },
-      "permission": "users.list",
-      "entity": "user"
-    },
-    {
-      "path": [
-        "users",
-        "show"
-      ],
-      "summary": "show one of the employees on the portal",
-      "effects": {
-        "remote": "read",
-        "local": "read"
-      },
-      "permission": "users.show",
-      "entity": "user"
     },
     {
       "path": [
@@ -1152,16 +1152,6 @@
         "kind"
       ]
     },
-    "crm_field": {
-      "fields": [
-        "code",
-        "label",
-        "type",
-        "multiple",
-        "filterable",
-        "untrusted"
-      ]
-    },
     "crm_person": {
       "fields": [
         "id",
@@ -1179,14 +1169,32 @@
       "fields": [
         "id",
         "name",
-        "type_id",
-        "industry_id",
-        "revenue",
-        "currency",
+        "type",
+        "own",
         "person_ids",
         "assigned_to",
         "created_at",
         "updated_at"
+      ]
+    },
+    "crm_user": {
+      "fields": [
+        "id",
+        "name",
+        "email",
+        "position",
+        "active",
+        "department_ids"
+      ]
+    },
+    "crm_field": {
+      "fields": [
+        "code",
+        "label",
+        "type",
+        "multiple",
+        "filterable",
+        "untrusted"
       ]
     },
     "product": {
@@ -1197,16 +1205,6 @@
         "currency",
         "active",
         "section_id"
-      ]
-    },
-    "user": {
-      "fields": [
-        "id",
-        "name",
-        "email",
-        "position",
-        "active",
-        "department_ids"
       ]
     },
     "api_method": {

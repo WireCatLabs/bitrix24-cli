@@ -1,5 +1,8 @@
+import { crmValues } from "@wirecat/cli-core/crm"
 import { describe, expect, it } from "vitest"
-import { amountOf, fullName } from "./values.js"
+import { fullName } from "./values.js"
+
+const { amountOf } = crmValues
 
 describe("fullName", () => {
   it("drops the null and null #<id> an import left in a name field", () => {

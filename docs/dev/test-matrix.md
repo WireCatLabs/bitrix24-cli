@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**190 ✅ · 66 ⛔ · 0 ❌** — 92 commands, 164 options.
+**191 ✅ · 66 ⛔ · 0 ❌** — 92 commands, 165 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -30,7 +30,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `sync` | `--max-pages` | ✅ |  |
 | `store status` |  | ✅ |  |
 | `store apply` |  | ✅ |  |
-| `store apply` | `--yes` | ⛔ | cli-core 0.662.0 src/crm/cli/commands.test.ts removes the counted contacts only with --yes |
+| `store apply` | `--yes` | ⛔ | cli-core 0.670.0 src/crm/cli/commands.test.ts removes the counted contacts only with --yes |
 | `store info` |  | ⛔ | cli-core's addStoreMaintenanceCommands, mounted by addCrmCommands; its store and src/crm/cli/store-file tests drive them on a CRM program |
 | `store check` |  | ⛔ | cli-core's addStoreMaintenanceCommands, mounted by addCrmCommands; its store and src/crm/cli/store-file tests drive them on a CRM program |
 | `store migrate` |  | ⛔ | cli-core's addStoreMaintenanceCommands, mounted by addCrmCommands; its store and src/crm/cli/store-file tests drive them on a CRM program |
@@ -106,6 +106,42 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `pipelines list` |  | ✅ |  |
 | `pipelines show` |  | ✅ |  |
 | `stages list` |  | ✅ |  |
+| `people list` |  | ✅ |  |
+| `people list` | `--limit` | ✅ |  |
+| `people list` | `--page` | ✅ |  |
+| `people list` | `--format` | ✅ |  |
+| `people show` |  | ✅ |  |
+| `people create` |  | ✅ |  |
+| `people create` | `--name` | ✅ |  |
+| `people create` | `--first-name` | ✅ |  |
+| `people create` | `--last-name` | ✅ |  |
+| `people create` | `--position` | ✅ |  |
+| `people create` | `--owner` | ✅ |  |
+| `people create` | `--field` | ✅ |  |
+| `people update` |  | ✅ |  |
+| `people update` | `--name` | ✅ |  |
+| `people update` | `--first-name` | ✅ |  |
+| `people update` | `--last-name` | ✅ |  |
+| `people update` | `--position` | ✅ |  |
+| `people update` | `--owner` | ✅ |  |
+| `people update` | `--field` | ✅ |  |
+| `organizations list` |  | ✅ |  |
+| `organizations list` | `--limit` | ✅ |  |
+| `organizations list` | `--page` | ✅ |  |
+| `organizations list` | `--format` | ✅ |  |
+| `organizations show` |  | ✅ |  |
+| `organizations create` |  | ✅ |  |
+| `organizations create` | `--name` | ✅ |  |
+| `organizations create` | `--owner` | ✅ |  |
+| `organizations create` | `--field` | ✅ |  |
+| `organizations update` |  | ✅ |  |
+| `organizations update` | `--name` | ✅ |  |
+| `organizations update` | `--owner` | ✅ |  |
+| `organizations update` | `--field` | ✅ |  |
+| `users list` |  | ✅ |  |
+| `users list` | `--limit` | ✅ |  |
+| `users list` | `--page` | ✅ |  |
+| `users show` |  | ✅ |  |
 | `fields list` |  | ✅ |  |
 | `fields list` | `--limit` | ✅ |  |
 | `fields list` | `--page` | ✅ |  |
@@ -117,46 +153,11 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `search all` | `--page` | ✅ |  |
 | `search all` | `--exact` | ✅ |  |
 | `search all` | `--timezone` | ✅ |  |
-| `people list` |  | ✅ |  |
-| `people list` | `--limit` | ✅ |  |
-| `people list` | `--page` | ✅ |  |
-| `people list` | `--all` | ✅ |  |
-| `people list` | `--format` | ✅ |  |
-| `people show` |  | ✅ |  |
-| `people create` |  | ✅ |  |
-| `people create` | `--first-name` | ✅ |  |
-| `people create` | `--last-name` | ✅ |  |
-| `people create` | `--body` | ✅ |  |
-| `people create` | `--field` | ✅ |  |
-| `people update` |  | ✅ |  |
-| `people update` | `--first-name` | ✅ |  |
-| `people update` | `--last-name` | ✅ |  |
-| `people update` | `--body` | ✅ |  |
-| `people update` | `--field` | ✅ |  |
-| `organizations list` |  | ✅ |  |
-| `organizations list` | `--limit` | ✅ |  |
-| `organizations list` | `--page` | ✅ |  |
-| `organizations list` | `--all` | ✅ |  |
-| `organizations list` | `--format` | ✅ |  |
-| `organizations show` |  | ✅ |  |
-| `organizations create` |  | ✅ |  |
-| `organizations create` | `--name` | ✅ |  |
-| `organizations create` | `--body` | ✅ |  |
-| `organizations create` | `--field` | ✅ |  |
-| `organizations update` |  | ✅ |  |
-| `organizations update` | `--name` | ✅ |  |
-| `organizations update` | `--body` | ✅ |  |
-| `organizations update` | `--field` | ✅ |  |
 | `products list` |  | ✅ |  |
 | `products list` | `--limit` | ✅ |  |
 | `products list` | `--page` | ✅ |  |
 | `products list` | `--all` | ✅ |  |
 | `products show` |  | ✅ |  |
-| `users list` |  | ✅ |  |
-| `users list` | `--limit` | ✅ |  |
-| `users list` | `--page` | ✅ |  |
-| `users list` | `--all` | ✅ |  |
-| `users show` |  | ✅ |  |
 | `api list` |  | ✅ |  |
 | `api show` |  | ✅ |  |
 | `api call` |  | ✅ |  |

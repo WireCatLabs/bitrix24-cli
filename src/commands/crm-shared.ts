@@ -1,3 +1,4 @@
+import type { CrmKind } from "@wirecat/cli-core"
 import { outputFor } from "@wirecat/cli-core/cli"
 import type { CrmRun } from "@wirecat/cli-core/crm/cli"
 import { addCrmCommands, openCrmStore } from "@wirecat/cli-core/crm/cli"
@@ -43,7 +44,21 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
       chosen: crmSettingKey(account, "unassigned"),
     }
   }
-  const crm = () => (source ??= bitrixCrmSource(portal, Date.now, ownMemoryAt(ownMemoryFile(env, profile)), asked))
+  // Only a sync copies: every other command reads `self` too (a non-admin's own clients), and must answer under `all`.
+  const scope = command.name() === "sync" ? asked : undefined
+  const copy = {
+    fields: (kind: CrmKind) => store.crm.fields(account, kind),
+    contacts: async (externalIds: readonly string[]) => {
+      const { crmIdentityId } = await import("@wirecat/cli-core/store")
+      const held = new Set<string>()
+      for (const externalId of externalIds)
+        if (await store.people.personOf({ provider: PROVIDER.name, id: crmIdentityId(account, externalId) }))
+          held.add(externalId)
+      return held
+    },
+  }
+  const crm = () =>
+    (source ??= bitrixCrmSource(portal, Date.now, ownMemoryAt(ownMemoryFile(env, profile)), scope, copy))
   return {
     profile,
     account,
@@ -65,9 +80,17 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
   }
 }
 
-/** cli-core's shared CRM commands over the portal: `sync`, `store status`, `deals`, `leads`, `pipelines`, `stages`. */
+/**
+ * cli-core's shared CRM commands over the portal: `sync`, `store`, `deals`, `leads`, `pipelines`, `stages`, `fields`,
+ * `search all`, and `people`, `organizations` and `users` read live.
+ */
 export const crmSharedCommands = (): Command[] => {
   const holder = new Command(IDENTITY.command)
-  addCrmCommands(holder, { app: IDENTITY, open: openProfile, writes: BITRIX_WRITES })
+  addCrmCommands(holder, {
+    app: IDENTITY,
+    open: openProfile,
+    writes: BITRIX_WRITES,
+    live: ["person", "organization", "user"],
+  })
   return [...holder.commands]
 }

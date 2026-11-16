@@ -1,5 +1,5 @@
 import { CliError } from "@wirecat/cli-base"
-import type { DealKind } from "@wirecat/cli-core"
+import type { CrmKind } from "@wirecat/cli-core"
 import type { CrmVerb } from "@wirecat/cli-core/crm"
 import type { Level } from "@wirecat/cli-core/sends"
 import { type Effect, KNOWN_METHODS, methodOf } from "./bitrix/methods.js"
@@ -239,21 +239,14 @@ const METHODS: Record<CrmVerb, string> = {
   remove: "delete",
 }
 
+const TYPES: Record<CrmKind, string> = { deal: "deal", lead: "lead", person: "contact", organization: "company" }
+
 /**
- * The `api.*` key a deal's or lead's write sends its request under, so `api.crm.deal.update: deny` holds on `deals
- * update` too: core's `CrmWrites.alsoChecks` and, through `crmAlsoChecks`, its `--dry-run`.
+ * The `api.*` key a CRM write sends its request under, so `api.crm.deal.update: deny` holds on `deals update` and
+ * `api.crm.contact.add: deny` on `people create`: core's `CrmWrites.alsoChecks` and, through `crmAlsoChecks`, its
+ * `--dry-run`.
  */
-export const crmApiKeys = (kind: DealKind, verb: CrmVerb): string[] => [apiKey(`crm.${kind}.${METHODS[verb]}`)]
-
-const OWN_WRITES: Record<string, string> = { people: "contact", organizations: "company" }
-
-/** The same for b24's own `people` and `organizations` writes, by command path. */
-export const apiKeysOf = (path: readonly string[]): string[] => {
-  const [noun, command, ...rest] = path
-  const type = OWN_WRITES[noun ?? ""]
-  const method = command === "create" ? "add" : command === "update" ? "update" : undefined
-  return type && method && rest.length === 0 ? [apiKey(`crm.${type}.${method}`)] : []
-}
+export const crmApiKeys = (kind: CrmKind, verb: CrmVerb): string[] => [apiKey(`crm.${TYPES[kind]}.${METHODS[verb]}`)]
 
 /** The keys `permissions` may name for `api`: the known methods and the denied families. */
 export const API_KEYS = [...KNOWN_METHODS.map((one) => apiKey(one.name)), ...DENIED_FAMILIES.map(apiKey)]

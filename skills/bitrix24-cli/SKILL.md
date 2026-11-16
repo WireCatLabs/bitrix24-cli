@@ -146,17 +146,19 @@ Gemini CLI and OpenClaw look; `--for hermes` adds Hermes Agent too.
   refuse `--offline`.
 - **Query lists.** `b24 work deals list status:open stage:"Quote sent" pipeline:Sales`. `b24 help deals list` lists
   the fields; `people list` and `organizations list` filter by the portal's own fields too, by code or label.
+  A label in `--field` needs a `sync` first; before one, use the field's code.
 - **A deal or lead** answers `ref` (`deal:12`, `lead:7`), `pipeline`, `stage`, `status` (`open`, `won` or `lost`),
   `close_date`, and `amount` as a decimal string in `currency`. Every `show` and every write takes that `ref`.
 - **Leads have no pipelines in Bitrix24:** they stand in one pipeline named `Leads`. Won or lost is `status`, never
   the stage's name.
-- **Custom fields.** `people show` and `organizations show` give the portal's own fields in `provider_metadata`, by
-  code with their label. `b24 work fields list deals` lists them with type and options, as the last `sync` stored
+- **Custom fields.** A person or an organization gives the portal's own fields in `provider_metadata`, by code with
+  their label; a company's industry, revenue and currency are there too. `b24 work fields list deals` lists them with type and options, as the last `sync` stored
   them. A write sets one with `--field "<label or code>=<value>"`; a list field takes its option's label or id.
 - **Writes.** `deals create --title … --pipeline … --stage … --amount … --currency … --close-date …
   --owner …`, `deals update <ref>`, `deals move <ref> <stage>`, `deals close <ref> won|lost --reason …`,
-  `deals delete <ref>`; the same for `leads`. `people` and `organizations` have `create` and `update`, with `--body` for other fields in
-  Bitrix24's REST 3.0 names. Each write answers an `operation_id` and reads the record back into the store.
+  `deals delete <ref>`; the same for `leads`. `people` and `organizations` have `create` and `update` with `--name`,
+  `--owner`, `--field`, and for people `--first-name`, `--last-name` and `--position`. Each write answers an
+  `operation_id` and reads the record back into the store.
 - **Who is who.** `sync` also stores relationships: a contact is a person, a member of each of its companies with
   the role `contact` (job title beside it, never as a role); a deal's contacts have the role `contact` and its
   responsible employee the role `owner`; employees are members of the own company ("My companies") as `employee`, and
@@ -180,8 +182,8 @@ Gemini CLI and OpenClaw look; `--for hermes` adds Hermes Agent too.
 3. **Exit `14` (`outcome_unknown`) is not a reason to repeat the write.** The portal may have made it, and Bitrix24
    makes a repeat a second time: a create repeated with the same `Idempotency-Key` made a second record. Run
    `b24 work sync`, then `show` the record, and write again only if it is not there and the owner still wants it.
-4. **A name that fits several records is an error, not a choice.** `*.ambiguous` lists the candidates: take an id
-   from there, never the first.
+4. **A name that fits several records is an error, not a choice.** `*.ambiguous` and `crm.record-ambiguous` list
+   the candidates: take an id from there, never the first.
 5. **An employee's webhook cannot delete or clear.** Unless the webhook's user is a Bitrix24 administrator, `b24`
    refuses every delete, an update that sets a field to nothing, an unbind, a merge of duplicates and `api call batch`,
    whatever the permissions say (`permission_error`, reason `employee.*`). Do not look for another way: tell the owner
@@ -203,8 +205,8 @@ Gemini CLI and OpenClaw look; `--for hermes` adds Hermes Agent too.
 11. **`B24_CONFIG_DIR` and `B24_STATE_DIR` move the folders**, and a sign-in made with them goes to a temporary keyring
     entry that `session end` removes. With them, a profile may answer "not signed in" although the owner is.
     `b24 work config show` and `b24 doctor` say whether they are set.
-12. **The portal allows about 2 requests a second for all its apps together.** `b24` keeps that pace; a long list
-    with `--all` or a `sync --rescan` takes time. Do not run several syncs at once.
+12. **The portal allows about 2 requests a second for all its apps together.** `b24` keeps that pace; a long
+    `products list --all` or a `sync --rescan` takes time. Do not run several syncs at once.
 13. **`B24_READ_ONLY=1` refuses every write**, whatever the permissions say. An agent `schedule agent` starts runs
     with it.
 14. **Before you report a bug**, compare `b24 -V` with `npm view @wirecat/bitrix24-cli version`; an older install

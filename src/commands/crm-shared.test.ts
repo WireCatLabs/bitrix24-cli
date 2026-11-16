@@ -103,10 +103,15 @@ describe("fields list", () => {
 })
 
 describe("sync and field definitions", () => {
-  it("syncs the records without definitions when the webhook may not read them", async () => {
+  it("syncs the records, and the definitions without labels, when the webhook may not read the labels", async () => {
     const portal = seededCrm({ "crm.deal.field.list": { status: 403, body: { error: "ACCESS_DENIED" } } })
     expect((await b24(["work", "sync", "--json"], { portal })).code).toBe(0)
-    expect(items(await b24(["work", "--offline", "fields", "list", "deals", "--json"], { portal }))).toEqual([])
+    const fields = items(await b24(["work", "--offline", "fields", "list", "deals", "--json"], { portal }))
+    expect(fields.map(({ code, label, multiple }) => ({ code, label, multiple }))).toEqual([
+      { code: "UF_CRM_SOURCE", label: null, multiple: false },
+      { code: "UF_CRM_NOTE", label: null, multiple: false },
+      { code: "UF_CRM_TAGS", label: null, multiple: true },
+    ])
     expect(items(await b24(["work", "--offline", "deals", "list", "--json"], { portal }))).toHaveLength(2)
   })
 
@@ -133,7 +138,7 @@ describe("lists read the store, --offline too", () => {
     expect(items(await b24(["work", "deals", "list", "--json"], { env })).length).toBeGreaterThan(0)
   })
 
-  it("a large amount keeps its digits, and one past core's largest is named, not stored wrong", async () => {
+  it("a large amount keeps its digits, and one past core's largest is kept with no amount and says why", async () => {
     const portal = seededCrm()
     portal.put("deal", {
       title: "Big",
@@ -153,8 +158,8 @@ describe("lists read the store, --offline too", () => {
     expect(sync.code, sync.err).toBe(0)
     const deals = items(await b24(["work", "--offline", "deals", "list", "--json"], { portal }))
     expect(deals.find((one) => one.title === "Big")).toMatchObject({ amount: "98765432109.87", currency: "RUB" })
-    expect(deals.find((one) => one.title === "Huge")).toBeUndefined()
-    expect(JSON.stringify(sync.json())).toContain("crm.item-invalid")
+    expect(deals.find((one) => one.title === "Huge")).toMatchObject({ amount: null, currency: null })
+    expect(JSON.stringify(sync.json())).toContain("crm.amount-unkept")
   })
 
   it("deals and leads in core's shape: status, pipeline, stage, close date, a decimal amount, assignee, custom values", async () => {

@@ -1,8 +1,11 @@
 import type { CrmStageEntry } from "@wirecat/cli-core"
 import type { CrmCallContext, CrmPage } from "@wirecat/cli-core/crm"
+import { crmValues } from "@wirecat/cli-core/crm"
 import type { BitrixCaller } from "../bitrix/transport.js"
 import { LEAD_PIPELINE } from "./lead.js"
-import { epoch, fieldOf, id, portalTime, type Raw, rawsOf } from "./values.js"
+import { portalTime, type Raw } from "./values.js"
+
+const { epoch, fieldOf, id, rawsOf } = crmValues
 
 /** A list page of `crm.stagehistory.list` (apidocs: 50 rows). */
 const PAGE = 50

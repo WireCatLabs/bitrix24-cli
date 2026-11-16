@@ -1,4 +1,4 @@
-import { mkdtempSync } from "node:fs"
+import { existsSync, mkdtempSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { afterAll, beforeEach } from "vitest"
@@ -20,8 +20,13 @@ delete process.env.CLAUDECODE
 // The portal's pace is kept in the state folder on the real clock, and a sync's cursor in the store: a test of one
 // file would otherwise use up the pace, or read only what changed since another test's sync.
 // Nothing is chosen, as on a new install: a sync copies the signed-in user 7's deals, the fake portal's own.
+// The store sits in memory where Linux offers it: SQLite syncs every commit to disk, and on a busy disk one sync took
+// 0.3 s, so one test's sync waited 7 s on the disk alone.
+const MEMORY = "/dev/shm"
+const stores = existsSync(MEMORY) ? mkdtempSync(join(MEMORY, "b24-test-")) : tmpdir()
+
 beforeEach(async () => {
-  const own = mkdtempSync(join(tmpdir(), "test-"))
+  const own = mkdtempSync(join(stores, "test-"))
   process.env.B24_STATE_DIR = join(own, "state")
   process.env.MESSAGING_STORE = join(own, "store.db")
   const { openB24Store } = await import("../store.js")
@@ -29,6 +34,7 @@ beforeEach(async () => {
 })
 
 afterAll(() => {
+  if (stores !== tmpdir()) rmSync(stores, { recursive: true, force: true })
   for (const key of Object.keys(process.env)) if (!(key in saved)) delete process.env[key]
   Object.assign(process.env, saved)
 })

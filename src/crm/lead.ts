@@ -1,16 +1,16 @@
 import type { CrmItem, CrmPipeline } from "@wirecat/cli-core"
+import { crmValues } from "@wirecat/cli-core/crm"
 import { contactsOn } from "./deal.js"
 import type { ItemType } from "./items.js"
-import { amountOf, epoch, fullName, id, type Metadata, type Raw, text } from "./values.js"
+import { fullName, type Raw } from "./values.js"
+
+const { amountOf, epoch, id, text } = crmValues
 
 /** Bitrix24's leads have no pipelines, only the one list of lead stages: core gets one pipeline of b24's making. */
 export const LEAD_PIPELINE: Omit<CrmPipeline, "stages"> = { externalId: "0", name: "Leads" }
 
-// TODO(cli-core#2869): drop the intersection once the pinned cli-core's CrmItem has both fields.
-type LeadItem = CrmItem & { contactName?: string | null; companyName?: string | null }
-
-export const fromBitrixLead = (raw: Raw, metadata?: Metadata): CrmItem => {
-  const item: LeadItem = {
+export const fromBitrixLead = (raw: Raw, metadata?: CrmItem["metadata"]): CrmItem => {
+  const item: CrmItem = {
     externalId: id(raw.id) ?? "",
     title: text(raw.title) ?? "",
     pipeline: LEAD_PIPELINE.externalId,
@@ -29,7 +29,7 @@ export const fromBitrixLead = (raw: Raw, metadata?: Metadata): CrmItem => {
   return item
 }
 
-export const LEAD: ItemType<CrmItem> = {
+export const LEAD: ItemType = {
   type: "lead",
   entityTypeId: 1,
   word: "lead",
@@ -52,6 +52,4 @@ export const LEAD: ItemType<CrmItem> = {
     "assignedById",
   ],
   words: ["title"],
-  nameOf: (lead) => lead.title,
-  map: fromBitrixLead,
 }

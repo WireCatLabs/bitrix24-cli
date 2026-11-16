@@ -47,11 +47,11 @@ describe("organizations list --format csv", () => {
     expect(ran.err).toBe("")
     const [header, first] = records(ran.out)
     expect(header).toBe(
-      "id,name,type_id,industry_id,revenue,currency,person_ids,phones,emails,assigned_to,created_at,updated_at,url," +
+      "id,name,type,own,person_ids,emails,phones,assigned_to,created_at,updated_at,url," +
         "Lead source,Budget amount,Budget currency,Tag (UF_CRM_3_TAG),Tag (UF_CRM_4_TAG)",
     )
     expect(first).toBe(
-      `7,"'=HYPERLINK(""http://example.com"")",,,,,,'+10000000001; +10000000002,,,,,,Fair,1500.50,USD,"vip, fair",`,
+      `7,"'=HYPERLINK(""http://example.com"")",,false,,,'+10000000001; +10000000002,,,,,Fair,1500.50,USD,"vip, fair",`,
     )
   })
 

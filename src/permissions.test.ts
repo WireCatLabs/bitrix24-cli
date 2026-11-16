@@ -391,15 +391,16 @@ describe("a denied family stays denied for reads", () => {
 })
 
 describe("a body is read one way, and that is the body sent", () => {
-  const twice = '{"assignedById":7,"ASSIGNED_BY_ID":9}'
-
-  it("M1: an MCP people update naming the assignee twice is refused, with no request", async () => {
+  it("M1: an MCP people update naming the assignee as a field is refused, with no request", async () => {
     const portal = fakePortal({ "crm.contact.update": ok(true) })
     const mcp = await overMcp(portal)
     try {
-      const answer = await mcp.call("b24_write", { command: "people update", arguments: { id: "4", body: twice } })
+      const answer = await mcp.call("b24_write", {
+        command: "people update",
+        arguments: { person: "4", field: ["assignedById=7", "ASSIGNED_BY_ID=9"] },
+      })
       expect(answer.isError).toBe(true)
-      expect(JSON.stringify(answer)).toContain("validation_error")
+      expect(JSON.stringify(answer)).toContain("one of Bitrix24's own fields")
     } finally {
       await mcp.close()
     }
@@ -407,8 +408,8 @@ describe("a body is read one way, and that is the body sent", () => {
   })
 
   it.each([
-    ["P9", ["work", "people", "update", "4", "--body", twice]],
-    ["P9 with --name", ["work", "organizations", "update", "4", "--name", "x", "--body", '{"TITLE":"y"}']],
+    ["P9", ["work", "people", "update", "4", "--field", "assignedById=7", "--field", "ASSIGNED_BY_ID=9"]],
+    ["P9 with --name", ["work", "organizations", "update", "4", "--name", "x", "--field", "TITLE=y"]],
     ["P10", call("crm.deal.update", { id: 5, fields: { assignedById: 7, ASSIGNED_BY_ID: 9 } })],
     ["P6b", call("crm.deal.update", { id: 5, fields: { title: "x" }, FIELDS: { STAGE_ID: "C1:WON" } })],
     ["P4", call("crm.item.delete", { ENTITY_TYPE_ID: 7, entityTypeId: 2, id: 5 }, "--yes")],
@@ -481,12 +482,6 @@ describe("a body is read one way, and that is the body sent", () => {
       expect(portal.calls).toHaveLength(0)
     },
   )
-
-  it("people update does not read --body - from stdin, which carries MCP's messages", async () => {
-    const portal = fakePortal({ "crm.contact.update": ok(true) })
-    expect((await b24(["work", "people", "update", "4", "--body", "-"], { portal })).code).toBe(2)
-    expect(portal.calls).toHaveLength(0)
-  })
 
   it("an integer past 2^53 in --body is sent with every digit", async () => {
     const portal = fakePortal({ "crm.deal.list": ok([]) })
@@ -568,11 +563,16 @@ describe("an id that is not a number is refused before any request", () => {
     expect(calls()).toBe(before)
   })
 
-  it.each(["users", "products"])("%s show abc", async (noun) => {
+  it("products show abc", async () => {
     const portal = seededCrm()
-    const ran = await b24(["work", noun, "show", "abc", "--json"], { portal })
+    const ran = await b24(["work", "products", "show", "abc", "--json"], { portal })
     expect(ran.code).toBe(2)
     expect(portal.calls).toHaveLength(0)
+  })
+
+  it("users show abc is not_found", async () => {
+    const ran = await b24(["work", "users", "show", "abc", "--json"], { portal: seededCrm() })
+    expect(ran.json().error).toMatchObject({ code: "not_found" })
   })
 })
 

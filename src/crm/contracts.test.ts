@@ -33,6 +33,7 @@ describe("crmSourceContract over the fake portal", () => {
   for (const { name, run } of crmSourceContract(() => ({
     source: over(seededCrm()).source,
     deadCursor: { kind: "deal", cursor: "not a time" },
+    live: { person: ["101"], organization: ["100"] },
   })))
     it(name, run)
 })
