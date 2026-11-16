@@ -24,7 +24,8 @@ call that revokes a token: `session end` forgets the sign-in here, and deleting 
 The webhook acts with the rights of the employee who made it. A webhook made by an admin lets an agent read and
 change everything in the CRM. `session status --check` says whose rights it carries; make the webhook with an
 employee whose rights fit the work, and only the scopes it needs. `sync` uses `crm`, `user_basic` for employees'
-e-mail addresses and `department` for the company structure. `user_basic` is enough: `sync` never changes an
+e-mail addresses and `department` for the company structure; `meetings sync` reads the call history with
+`telephony`, and a call's recording only with `download_recordings` on ([Calls](calls.md)). `user_basic` is enough: `sync` never changes an
 employee, and the full `user` scope adds the right to invite and edit them. The sync stores each employee's name,
 e-mail address, position and department head in the local store, where every WireCat tool can read them.
 

@@ -165,6 +165,58 @@ export class BitrixTransport {
     })
   }
 
+  /**
+   * A file behind a link the portal gave, such as a call's `CALL_RECORD_URL`. Such a link carries a token, so it is
+   * never put into an error or a run record, and it is followed only on the portal's own address, with no redirect.
+   */
+  async download(link: string, maxBytes: number): Promise<{ bytes: Uint8Array; type: string | null }> {
+    const portal = new URL(this.#auth.origin)
+    const url = URL.canParse(link, portal.href) ? new URL(link, portal) : null
+    if (url?.origin !== portal.origin)
+      throw new CliError(
+        "invalid_response",
+        "the portal gave a download link to another address; b24 does not follow it",
+        {
+          reason: "bitrix.foreign-link",
+        },
+      )
+    const at = this.#pacer ? (await this.#pacer.reserve()) - this.#now() : 0
+    if (at > 0) await this.#wait(at, "a download")
+    const end = providerRequest("download", this.#events ?? providerEvent, {
+      method: "GET",
+      endpointTemplate: url.pathname,
+      transport: "http",
+    })
+    const deadline = new AbortController()
+    const timer = setTimeout(
+      () => deadline.abort(new DOMException("download timed out", "TimeoutError")),
+      6 * this.#timeoutMs,
+    )
+    timer.unref()
+    const signal = AbortSignal.any([deadline.signal, ...(this.#signal ? [this.#signal] : [])])
+    try {
+      const response = await this.#fetch(url.href, { method: "GET", redirect: "error", signal }).catch((error) => {
+        throw this.#unanswered("download", signal.aborted ? signal.reason : error, { reads: true, key: undefined })
+      })
+      end({ status: response.status })
+      if (!response.ok)
+        throw new CliError(
+          response.status === 401 || response.status === 403 ? "permission_error" : "provider_unavailable",
+          `the portal refused the download (HTTP ${response.status})`,
+          { reason: "bitrix.download-refused", status: response.status },
+        )
+      const size = Number(response.headers.get("content-length") ?? 0)
+      const bytes = size > maxBytes ? null : new Uint8Array(await response.arrayBuffer())
+      if (!bytes || bytes.byteLength > maxBytes)
+        throw new CliError("invalid_response", `the file is larger than ${Math.round(maxBytes / 1e6)} MB`, {
+          reason: "bitrix.download-too-large",
+        })
+      return { bytes, type: response.headers.get("content-type") }
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+
   /** Here, where every write passes, so neither a command nor its permission level can get round it. */
   async #refuseForEmployee(method: string, params: Record<string, unknown>) {
     const rule = employeeRuleOf(method, params)

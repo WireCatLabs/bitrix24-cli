@@ -46,6 +46,9 @@ The families denied through `api call` are `im`, `imopenlines`, `imbot`, `imconn
 `crm.automation`), CRM activities (`crm.activity`), tasks (`tasks`, `task`), `user.add`, public file links,
 `event.bind` and `batch`. `b24 work api show <method>` names a method's key, its level and the keys it also checks.
 
+The call history stays denied through `api call` too (`api.voximplant.statistic.get`): its answer holds the
+recording links with their tokens. `meetings sync` reads it under its own key, `meetings.sync`; see [Calls](calls.md).
+
 ## One command can check several keys
 
 A command checks its own key, and the keys of what it does on the way. `--dry-run` names each one with its level, and

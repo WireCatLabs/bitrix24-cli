@@ -9,6 +9,11 @@ const SHARED_STORE =
   "drive them on a CRM program"
 const SHARED_REPORTS = "cli-core's appDoctorCommand; its app-mcp-command test creates and shows a report"
 const SHARED_COMPLETE = "cli-core's appCompleteCommand; its complete-command test drives every shell and word"
+const SHARED_MEETINGS =
+  "cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, " +
+  "list, show, transcript and people on b24's calls"
+const SHARED_MODELS = "cli-core's modelCatalogueCommand; its tests download a model from a fake catalogue"
+const TRANSCRIBE_HELPER = "src/calls/calls.test.ts passes it through its transcribe helper, with a fake speech engine"
 const LONG_RUNNING = `starts an HTTP server or a background process that runs until stopped; ${SHARED_MCP}`
 
 export const UNTESTED: { command: string; option?: string; reason: string }[] = [
@@ -118,4 +123,29 @@ export const UNTESTED: { command: string; option?: string; reason: string }[] = 
     reason:
       "stops the detached server that `mcp server start` wrote a pid file for; cli-core tests mcpServerCommand, and no live scenario starts a server to stop",
   },
+  { command: "meetings list", option: "--backend", reason: SHARED_MEETINGS },
+  { command: "meetings list", option: "--limit", reason: SHARED_MEETINGS },
+  { command: "meetings list", option: "--page", reason: SHARED_MEETINGS },
+  { command: "meetings show", option: "--backend", reason: SHARED_MEETINGS },
+  { command: "meetings transcript", option: "--history", reason: SHARED_MEETINGS },
+  { command: "meetings export", reason: SHARED_MEETINGS },
+  { command: "meetings export", option: "--format", reason: SHARED_MEETINGS },
+  { command: "meetings export", option: "--transcript-id", reason: SHARED_MEETINGS },
+  { command: "meetings export", option: "--output", reason: SHARED_MEETINGS },
+  { command: "meetings people", option: "--limit", reason: SHARED_MEETINGS },
+  { command: "meetings people", option: "--scan-limit", reason: SHARED_MEETINGS },
+  { command: "meetings people", option: "--max-read-bytes", reason: SHARED_MEETINGS },
+  { command: "meetings people", option: "--cursor", reason: SHARED_MEETINGS },
+  { command: "meetings sync", option: "--lookback-days", reason: SHARED_MEETINGS },
+  { command: "meetings repair", reason: SHARED_MEETINGS },
+  { command: "meetings repair", option: "--yes", reason: SHARED_MEETINGS },
+  { command: "meetings transcribe", option: "--max-meetings", reason: TRANSCRIBE_HELPER },
+  {
+    command: "meetings transcribe",
+    option: "--model",
+    reason: "picks the local speech model; src/calls/calls.test.ts runs transcribe on a fake engine that has none",
+  },
+  { command: "models download", reason: SHARED_MODELS },
+  { command: "models download", option: "--offline", reason: SHARED_MODELS },
+  { command: "models download", option: "--accept-terms", reason: SHARED_MODELS },
 ]
