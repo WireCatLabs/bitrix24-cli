@@ -2,12 +2,21 @@
 
 # Commands
 
-Every command, option and exit code, generated from the program itself. For the same list as JSON, run
-`b24 commands --json`.
+Look up any `b24` command: what it does, its arguments and options, what it answers and
+how it can fail. Every entry is generated from the program itself, so it matches that release of `b24`.
+
+You or your agent find the exact words for a task here, such as the query fields of `deals list` or the options
+of `deals move`. For the same list as JSON, an agent runs `b24 commands --json`.
 
 **The first word is the profile**, a name you choose: `b24 work config show`. `B24_PROFILE`
 does the same for a whole shell session. No profile is assumed: a command that uses an account stops without one and
 lists the profiles on this computer.
+
+**On this page:**
+
+1. [Options for every command](#options-for-every-command)
+2. [The commands](#b24-commands), one section for each group, from `commands` to `runs`
+3. [Exit codes](#exit-codes)
 
 ## Options for every command
 

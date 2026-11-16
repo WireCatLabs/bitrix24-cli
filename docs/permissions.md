@@ -1,15 +1,25 @@
 # Permissions
 
-Read this page before you let an AI agent, a script or a colleague change your CRM through `b24`. It shows how to
-decide, for each profile, what may only be read, what asks you first and what may go ahead. By the end you can stop
-agents from moving deals or deleting, and you know which checks hold whatever the permissions say.
+Let an AI agent, a script or a colleague work in your CRM through `b24` and keep the say over what it changes. The
+webhook carries all the rights of its employee in Bitrix24, so without your own limits an agent could do whatever
+that employee can.
 
-Words this page uses:
+For each profile, the name you gave one portal's sign-in, you decide what an agent may only read, what asks you first
+and what goes ahead. You can stop an agent from moving or deleting deals, and you know which checks hold whatever
+the settings say.
 
-- **Profile**: the name you gave one portal's sign-in, such as `work`. It is the first word of a command.
-- **Permission key**: the name of a command, such as `deals.move`, or of a group of commands, such as `deals`. A
-  longer key is more specific and wins.
-- **Level**: what happens when the command runs: `deny`, `readonly`, `ask` or `allow`.
+Each command has a permission key, its name such as `deals.move`, or a group such as `deals`, where the longer key
+wins. Each key has a level: `deny`, `readonly`, `ask` or `allow`. `b24 work config set` sets them, and `--dry-run`
+shows which keys a command checks.
+
+**On this page:**
+
+1. [The levels](#the-levels)
+2. [What is set before you change anything](#what-is-set-before-you-change-anything)
+3. [One command can check several keys](#one-command-can-check-several-keys)
+4. [Stage changes start the portal's robots](#stage-changes-start-the-portals-robots)
+5. [Agents and MCP](#agents-and-mcp)
+6. [Checks that hold whatever the permissions say](#checks-that-hold-whatever-the-permissions-say)
 
 ## The levels
 

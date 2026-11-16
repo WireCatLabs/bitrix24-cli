@@ -16,12 +16,21 @@ const page = commandsPage({
   text: {
     banner: "<!-- Generated from the command tree by pnpm generate. Do not edit. -->",
     title: "Commands",
-    intro: `Every command, option and exit code, generated from the program itself. For the same list as JSON, run
-\`${IDENTITY.command} commands --json\`.
+    intro: `Look up any \`${IDENTITY.command}\` command: what it does, its arguments and options, what it answers and
+how it can fail. Every entry is generated from the program itself, so it matches that release of \`${IDENTITY.command}\`.
+
+You or your agent find the exact words for a task here, such as the query fields of \`deals list\` or the options
+of \`deals move\`. For the same list as JSON, an agent runs \`${IDENTITY.command} commands --json\`.
 
 **The first word is the profile**, a name you choose: \`${IDENTITY.command} work config show\`. \`${IDENTITY.envPrefix}_PROFILE\`
 does the same for a whole shell session. No profile is assumed: a command that uses an account stops without one and
-lists the profiles on this computer.`,
+lists the profiles on this computer.
+
+**On this page:**
+
+1. [Options for every command](#options-for-every-command)
+2. [The commands](#${IDENTITY.command}-commands), one section for each group, from \`commands\` to \`runs\`
+3. [Exit codes](#exit-codes)`,
     globalHeading: "Options for every command",
     globalIntro: "",
     mutates: "**Changes something in the service.**",

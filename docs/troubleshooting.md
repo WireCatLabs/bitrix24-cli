@@ -1,7 +1,28 @@
 # When something goes wrong
 
-Start with the symptom, run the check, then retry the command. Keep the error code and the profile name for a
-support request.
+Get `b24` working again from the symptom you see. Most failures come from the sign-in, a missing scope on the
+webhook or the profile's permissions, and each has a check that names the cause.
+
+You find your symptom in the table, run the check it gives, and retry the command. If it still fails, you have the
+error code and the profile name ready for a support request.
+
+`b24 doctor` shows what is set up without the network or the keyring. `b24 work session status --check` asks the
+portal which employee the webhook acts as.
+
+**On this page:**
+
+1. [First checks](#first-checks)
+2. [Symptoms and what to do](#symptoms-and-what-to-do)
+3. [Ask for help](#ask-for-help)
+
+## First checks
+
+```sh
+b24 doctor                         # the version, the settings, the profiles, without the network
+b24 work session status --check    # the employee the webhook acts as, and whether they are an admin
+```
+
+## Symptoms and what to do
 
 | Symptom | What to do |
 | --- | --- |
@@ -20,4 +41,8 @@ support request.
 | `outcome_unknown` on a write | The portal may have made the change. Look at the record first (`sync`, then `show`), and write it again only if it is not there: Bitrix24 would make a repeat a second time. See [write](usage.md#write). |
 | A write is refused | The profile's permissions or `B24_READ_ONLY` stop it; see [permissions](permissions.md). |
 
-Never paste a token, a password or private content into a support request.
+## Ask for help
+
+Ask on [Discord](https://discord.gg/DebENqbRrJ), or open an [issue](https://github.com/WireCatLabs/bitrix24-cli/issues)
+with the error code, the profile name and the command. Never paste a token, a password or private content into a
+support request.

@@ -1,7 +1,23 @@
 # Settings
 
-Settings live in one file, `config.json`, in the folder `b24 doctor` shows. Each profile has its own part,
-and `defaults` apply to every profile. This page lists how to see and change them.
+Change how `b24` works for one portal, or for every portal on this computer, with one command, and see where each
+value came from. Every setting has a default, so you change only the few that matter to you.
+
+You decide what an agent may do, whether calls and their recordings are copied, and how the sync stores who is who.
+Only you can loosen a permission: an agent that tries is refused.
+
+Settings live in one file, `config.json`, in the folder `b24 doctor` shows. Each profile has its own part, and
+`defaults` apply to every profile. `b24 work config` shows and changes them.
+
+**On this page:**
+
+1. [See and change a setting](#see-and-change-a-setting)
+2. [Permissions](#permissions)
+3. [Calls](#calls)
+4. [CRM relationships](#crm-relationships)
+5. [Run records](#run-records)
+
+## See and change a setting
 
 ```sh
 b24 work config show

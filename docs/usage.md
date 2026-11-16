@@ -1,6 +1,25 @@
 # Use it
 
-This page explains how a command is built, and how an agent uses the tool. Read it before your first command.
+Read and change your Bitrix24 CRM with short commands, the same ones your agent runs. An agent cannot click through
+Bitrix24's web pages, so `b24` gives it the CRM as commands, and answers most reads from a copy on your computer.
+
+You find a deal by its stage or owner, see the funnel, learn what changed since yesterday, and move or close a deal
+in one line. An agent does the same from your request.
+
+Every command starts with a profile, the name you gave one portal's sign-in. `sync` copies your deals and leads into
+the WireCat local store, where the reads find them. `api call` reaches any other Bitrix24 method. You need a
+signed-in profile: [install](installation.md) sets one up.
+
+**On this page:**
+
+1. [The profile comes first](#the-profile-comes-first)
+2. [Sign in](#sign-in)
+3. [Sync](#sync)
+4. [Read](#read)
+5. [What changed](#what-changed)
+6. [Write](#write)
+7. [Output for scripts](#output-for-scripts)
+8. [Agents](#agents)
 
 ## The profile comes first
 
@@ -303,6 +322,26 @@ or `organizations show` of one who is not your client gives them, at most 100 su
 counted for you and your agents together; showing the same one again that day is free, and your own clients are never
 counted. The count is kept on this computer, so it guards against an accident and an agent, not against someone who
 means to take the base: Bitrix24's own access rights do that.
+
+## What changed
+
+`changes list` shows what the syncs saw change in the copy: deals and leads made, moved, won, lost and given another
+owner, activities added and done, and new contacts, newest first. It reads the last day unless `at:` says otherwise.
+
+```sh
+b24 work changes list "at>=1d"
+b24 work changes list change:won "at>=7d" --json
+```
+
+`--format report` turns the window into a morning digest. Run by a schedule, each digest starts where the last one
+ended:
+
+```sh
+b24 work schedule command morning --at 08:00 -- changes list "at>=1d" --format report
+```
+
+The schedule shows each digest as a desktop notice. `--deliver-to` also sends it to your Telegram or mailbox through
+your own `tg` or mail tool, as `b24 help schedule command` shows.
 
 ## Write
 
