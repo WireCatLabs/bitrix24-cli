@@ -18,7 +18,8 @@ command without one stops with exit code 2 and lists the profiles on this comput
 Make an incoming webhook in Bitrix24 (Developer resources → Other → Incoming webhook) with the scopes `crm`,
 `user_basic` (or `user`) and `department`, and copy its address. Without `user_basic` the sync gets no employee's
 e-mail; without `department` it gets no reporting lines; see [Who is who](#who-is-who). Add `task` to read the
-Bitrix24 tasks on your deals ([Activities and tasks](#activities-and-tasks-on-a-deal)). Then:
+Bitrix24 tasks on your deals ([Activities and tasks](#activities-and-tasks-on-a-deal)), and `telephony` to copy
+the portal's calls ([Calls](calls.md)). Then:
 
 ```sh
 b24 work session start
@@ -50,8 +51,8 @@ last only an hour, renewed by `b24`. A Bitrix24 administrator, or an employee al
 2. Choose **Server** mode. Set **Your handler path** to `https://wirecat.dev/webhooks/apps/b24-callback`. Leave
    **Initial installation path** and the menu item texts empty, and **Application completes the installation itself**
    off, so the portal installs it on save.
-3. Tick the access permissions `crm`, `user_basic` (or `user`) and `department`, `task` too for Bitrix24 tasks, and
-   save.
+3. Tick the access permissions `crm`, `user_basic` (or `user`) and `department`, `task` too for Bitrix24 tasks, `telephony`
+   for calls, and save.
 4. Copy the **Application ID (client_id)** and the **Application key (client_secret)** Bitrix24 shows.
 
 Then sign in:
@@ -186,6 +187,11 @@ in `issues`. Nothing it stored before is ended for that. Without `user_basic` th
 addresses, so an employee is not joined to the same person in your mail; a portal that refuses its own companies
 leaves its employees in no company. The sync keeps these two as gaps of the account, which memo's answers name, not
 in `issues`.
+
+### Calls
+
+`meetings sync` copies the portal's calls, and `meetings transcribe` turns them into text on this computer. They have
+their own page: [Calls](calls.md).
 
 ### Keep it up to date
 

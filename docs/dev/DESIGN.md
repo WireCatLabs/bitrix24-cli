@@ -256,6 +256,19 @@ and `type`); field names are from the REST 3.0 field pages and the `user.get` an
   with how long to wait. A read or a write is tried again a few times, since the portal refused it before doing
   anything. A read is also tried again on a lost answer; a write never is.
 
+### Calls (2026-11-16)
+
+- The portal's call history (`voximplant.statistic.get`, scope `telephony`) is copied by cli-core's `meetings sync`,
+  as pbx and beeline-cli copy theirs: one call is one meeting of kind call, under the CRM's own account, so the
+  employee is the CRM user's identity (`<portal>/user/<id>`) and the caller is `phone:<E.164>`, which cli-core joins
+  to a contact's mobile. The portal's own link to a CRM record (`CRM_ENTITY_*`) is kept in the metadata, never a
+  join: cli-core has no rule for it.
+- Only the calls of the users the CRM copy is for (`unassigned`, else the signed-in user); `scope: all` refuses.
+- A recording is downloaded only with `download_recordings`, from `CALL_RECORD_URL`, on the portal's own host, with
+  no redirect. The link holds a token: never stored or printed. No `disk` scope.
+- `api call` keeps the whole `voximplant` family denied, the call history too, since its answer holds those links.
+- A number without `+` needs `phone_region`: the store's `phone_countries` never decides an identifier.
+
 ## Open questions for the owner
 
 - A `leads` table in cli-core, or leads only as source records: the owner's portal runs its main funnel on leads

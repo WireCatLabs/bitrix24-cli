@@ -3,6 +3,7 @@
   "session list": "read",
   "products list": "read",
   "products show": "read",
+  "meetings transcribe": "read",
   "api list": "read",
   "api show": "read"
 }

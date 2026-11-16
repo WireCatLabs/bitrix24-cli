@@ -21,6 +21,7 @@ const portal = () =>
     "crm.product.list": ok([PRODUCT], { total: 1 }),
     "crm.product.get": ok(PRODUCT),
     "crm.item.get": ok({ item: {} }),
+    "voximplant.statistic.get": ok([]),
   })
 
 // The writes name stored deals and leads, so each case gets its own copy of one synced store.
@@ -77,11 +78,16 @@ describe("every remote command runs inside cli-core's run", () => {
       "users list": ["work", "users", "list"],
       "users show": ["work", "users", "show", "7"],
       "api call": ["work", "api", "call", "crm.deal.update", "--body", '{"id":102,"fields":{"title":"Example"}}'],
+      "meetings sync": ["work", "meetings", "sync"],
     },
     skip: {
       "mcp serve": "listens until stopped; src/mcp.test.ts and src/permissions.test.ts run it",
       "schedule run": "starts the schedule's entry as its own process; src/schedule.test.ts runs it against a fake one",
       "schedule exec": "the timer's entry, which starts a process; src/schedule.test.ts runs it against a fake one",
+      "meetings list": "reads the store only: the portal's call history has no search for a live list",
+      "meetings show": "reads the store only: the portal's call history has no search for a live list",
+      "meetings transcribe": "needs a local speech model first; src/calls/calls.test.ts runs it with a fake one",
+      "models download": "cli-core's modelCatalogueCommand downloads hundreds of MB; cli-core tests it",
       doctor: "cli-core's appDoctorCommand: 0.598.0 answers --online under the process run, a cli-core fix",
     },
     answering: () => options(portal().fetch),

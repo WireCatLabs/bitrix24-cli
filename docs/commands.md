@@ -1093,6 +1093,250 @@ b24 products show <product>
 
 **Example:** `b24 work products show 42`, `b24 work products show 42 --json`
 
+## `b24 meetings`
+
+stored meetings and their records
+
+### `b24 meetings list`
+
+meetings, newest first: the service's and the stored ones, kept in the store
+
+```sh
+b24 meetings list [query] [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+| Option | What it does |
+|---|---|
+| `--backend <archive\|server\|both>` | where to read: the store (archive), the service (server), or both, kept in the store (default: both). |
+| `--limit <n>` | meetings per page; the profile's defaults.limit when absent. |
+| `--page <n>` | which page, starting at 1. |
+
+**Returns:** meeting — ref, id, provider_id, provider, account, title, url, started_at, and 12 more; every field: b24 commands info meetings list
+
+**Next usually:** `b24 meetings show <meeting>`, `b24 meetings transcript <meeting>`, `b24 meetings export <meeting>`
+
+**Example:** `b24 work meetings list --limit 50 --json`
+
+### `b24 meetings show`
+
+show a meeting, read again from the service with its people, transcript and documents
+
+```sh
+b24 meetings show <meeting> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `meeting` | required | the stored meeting's number, its meeting: ref, or the service's id (provider_id). |
+
+| Option | What it does |
+|---|---|
+| `--backend <archive\|server\|both>` | where to read: the store (archive), the service (server), or both, kept in the store (default: both). |
+
+**Returns:** meeting details — ref, id, provider_id, provider, account, title, url, started_at, and 21 more; every field: b24 commands info meetings show
+
+**Next usually:** `b24 meetings transcript <meeting>`, `b24 meetings export <meeting>`
+
+**Example:** `b24 work meetings show 1 --json`
+
+### `b24 meetings transcript`
+
+show current meeting transcripts
+
+```sh
+b24 meetings transcript <meeting> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `meeting` | required | stored meeting id. |
+
+| Option | What it does |
+|---|---|
+| `--history` | include superseded transcript versions. |
+
+**Returns:** meeting transcript — ref, meeting, source, language, superseded_at, created_at, lines, untrusted; every field: b24 commands info meetings transcript
+
+**Example:** `b24 work meetings transcript 1 --json`
+
+### `b24 meetings export`
+
+export a meeting as Markdown or one transcript as WebVTT
+
+**Changes something on this computer only.**
+
+```sh
+b24 meetings export <meeting> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `meeting` | required | stored meeting id. |
+
+| Option | What it does |
+|---|---|
+| `--format <format>` | export format. One of: `markdown`, `vtt`. Default: `markdown`. |
+| `--transcript-id <id>` | export a specific transcript version. |
+| `--output <file>` | write content to a new file through the host's writer. |
+
+**Returns:** meeting export — meeting_id, format, filename, content, untrusted, output; every field: b24 commands info meetings export
+
+**Example:** `b24 work meetings export 1 --format markdown --json`
+
+### `b24 meetings people`
+
+find meeting participants by name or email
+
+```sh
+b24 meetings people <query> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | required | a name or an email address. |
+
+| Option | What it does |
+|---|---|
+| `--limit <n>` | most matching observations per page, 1–1000 (default 50). |
+| `--scan-limit <n>` | most participant observations to inspect, 1–10000 (default 1000). |
+| `--max-read-bytes <bytes>` | most stored name and email bytes to read (default 1048576). |
+| `--cursor <cursor>` | continue with the same name query and selected account. |
+
+**Returns:** meeting participants — schema_version, kind, account_id, query, items, ambiguity, coverage, page; every field: b24 commands info meetings people
+
+**Example:** `b24 work meetings people "Anna Example" --json`
+
+### `b24 meetings sync`
+
+bring the stored meetings up to date from the connected account, oldest first; a run that stops before its deadline keeps what it saved and the next one goes on from there
+
+**Changes something on this computer only.**
+
+```sh
+b24 meetings sync [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--since-time <time>` | fetch meetings starting at or after this ISO 8601 date or time, or 30m, 2h, 7d ago. |
+| `--lookback-days <days>` | revisit recent occurrences for late transcripts (0–31). |
+| `--rescan` | read the last 30 days again, not only what came after the last sync. |
+
+**Returns:** meeting ingestion — meetings, participants, transcript_rows, summaries, warnings, timezone; every field: b24 commands info meetings sync
+
+**Example:** `b24 work meetings sync --since-time 2026-11-01T00:00:00Z --json`
+
+### `b24 meetings repair`
+
+preview filling in what older builds left out of stored transcripts (their language); --yes stores it
+
+**Changes something on this computer only.**
+
+```sh
+b24 meetings repair [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--yes` | store the detected languages; otherwise only preview. |
+
+**Returns:** meeting repair — account_id, applied, transcripts, languages; every field: b24 commands info meetings repair
+
+**Example:** `b24 work meetings repair --json`
+
+### `b24 meetings transcribe`
+
+read each call's recording and recognize it with a local speech model; nothing leaves this computer
+
+**Changes something on this computer only.**
+
+```sh
+b24 meetings transcribe [query] [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that pick the calls (default duration_ms>=5000) — the fields are below. |
+
+| Option | What it does |
+|---|---|
+| `--replace` | transcribe calls that already have a transcript too, replacing it. |
+| `--max-meetings <n>` | at most this many calls transcribed, newest first. Default: `20`. |
+| `--model <model>` | local speech model. Default: `gigaam-v3`. |
+
+**Returns:** call transcription report — transcribed, audio_seconds, failed, without_recording, remaining, stopped; every field: b24 commands info meetings transcribe
+
+**Example:** `b24 work meetings transcribe --max-meetings 20 --json`, `b24 work meetings transcribe "duration_ms>=60000" --json`
+
+## `b24 events`
+
+the owner's stored events
+
+### `b24 events list`
+
+list stored events
+
+```sh
+b24 events list [query]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | event id, origin or time fields that narrow the list. |
+
+**Returns:** event — id, event_series_id, title, description, location, starts_at, ends_at, timezone, and 13 more; every field: b24 commands info events list
+
+**Example:** `b24 work events list --json`
+
+## `b24 models`
+
+models that run on this machine
+
+### `b24 models list`
+
+speech and embedding models, their download status and the default of each kind
+
+```sh
+b24 models list [query]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `query` | optional | field:value terms that narrow the list — the fields are below. |
+
+**Returns:** model — id, kind, title, languages, size_bytes, downloaded, default, path, and 6 more; every field: b24 commands info models list
+
+**Next usually:** `b24 models download <model>`
+
+**Example:** `b24 models list`, `b24 models list kind:audio`
+
+### `b24 models download`
+
+download and verify one speech or embedding model
+
+**Changes something on this computer only.**
+
+```sh
+b24 models download <model> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `model` | required | a model id from models list. |
+
+| Option | What it does |
+|---|---|
+| `--offline` | refuse a download that needs the network. |
+| `--accept-terms` | no longer needed; kept so older scripts still run. |
+
+**Returns:** model — id, kind, title, languages, size_bytes, downloaded, default, path, and 6 more; every field: b24 commands info models download
+
+**Example:** `b24 models download parakeet-v3`
+
 ## `b24 api`
 
 see and call the Bitrix24 REST methods directly
@@ -1617,7 +1861,7 @@ b24 config set <setting> <value> [options]
 
 | Argument | | What it is |
 |---|---|---|
-| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, keep_store_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types, crm.<provider>:<account>.scope, crm.<provider>:<account>.unassigned, crm.<provider>:<account>.self, crm.<provider>:<account>.stage-tasks, crm.<provider>:<account>.activities. |
+| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, keep_store_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, download_recordings, phone_region, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types, crm.<provider>:<account>.scope, crm.<provider>:<account>.unassigned, crm.<provider>:<account>.self, crm.<provider>:<account>.stage-tasks, crm.<provider>:<account>.activities. |
 | `value` | required | a number, true or false; for a group tg:work,max:Alice,email:me@x. |
 
 | Option | What it does |
@@ -1638,7 +1882,7 @@ b24 config unset <setting> [options]
 
 | Argument | | What it is |
 |---|---|---|
-| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, keep_store_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types, crm.<provider>:<account>.scope, crm.<provider>:<account>.unassigned, crm.<provider>:<account>.self, crm.<provider>:<account>.stage-tasks, crm.<provider>:<account>.activities. |
+| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, keep_store_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, download_recordings, phone_region, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types, crm.<provider>:<account>.scope, crm.<provider>:<account>.unassigned, crm.<provider>:<account>.self, crm.<provider>:<account>.stage-tasks, crm.<provider>:<account>.activities. |
 
 | Option | What it does |
 |---|---|

@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**201 ✅ · 66 ⛔ · 0 ❌** — 92 commands, 175 options.
+**212 ✅ · 87 ⛔ · 0 ❌** — 103 commands, 196 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -168,6 +168,38 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `products list` | `--page` | ✅ |  |
 | `products list` | `--all` | ✅ |  |
 | `products show` |  | ✅ |  |
+| `meetings list` |  | ✅ |  |
+| `meetings list` | `--backend` | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |
+| `meetings list` | `--limit` | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |
+| `meetings list` | `--page` | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |
+| `meetings show` |  | ✅ |  |
+| `meetings show` | `--backend` | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |
+| `meetings transcript` |  | ✅ |  |
+| `meetings transcript` | `--history` | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |
+| `meetings export` |  | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |
+| `meetings export` | `--format` | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |
+| `meetings export` | `--transcript-id` | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |
+| `meetings export` | `--output` | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |
+| `meetings people` |  | ✅ |  |
+| `meetings people` | `--limit` | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |
+| `meetings people` | `--scan-limit` | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |
+| `meetings people` | `--max-read-bytes` | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |
+| `meetings people` | `--cursor` | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |
+| `meetings sync` |  | ✅ |  |
+| `meetings sync` | `--since-time` | ✅ |  |
+| `meetings sync` | `--lookback-days` | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |
+| `meetings sync` | `--rescan` | ✅ |  |
+| `meetings repair` |  | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |
+| `meetings repair` | `--yes` | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |
+| `meetings transcribe` |  | ✅ |  |
+| `meetings transcribe` | `--replace` | ✅ |  |
+| `meetings transcribe` | `--max-meetings` | ⛔ | src/calls/calls.test.ts passes it through its transcribe helper, with a fake speech engine |
+| `meetings transcribe` | `--model` | ⛔ | picks the local speech model; src/calls/calls.test.ts runs transcribe on a fake engine that has none |
+| `events list` |  | ✅ |  |
+| `models list` |  | ✅ |  |
+| `models download` |  | ⛔ | cli-core's modelCatalogueCommand; its tests download a model from a fake catalogue |
+| `models download` | `--offline` | ⛔ | cli-core's modelCatalogueCommand; its tests download a model from a fake catalogue |
+| `models download` | `--accept-terms` | ⛔ | cli-core's modelCatalogueCommand; its tests download a model from a fake catalogue |
 | `api list` |  | ✅ |  |
 | `api show` |  | ✅ |  |
 | `api call` |  | ✅ |  |

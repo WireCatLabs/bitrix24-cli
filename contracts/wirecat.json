@@ -697,6 +697,149 @@
     },
     {
       "path": [
+        "meetings",
+        "list"
+      ],
+      "summary": "meetings, newest first: the service's and the stored ones, kept in the store",
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "meetings.list",
+      "entity": "meeting"
+    },
+    {
+      "path": [
+        "meetings",
+        "show"
+      ],
+      "summary": "show a meeting, read again from the service with its people, transcript and…",
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "meetings.show",
+      "entity": "meeting_details"
+    },
+    {
+      "path": [
+        "meetings",
+        "transcript"
+      ],
+      "summary": "show current meeting transcripts",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "meetings.transcript",
+      "entity": "meeting_transcript"
+    },
+    {
+      "path": [
+        "meetings",
+        "export"
+      ],
+      "summary": "export a meeting as Markdown or one transcript as WebVTT",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "meetings.export",
+      "entity": "meeting_export"
+    },
+    {
+      "path": [
+        "meetings",
+        "people"
+      ],
+      "summary": "find meeting participants by name or email",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "meetings.people",
+      "entity": "meeting_participants"
+    },
+    {
+      "path": [
+        "meetings",
+        "sync"
+      ],
+      "summary": "bring the stored meetings up to date from the connected account, oldest…",
+      "effects": {
+        "remote": "read",
+        "local": "write"
+      },
+      "permission": "meetings.sync",
+      "entity": "meeting_ingestion"
+    },
+    {
+      "path": [
+        "meetings",
+        "repair"
+      ],
+      "summary": "preview filling in what older builds left out of stored transcripts (their…",
+      "effects": {
+        "remote": "none",
+        "local": "write"
+      },
+      "permission": "meetings.repair",
+      "entity": "meeting_repair"
+    },
+    {
+      "path": [
+        "meetings",
+        "transcribe"
+      ],
+      "summary": "turn call recordings into text, on this computer",
+      "effects": {
+        "remote": "read",
+        "local": "write"
+      },
+      "permission": "meetings.transcribe",
+      "entity": "call_transcription_report"
+    },
+    {
+      "path": [
+        "events",
+        "list"
+      ],
+      "summary": "list stored events",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "events.list",
+      "entity": "event"
+    },
+    {
+      "path": [
+        "models",
+        "list"
+      ],
+      "summary": "speech and embedding models, their download status and the default of each kind",
+      "effects": {
+        "remote": "none",
+        "local": "read"
+      },
+      "permission": "models.list",
+      "entity": "model"
+    },
+    {
+      "path": [
+        "models",
+        "download"
+      ],
+      "summary": "download and verify one speech or embedding model",
+      "effects": {
+        "remote": "read",
+        "local": "write"
+      },
+      "permission": "models.download",
+      "entity": "model"
+    },
+    {
+      "path": [
         "api",
         "list"
       ],
@@ -1207,6 +1350,36 @@
         "section_id"
       ]
     },
+    "meeting": {
+      "fields": [
+        "id",
+        "provider_id",
+        "title",
+        "started_at",
+        "ended_at",
+        "duration_ms",
+        "participants_count",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "event": {
+      "fields": [
+        "id",
+        "origin",
+        "starts_at",
+        "ends_at",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "model": {
+      "fields": [
+        "kind",
+        "id",
+        "downloaded"
+      ]
+    },
     "api_method": {
       "fields": [
         "scope",
@@ -1328,7 +1501,7 @@
     ],
     "signIn": {
       "gives": "Lets your agent read and change the portal's CRM with the rights of the employee who made the webhook, or who signed in through a local application.",
-      "asks": "An incoming webhook address, from Developer resources → Other → Incoming webhook, with the crm, user_basic and department scopes; or a local application's code and key."
+      "asks": "An incoming webhook address, from Developer resources → Other → Incoming webhook, with the crm, user_basic and department scopes, and telephony for calls; or a local application's code and key."
     },
     "skill": {
       "status": [

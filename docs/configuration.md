@@ -17,6 +17,12 @@ b24 work config unset limit
 key. Over MCP `ask` does not ask: the write goes ahead. The keys, their built-in levels and how to keep an agent's
 writes yours are on [Permissions](permissions.md).
 
+## Calls
+
+`download_recordings` (`true` or `false`, `false` when not set) downloads each call's recording at `meetings sync`
+and keeps it in the state folder. `phone_region` (a country code, such as `ru`, or several: `ru,kz`) is the country
+of a caller's number the portal writes without `+`. Both are on [Calls](calls.md).
+
 ## CRM relationships
 
 Two settings of the shared store, not of a profile, say how the sync stores relationships:

@@ -47,9 +47,15 @@ const SCOPES = new Map([
 ])
 /** In scope `basic` (apidocs common/users: user-admin, user-access; common/system). */
 const BASIC = new Set(["user.admin", "user.access", ...READ_METHODS])
+/** `voximplant.*` spans two scopes: `voximplant.infocall.*` is `call`, the call history `telephony`. */
+const TELEPHONY = new Set(["voximplant.statistic.get"])
 
 export const scopeOf = (name: string): string =>
-  BASIC.has(name) ? "basic" : (SCOPES.get(name.slice(0, name.indexOf("."))) ?? "unknown")
+  BASIC.has(name)
+    ? "basic"
+    : TELEPHONY.has(name)
+      ? "telephony"
+      : (SCOPES.get(name.slice(0, name.indexOf("."))) ?? "unknown")
 
 /** Which REST version answers a method, what it does, and its scope; unknown methods go to REST 2, the older API. */
 export const methodOf = (name: string): Method => ({
@@ -68,4 +74,5 @@ export const KNOWN_METHODS: readonly Method[] = [
   ),
   ...["crm.item.list", "crm.category.list", "crm.status.list", "crm.product.list", "crm.product.get"].map(methodOf),
   ...["user.current", "user.get", "user.admin", "department.get", "crm.mycompany.basic.list"].map(methodOf),
+  ...[...TELEPHONY].map(methodOf),
 ]

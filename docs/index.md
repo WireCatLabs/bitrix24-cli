@@ -6,6 +6,9 @@ stages, products and employees (`users`). `sync` copies pipelines, companies, co
 local WireCat store, which `deals`, `leads`, `pipelines` and `stages` read, offline too; contacts, companies,
 products and employees are read from the portal.
 
+If the company's phones run through Bitrix24 telephony, `meetings sync` copies its calls too, and `meetings
+transcribe` turns their recordings into text on this computer: see [Calls](calls.md).
+
 It signs in with an incoming webhook of the portal, and acts with the rights of the employee who made that webhook.
 `b24 work session status --check` says who that is, for the profile `work`.
 

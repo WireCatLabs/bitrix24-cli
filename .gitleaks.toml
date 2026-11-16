@@ -39,7 +39,8 @@ tags = ["pii"]
 
 [[rules.allowlists]]
 regexTarget = "match"
-regexes = ['''\+?71234567890''']
+# +7 900 000-0xxx: the tests' made-up mobiles; a call joins a contact only on a mobile number.
+regexes = ['''\+?71234567890''', '''\+?[78]9000000\d{3}''']
 
 [[rules]]
 id = "email-address"
