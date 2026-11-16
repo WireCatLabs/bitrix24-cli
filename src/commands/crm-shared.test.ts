@@ -128,8 +128,11 @@ describe("lists read the store, --offline too", () => {
     const store = join(mkdtempSync(join(tmpdir(), "new-machine-")), "wirecat.db")
     const env = { B24_READ_ONLY: "1", MESSAGING_STORE: store }
     const listed = await b24(["work", "deals", "list", "--json"], { env, keyring: memoryKeyring() })
-    expect(listed.code, listed.err).toBe(0)
     expect(items(listed)).toEqual([])
+    // No sign-in names no CRM user, so the answer is short and says so, exiting 1 as an incomplete answer does.
+    expect(listed.code).toBe(1)
+    expect((listed.json() as { meta: { complete: boolean } }).meta.complete).toBe(false)
+    expect(listed.err).toContain("names no CRM user")
     expect(existsSync(store)).toBe(false)
 
     const chosen = ["work", "config", "set", "crm.bitrix24:example.bitrix24.test.unassigned", "7", "--json"]

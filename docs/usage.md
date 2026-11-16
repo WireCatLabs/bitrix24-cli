@@ -132,6 +132,11 @@ One portal's copy belongs to one user: the first sync remembers the webhook's us
 A sync through a webhook of another user is refused;
 `b24 work config unset crm.bitrix24:example.bitrix24.ru.self` gives the copy to the next one.
 
+A profile reads offline only what its own user may read. The portal's administrator, as its last `sync` found, reads
+the whole copy. Anyone else reads only the deals and leads assigned to them, even in a copy their own sync made: the
+unassigned ones and those of the users they chose stay out of lists, `show` (`not_found`), the funnel and `search all`.
+A sign-in that names no portal user reads none; `session start` again fixes it.
+
 ### Who is who
 
 The sync also stores who belongs where, as relationships between people, organizations and deals. Every WireCat

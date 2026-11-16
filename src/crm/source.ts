@@ -71,9 +71,9 @@ const assigneesOf = (context?: CrmCallContext): number[] | null => {
 
 /**
  * A contact in the copy that a round of changes saw is no longer the user's (given to a colleague, or off the user's
- * deals) is saved again with its new assignee and no phones or e-mails, so the next narrowing or `--rescan` removes it: cli-core
- * removes contacts only then, since they have no id pass. Until then it keeps the one phone and e-mail cli-core holds
- * beside the lists, which a save without them leaves.
+ * deals) leaves the copy at once, phones and e-mails with it. One cli-core keeps (the owner decided about it, or
+ * something points at it) is saved again with its new assignee and no phones or e-mails, so the next narrowing or
+ * `--rescan` removes it; until then it keeps the one phone and e-mail cli-core holds beside the lists.
  */
 const givenAway = (raw: Raw): Raw => ({ ...raw, phone: [], email: [] })
 
@@ -169,6 +169,8 @@ export const bitrixCrmSource = (
     fields?: (kind: CrmKind) => Promise<CrmField[]>
     /** Which of these contacts the copy holds. */
     contacts?: (externalIds: readonly string[]) => Promise<ReadonlySet<string>>
+    /** Removes one held contact from the copy; false when cli-core keeps it. */
+    remove?: (externalId: string) => Promise<boolean>
   } = {},
 ): BitrixCrmSource => {
   let role: Promise<Role> | undefined
@@ -441,7 +443,10 @@ export const bitrixCrmSource = (
       if (narrowed && kind === "person") {
         const gone = rows.filter((raw) => !mineOnly(raw, assignees, clients))
         const held = gone.length ? await copy.contacts?.(gone.map((raw) => id(raw.id) ?? "")) : undefined
-        for (const raw of gone) if (held?.has(id(raw.id) ?? "")) kept.push(givenAway(raw))
+        for (const raw of gone) {
+          const externalId = id(raw.id) ?? ""
+          if (held?.has(externalId) && !(await copy.remove?.(externalId))) kept.push(givenAway(raw))
+        }
       }
       // An empty page ends the round, not a short one: a portal that caps pages below PAGE still lists every row.
       // Every round ends with the named clients: a deal given to the user brings a client whose row did not change.

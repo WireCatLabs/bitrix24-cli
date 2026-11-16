@@ -1,3 +1,4 @@
+import { isCliError } from "@wirecat/cli-base"
 import type { CrmKind } from "@wirecat/cli-core"
 import { outputFor } from "@wirecat/cli-core/cli"
 import type { CrmRun } from "@wirecat/cli-core/crm/cli"
@@ -9,6 +10,16 @@ import { permissions } from "../config.js"
 import { BITRIX_WRITES } from "../crm/capabilities.js"
 import { IDENTITY } from "../identity.js"
 import { contextOf, signInOf, storedSignIn, transportFor } from "../portal.js"
+
+/** The sign-in's own portal user, read offline from its entry; a profile with none reads none of the copy's deals. */
+const ownUser = (command: Command): string | null => {
+  try {
+    return storedSignIn(command).userId || null
+  } catch (error) {
+    if (isCliError(error) && error.code === "authentication_error") return null
+    throw error
+  }
+}
 
 /** The selected profile's portal for one command; cli-core closes the store before the answer prints. */
 const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }): Promise<CrmRun> => {
@@ -56,12 +67,14 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
           held.add(externalId)
       return held
     },
+    remove: async (externalId: string) => (await store.crm.removeContact(account, externalId)).contacts > 0,
   }
   const crm = () =>
     (source ??= bitrixCrmSource(portal, Date.now, ownMemoryAt(ownMemoryFile(env, profile)), scope, copy))
   return {
     profile,
     account,
+    user: ownUser(command),
     store,
     env,
     locked: Boolean(env[`${IDENTITY.envPrefix}_PROFILE_LOCK`]),
