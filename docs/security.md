@@ -1,8 +1,8 @@
 # Security
 
-Let an agent work in your CRM while the webhook's address, your clients' contact details and the portal's download
-links stay out of its answers and your logs. The webhook's address is the password to the portal, so anyone who reads
-it can do what its employee can.
+Let an agent work in your CRM while the webhook's address and your clients' contact details stay out of its answers
+and your logs. The webhook's address is the password to the portal, so anyone who reads it can do what its employee
+can.
 
 You know where `b24` keeps the sign-in, what reaches the portal and nothing else, and which limits hold for an agent
 whatever it is told.

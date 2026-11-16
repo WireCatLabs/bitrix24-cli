@@ -1,8 +1,7 @@
 # Permissions
 
-Let an AI agent, a script or a colleague work in your CRM through `b24` and keep the say over what it changes. The
-webhook carries all the rights of its employee in Bitrix24, so without your own limits an agent could do whatever
-that employee can.
+Let an AI agent work in your CRM through `b24` and keep the say over what it changes. The webhook carries the rights
+of its employee in Bitrix24, so without your own limits an agent could do much of what that employee can.
 
 For each profile, the name you gave one portal's sign-in, you decide what an agent may only read, what asks you first
 and what goes ahead. You can stop an agent from moving or deleting deals, and you know which checks hold whatever

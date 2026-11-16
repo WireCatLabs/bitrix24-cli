@@ -5,8 +5,9 @@
 # b24: Bitrix24 CRM CLI for AI agents
 
 <p align="center">
-  Your Bitrix24 deals, leads, clients and calls in the terminal and in your AI agent. Ask about them in plain words
-  and change them by asking, from Claude Code, Codex, Cursor or any AI agent, with a permission on every change.
+  Know where every deal stands and what a client said on the phone, without opening Bitrix24. Ask your AI agent, and
+  it answers from a copy of your deals on your computer, even offline. It moves and closes deals for you too, as far
+  as you allow.
 </p>
 
 <p align="center">
@@ -21,29 +22,22 @@
   <a href="https://github.com/WireCatLabs/bitrix24-cli/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License: Apache 2.0"></a>
 </p>
 
-- **Your pipeline, within your agent's reach.** Ask which deals stand in a stage, how the funnel looks this month or
-  who a client is, and get the answer from a copy on your computer, even with no internet.
-- **Every call kept and readable.** Calls on your Bitrix24 phones are copied with who, when and how they ended, and
-  their recordings become text on your computer.
-- **You decide what an agent may do.** Every command and every Bitrix24 method has its own permission. Messages to
-  people, the portal's automation and giving a record to a colleague stay off until you allow them.
+- **Ask instead of clicking.** "Which deals are stuck in Quote sent?" gets an answer in a second, in Claude Code,
+  Codex or any app that speaks MCP.
+- **Calls you can read.** The recording of yesterday's call with a client becomes text on your computer, so the agent
+  can tell you what was promised.
+- **Nothing happens behind your back.** Every action has its own permission. Through `b24`, an agent gives no deal to
+  a colleague and messages no client until you allow it.
 
 ## What you get
 
-- **Know where every deal stands.** "Which of my deals are in Quote sent?" gives the deals with their amount and
-  owner, read from your computer.
-- **See the funnel.** How many deals stand in each stage and their sum, how many reached each stage and went on, and
-  the share won. For a period you choose, also the deals closed, how long they took and why the lost ones were lost.
-- **Start the day with what changed.** Deals made, moved, won, lost and given another owner, tasks added and done,
-  new contacts. A digest of the last day can arrive at the time you choose.
-- **Read your calls.** Who called whom, how long they talked, and what was said, as text made on your computer. Calls
-  from another phone system can land on the client's contact in Bitrix24.
-- **Change the CRM by asking.** Create a deal, move it to a stage by the stage's name, close it as won or lost, update
-  a contact or a company, set your portal's own fields by their labels.
-- **Keep track of the work on a deal.** Its calls, e-mails, meetings, to-dos, Bitrix24 tasks and timeline comments,
-  open ones first, when you turn them on.
-- **See the client in all your context.** One search finds a deal beside your messages, notes and meetings from the
-  other WireCat tools.
+- **The answer, not the search.** Ask about a deal or a client in your own words. The agent finds the deal with its
+  amount and owner, read from your computer.
+- **The funnel at a glance.** Where deals drop off this month, and why the lost ones were lost.
+- **The morning starts with what changed.** Yesterday's wins, losses and moves arrive as a short digest at the time
+  you choose.
+- **Changes by asking.** "Move Kitchen for Example to Contract signed" is enough. The agent finds the stage by its
+  name.
 
 ```text
 You:    Which of my deals are in Quote sent?
@@ -188,7 +182,7 @@ With `activities` on, each sync also reads the calls, e-mails, meetings, to-dos,
 comments on your deals and leads, and `deals show` lists them. `stage-tasks` opens a task on your computer each time
 a deal enters a stage you name.
 
-More: [activities and tasks](https://wirecat.dev/en/docs/b24/usage#activities-and-tasks-on-a-deal) ·
+More: [activities and tasks](https://github.com/WireCatLabs/bitrix24-cli/blob/main/docs/usage.md#activities-and-tasks-on-a-deal) ·
 [a task when a deal enters a stage](https://wirecat.dev/en/docs/b24/usage#a-task-when-a-deal-enters-a-stage)
 
 ### Any Bitrix24 method

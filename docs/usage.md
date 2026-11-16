@@ -1,10 +1,10 @@
 # Use it
 
-Read and change your Bitrix24 CRM with short commands, the same ones your agent runs. An agent cannot click through
-Bitrix24's web pages, so `b24` gives it the CRM as commands, and answers most reads from a copy on your computer.
+Find a deal, move it or see what changed overnight with one short command, the same one your agent runs. Bitrix24's
+REST API speaks in method names, field codes such as `UF_CRM_…` and stage ids such as `C1:WON`, and `b24` takes stage
+names and field labels instead.
 
-You find a deal by its stage or owner, see the funnel, learn what changed since yesterday, and move or close a deal
-in one line. An agent does the same from your request.
+You find the deals stuck in a stage, or close one as won, in one line. An agent does the same from your request.
 
 Every command starts with a profile, the name you gave one portal's sign-in. `sync` copies your deals and leads into
 the WireCat local store, where the reads find them. `api call` reaches any other Bitrix24 method. You need a

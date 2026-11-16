@@ -1,10 +1,10 @@
 # Settings
 
 Change how `b24` works for one portal, or for every portal on this computer, with one command, and see where each
-value came from. Every setting has a default, so you change only the few that matter to you.
+value came from. You change only the few that matter to you, and the rest keep their defaults or stay unset.
 
-You decide what an agent may do, whether calls and their recordings are copied, and how the sync stores who is who.
-Only you can loosen a permission: an agent that tries is refused.
+You decide, for example, what an agent may do, or whether call recordings are copied. Only you can loosen a
+permission: an agent that tries is refused.
 
 Settings live in one file, `config.json`, in the folder `b24 doctor` shows. Each profile has its own part, and
 `defaults` apply to every profile. `b24 work config` shows and changes them.

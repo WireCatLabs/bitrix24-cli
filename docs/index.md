@@ -1,11 +1,12 @@
 # b24
 
-Keep your Bitrix24 deals, leads, clients and calls within your AI agent's reach, and ask about them in plain words.
-The portal keeps them in the cloud, where an agent sees only what you copy into the chat. `b24` reads them through
-the portal's REST API and keeps a copy on your computer.
+Know where every deal stands and what a client said on the phone, without opening Bitrix24. Ask your AI agent in plain
+words, in Claude Code, Codex or any app that speaks MCP. The portal keeps your deals in the cloud, and every question
+to it is a live request, at about two a second for all its apps together. `b24` reads them through the portal's REST
+API and keeps a copy on your computer, so most answers need no request at all.
 
-An agent with `b24` tells you which deals stand in each stage, what changed since yesterday and what a client said on
-the phone. It moves a deal, closes it or updates a contact when you ask, as far as the permissions you set allow.
+An agent with `b24` tells you which deals are stuck in a stage and what changed overnight. It moves a deal, closes it
+or updates a contact when you ask, as far as the permissions you set allow.
 
 `b24` is a WireCat command-line tool, a program you or your agent run in a terminal. `sync` copies your deals and
 leads with their clients into the WireCat local store, the one file on your computer that the WireCat tools share.

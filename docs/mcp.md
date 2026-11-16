@@ -1,7 +1,7 @@
 # MCP
 
-Give your Bitrix24 CRM to an AI agent that cannot run commands, such as Claude Desktop, Cursor, or ChatGPT and Claude
-in the browser. MCP (Model Context Protocol) is the way such an agent asks a program what it can do and then calls
+Give your Bitrix24 CRM to an AI agent that cannot run commands, such as Claude Desktop, or ChatGPT and Claude in the
+browser. MCP (Model Context Protocol) is the way such an agent asks a program what it can do and then calls
 it, and `b24` serves its commands that way.
 
 The agent then reads your deals, leads and clients, and changes them as far as the profile's permissions allow.

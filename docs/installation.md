@@ -5,10 +5,10 @@ in only through an inbound webhook or an application you create in the portal, a
 
 Once it is done, an agent on this computer reads your deals, leads and clients, and changes them when you ask.
 
-npm installs `b24` as a command. `b24 work setup` shows where to make the webhook in Bitrix24 and which permissions
-(scopes) to tick, checks the webhook's address against the portal and keeps it in the system keyring. `b24 doctor`
-shows what is set up, without the network. You need Node.js 22.16 or a later 22.x, or 24 or later. Node 23 is not
-supported.
+npm installs `b24` as a command, and `b24 skill install` teaches your agent to use it. `b24 work setup` shows where to
+make the webhook in Bitrix24 and which permissions (scopes) to tick, checks the webhook's address against the portal
+and keeps it in the system keyring. `b24 doctor` shows what is set up, without the network. You need Node.js 22.16 or
+a later 22.x, or 24 or later. Node 23 is not supported.
 
 **On this page:**
 
@@ -22,12 +22,13 @@ Install `b24` once on each computer where you or an agent use it.
 ```sh
 npm install -g @wirecat/bitrix24-cli
 b24 --version
+b24 skill install   # the agent skill, for Claude Code, Codex, Gemini CLI and OpenClaw
 b24 doctor
 ```
 
-`doctor` needs no network and opens no keyring. It shows the version, where settings live, the profiles that
-exist, and whether other users of the computer can read the settings. Then pick a profile name for your portal, such
-as `work`.
+An agent with no terminal, such as Claude Desktop, uses `b24` over [MCP](mcp.md) instead. `doctor` needs no network
+and opens no keyring. It shows the version, where settings live, the profiles that exist, and whether other users of
+the computer can read the settings. Then pick a profile name for your portal, such as `work`.
 
 ## Sign in
 

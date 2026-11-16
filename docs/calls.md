@@ -1,8 +1,8 @@
 # Calls
 
-Keep every call on your Bitrix24 phones on your computer, with what was said as text, beside the client's deals,
-messages and mail. The portal keeps its calls in its call history (Telephony → Call history), and `b24` copies them
-from there.
+Keep your calls on Bitrix24's phones on your computer, with what was said as text, in the same local store as the
+client's deals, messages and mail. The portal keeps its calls in its call history (Telephony → Call history), and
+`b24` copies them from there.
 
 An agent then tells you when a client last called, how the call ended and what was said on it. Calls from another
 phone system can also land on the client's contact in Bitrix24, so the CRM shows them too.
