@@ -1,14 +1,25 @@
 # Calls
 
-Read this page if your company's phones run through Bitrix24 telephony. It shows how to copy the portal's calls into
-the local WireCat store, turn their recordings into text on this computer, and find a client's calls beside their
-deals, messages and mail. By the end, `memo context` shows a client's calls in their history.
+Keep your calls on Bitrix24's phones on your computer, with what was said as text, in the same local store as the
+client's deals, messages and mail. The portal keeps its calls in its call history (Telephony → Call history), and
+`b24` copies them from there.
 
-Words this page uses:
+An agent then tells you when a client last called, how the call ended and what was said on it. Calls from another
+phone system can also land on the client's contact in Bitrix24, so the CRM shows them too.
 
-- **Call history**: the list of calls the portal keeps under Telephony → Call history. b24 reads it with the
-  `voximplant.statistic.get` method.
-- **Profile**: the name of one portal's sign-in, such as `work`. It is the first word of a command.
+`meetings sync` copies the calls into the WireCat local store, and every `sync` does it too. `meetings transcribe`
+turns the recordings into text with a speech model that runs on this computer. `calls export` writes other phone
+systems' calls into Bitrix24. You need the webhook's `telephony` scope.
+
+**On this page:**
+
+1. [Before the first sync](#before-the-first-sync)
+2. [Copy the calls](#copy-the-calls)
+3. [The client and the employee](#the-client-and-the-employee)
+4. [Recordings](#recordings)
+5. [Turn calls into text](#turn-calls-into-text)
+6. [Permissions](#permissions)
+7. [Write other phone systems' calls into Bitrix24](#write-other-phone-systems-calls-into-bitrix24)
 
 ## Before the first sync
 
@@ -26,7 +37,7 @@ example because the webhook has no telephony scope, it says why in a note and th
 the calls out of `sync`: `b24 work config set sync_calls false`. `meetings sync` copies only the calls:
 
 ```sh
-b24 work meetings sync                                   # calls since the last sync; the first reads 30 days
+b24 work meetings sync                                   # calls since the last sync, the first reads 30 days
 b24 work meetings sync --since-time 2026-11-01T00:00:00Z # calls from a date on
 b24 work meetings list                                   # newest first, from the store, offline too
 b24 work meetings show 12                                # one call: who, when, how it ended
@@ -95,7 +106,7 @@ b24 work meetings transcribe         # calls of five seconds or more with no tex
 b24 work meetings transcript 12      # one call's text
 ```
 
-A recording kept by `download_recordings` is read from this computer; any other is downloaded for the
+A recording kept by `download_recordings` is read from this computer. Any other is downloaded for the
 transcription, and kept only when `download_recordings` is on. Bitrix24 does not say which side of a stereo
 recording is the employee, so the text names the channels "Channel 1" and "Channel 2". A call of more than an hour
 is skipped.
@@ -117,8 +128,15 @@ b24 work config set permissions.meetings.sync deny
 Calls from another phone system, such as pbx, can land on the client's contact in Bitrix24, so the CRM shows them
 beside the portal's own calls. It is off until you turn it on, and it writes each call once.
 
-Bitrix24 lets only an application write a call, not a webhook. Sign the profile in as a local application first:
-`b24 work session start --portal <portal> --client-id <id>`. Then turn it on and allow its two methods:
+Bitrix24 lets only an application write a call, not a webhook. Sign the profile in as a local application first
+([with a local application](usage.md#with-a-local-application)), with your portal's host and Application ID in place
+of these examples:
+
+```sh
+b24 work session start --portal example.bitrix24.ru --client-id local.0123abcd.45678901
+```
+
+Then turn it on and allow its two methods:
 
 ```sh
 b24 work config set export_calls true

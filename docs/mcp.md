@@ -1,12 +1,22 @@
 # MCP
 
-Use this page to give an AI agent your CRM over MCP (Model Context Protocol), the way an agent asks a program what it
-can do and then calls it. An agent with a terminal, such as Claude Code or Codex, does better with the commands and
-the skill (`b24 skill install`). MCP is for a client that cannot run commands: a chat app, a remote agent, ChatGPT or
-Claude in the browser.
+Give your Bitrix24 CRM to an AI agent that cannot run commands, such as Claude Desktop, or ChatGPT and Claude in the
+browser. MCP (Model Context Protocol) is the way such an agent asks a program what it can do and then calls
+it, and `b24` serves its commands that way.
 
-Before you start, sign the profile in (`b24 work session start`, with a webhook or a local application) and read
-[Permissions](permissions.md): over MCP a write at `ask` goes ahead.
+The agent then reads your deals, leads and clients, and changes them as far as the profile's permissions allow.
+
+`b24 work mcp add` adds the server to Claude Code or Codex, and `b24 work mcp config` prints the entry for any other
+client. An agent with a terminal, such as Claude Code or Codex, does better with the commands and the skill
+(`b24 skill install`). You need a signed-in profile, and a look at [Permissions](permissions.md) first: over MCP a
+write at `ask` goes ahead.
+
+**On this page:**
+
+1. [Add b24 to an agent](#add-b24-to-an-agent)
+2. [What the agent sees](#what-the-agent-sees)
+3. [Keep writes yours](#keep-writes-yours)
+4. [ChatGPT and Claude in the browser](#chatgpt-and-claude-in-the-browser)
 
 ## Add b24 to an agent
 
@@ -35,7 +45,7 @@ The server has three tools:
 
 A command is named as on the command line, without the profile, and checks the same permission key. These are never
 offered over MCP: `api call`, `session start` and `session end`. The agent asks you to run them in a terminal. Of
-`schedule`, MCP runs `list`, `run` and `exec`; the commands that add, change or remove a timer are refused unless
+`schedule`, MCP runs `list`, `run` and `exec`. The commands that add, change or remove a timer are refused unless
 `permissions.mcp.authority` is `allow`.
 
 Text from the portal comes marked `untrusted`: deal and lead titles, pipeline and stage names, the names of contacts,

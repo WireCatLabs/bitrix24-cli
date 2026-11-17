@@ -1,8 +1,17 @@
 # Roadmap
 
-This page lists what is planned for `b24` and is not in it yet. Read it before you build a workaround for a missing
-feature: it may already be on the way. The order is approximate and can change. To suggest something, open an
+See what `b24` does today and what comes next, before you build a workaround for something it lacks. It may already
+be on the way.
+
+You learn which parts of your Bitrix24 an agent can work with now, and which come in the next releases. The order is
+approximate and can change. To suggest something, open an
 [issue on GitHub](https://github.com/WireCatLabs/bitrix24-cli/issues).
+
+**On this page:**
+
+1. [What works today](#what-works-today)
+2. [Next](#next)
+3. [Later](#later)
 
 ## What works today
 
@@ -15,8 +24,11 @@ offline too, and `search all` searches them. It also stores who is who: contacts
 deals' contacts and owners, employees of your own company and their reporting lines. `pipelines show` is the sales
 funnel board: each stage's deals or leads, with their number and their total in each currency. `deals list`,
 `leads list`, `people list` and `organizations list` print a page as a CSV table for a spreadsheet with
-`--format csv`. `schedule` runs `sync` on a timer. `b24 api` reaches any portal method by name. Every command is in
-the [command reference](commands.md).
+`--format csv`. `schedule` runs `sync` on a timer. `changes list` shows what changed in the copy, and `--format
+report` makes it a morning digest. With `activities` on, the sync also reads the calls, e-mails, to-dos, tasks and
+comments on deals and leads. `meetings sync` copies the portal's calls, `meetings transcribe` turns their recordings
+into text on this computer, and `calls export` writes other phone systems' calls into Bitrix24. `b24 api` reaches any
+portal method by name. Every command is in the [command reference](commands.md).
 
 ## Next
 
@@ -24,6 +36,8 @@ the [command reference](commands.md).
   deals and leads, so they read from the local store and work offline.
 - **Custom fields of contacts kept locally.** The values of your portal's own fields on contacts are stored with the
   contact, so you can read them offline.
+- **Client files and documents.** The files of deals and their attachments, and documents made from the portal's
+  templates. The setup already asks for the `disk` and `documentgenerator` scopes they need.
 
 ## Later
 

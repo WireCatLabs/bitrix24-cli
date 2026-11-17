@@ -1,23 +1,32 @@
 # Permissions
 
-Read this page before you let an AI agent, a script or a colleague change your CRM through `b24`. It shows how to
-decide, for each profile, what may only be read, what asks you first and what may go ahead. By the end you can stop
-agents from moving deals or deleting, and you know which checks hold whatever the permissions say.
+Let an AI agent work in your CRM through `b24` and keep the say over what it changes. The webhook carries the rights
+of its employee in Bitrix24, so without your own limits an agent could do much of what that employee can.
 
-Words this page uses:
+For each profile, the name you gave one portal's sign-in, you decide what an agent may only read, what asks you first
+and what goes ahead. You can stop an agent from moving or deleting deals, and you know which checks hold whatever
+the settings say.
 
-- **Profile**: the name you gave one portal's sign-in, such as `work`. It is the first word of a command.
-- **Permission key**: the name of a command, such as `deals.move`, or of a group of commands, such as `deals`. A
-  longer key is more specific and wins.
-- **Level**: what happens when the command runs: `deny`, `readonly`, `ask` or `allow`.
+Each command has a permission key, its name such as `deals.move`, or a group such as `deals`, where the longer key
+wins. Each key has a level: `deny`, `readonly`, `ask` or `allow`. `b24 work config set` sets them, and `--dry-run`
+shows which keys a command checks.
+
+**On this page:**
+
+1. [The levels](#the-levels)
+2. [What is set before you change anything](#what-is-set-before-you-change-anything)
+3. [One command can check several keys](#one-command-can-check-several-keys)
+4. [Stage changes start the portal's robots](#stage-changes-start-the-portals-robots)
+5. [Agents and MCP](#agents-and-mcp)
+6. [Checks that hold whatever the permissions say](#checks-that-hold-whatever-the-permissions-say)
 
 ## The levels
 
 | Level | What happens |
 |---|---|
 | `deny` | The command is refused, a read too. |
-| `readonly` | Reads work; a write is refused. |
-| `ask` | A write asks first at a terminal; without one it is refused unless `--yes` is given. **Over MCP it runs.** |
+| `readonly` | Reads work. A write is refused. |
+| `ask` | A write asks first at a terminal. Without one it is refused unless `--yes` is given. **Over MCP it runs.** |
 | `allow` | The command runs without a question. |
 
 ```sh
@@ -37,7 +46,7 @@ run it yourself in a terminal.
 |---|---|---|
 | `deals.delete`, `leads.delete` | `ask` | A delete cannot be undone. |
 | `crm.assign-others` | `deny` | Bitrix24 tells the employee a record was given to them. |
-| `api.<method>` of a family that messages people, publishes or starts automation | `deny` | See below; reads too. |
+| `api.<method>` of a family that messages people, publishes or starts automation | `deny` | See below. Reads are denied too. |
 | `api.<method>` that `b24` does not read or write itself | `ask` | It may hold what you keep from agents. |
 | Every other command | `allow` | |
 
@@ -49,11 +58,11 @@ The families denied through `api call` are `im`, `imopenlines`, `imbot`, `imconn
 `event.bind` and `batch`. `b24 work api show <method>` names a method's key, its level and the keys it also checks.
 
 The call history stays denied through `api call` too (`api.voximplant.statistic.get`): its answer holds the
-recording links with their tokens. `meetings sync` reads it under its own key, `meetings.sync`; see [Calls](calls.md).
+recording links with their tokens. `meetings sync` reads it under its own key, `meetings.sync`. See [Calls](calls.md).
 
 `calls export` writes a call with `telephony.externalCall.register` and `finish`. It checks `calls.export` and both
 methods' own keys, `api.telephony.externalcall.register` and `api.telephony.externalcall.finish`, which stay denied
-with the rest of `telephony` until you allow these two. Allowing them opens only these two methods; see
+with the rest of `telephony` until you allow these two. Allowing them opens only these two methods. See
 [Calls](calls.md#write-other-phone-systems-calls-into-bitrix24).
 
 ## One command can check several keys
@@ -118,7 +127,7 @@ They never loosen the profile. See [MCP](mcp.md).
 - **Phones and e-mails** of clients who are not the webhook user's own: at most 100 such contacts and companies a day
   through `people show` and `organizations show`, for the user and their agents together. The count is kept on this
   computer: it stops an accident or an agent, not someone who means to take the base.
-- **Whose deals a sync copies** (`crm.bitrix24:<portal>.unassigned`, `scope`, `self`): only you set them; an agent is
+- **Whose deals a sync copies** (`crm.bitrix24:<portal>.unassigned`, `scope`, `self`): only you set them. An agent is
   refused.
 - **Bitrix24's own access rights.** The webhook acts as the employee who made it, and the portal refuses what that
   employee may not do (`bitrix.access-denied`).
