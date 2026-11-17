@@ -267,8 +267,12 @@ and `type`); field names are from the REST 3.0 field pages and the `user.get` an
   to a contact's mobile. The portal's own link to a CRM record (`CRM_ENTITY_*`) is kept in the metadata, never a
   join: cli-core has no rule for it.
 - Only the calls of the users the CRM copy is for (`unassigned`, else the signed-in user); `scope: all` refuses.
-- A recording is downloaded only with `download_recordings`, from `CALL_RECORD_URL`, on the portal's own host, with
-  no redirect. The link holds a token: never stored or printed. No `disk` scope.
+- A recording is downloaded only with `download_recordings` or `meetings transcribe`, from `CALL_RECORD_URL`, with no
+  redirect. The link holds a token: never stored or printed. No `disk` scope. A portal with an outside telephony
+  provider (Beeline cloud PBX, checked live 2026-11-17) links the provider's own host: followed only over https, only
+  when every address the host resolves to is public (cli-core `isPublicAddress`), through `hostFetch` for that one
+  host, with no portal sign-in. The name is resolved once for the check and again for the request, so a host that
+  changes its answer in between is not caught.
 - `api call` keeps the whole `voximplant` family denied, the call history too, since its answer holds those links.
 - A number without `+` needs `phone_region`: the store's `phone_countries` never decides an identifier.
 

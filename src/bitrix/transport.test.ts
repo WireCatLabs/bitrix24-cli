@@ -108,6 +108,35 @@ describe("BitrixTransport", () => {
     expect(JSON.stringify(events)).toContain("/rest/:user/:token/download.json")
   })
 
+  it("downloads a recording a telephony provider keeps, from its public https host, with nothing of the sign-in", async () => {
+    const portal = fakePortal({ "rec.mp3": { text: "audio", headers: { "content-type": "audio/mpeg" } } })
+    const events: RequestEvent[] = []
+    const { transport } = transportOf(portal, {
+      lookup: async () => ["93.184.216.10"],
+      events: (event) => events.push(event as RequestEvent),
+    })
+    const file = await transport.download("https://records.pbx.example/files/a1b2/rec.mp3", 1_000)
+    expect(new TextDecoder().decode(file.bytes)).toBe("audio")
+    expect(portal.calls.map(({ url }) => url)).toEqual(["https://records.pbx.example/files/a1b2/rec.mp3"])
+    expect(JSON.stringify(portal.calls)).not.toContain(FAKE_SECRET)
+    expect(JSON.stringify(events)).toContain("records.pbx.example/…")
+    expect(JSON.stringify(events)).not.toContain("a1b2")
+  })
+
+  it.each([
+    ["is not https", "http://records.pbx.example/rec.mp3", ["93.184.216.10"]],
+    ["names this computer", "https://127.0.0.1/rec.mp3", []],
+    ["resolves to a private network", "https://records.pbx.example/rec.mp3", ["10.0.0.5"]],
+    ["resolves to a public and a private address", "https://records.pbx.example/rec.mp3", ["93.184.216.10", "fd00::1"]],
+  ])("refuses a download link off the portal that %s, before any request", async (_, link, addresses) => {
+    const portal = fakePortal({ "rec.mp3": { text: "audio" } })
+    const { transport } = transportOf(portal, { lookup: async () => addresses })
+    const failure = await failureOf(transport.download(link, 1_000))
+    expect(failure.details.reason).toBe("bitrix.foreign-link")
+    expect(failure.message).not.toContain("rec.mp3")
+    expect(portal.calls).toEqual([])
+  })
+
   it("keeps REST 2's total and next", async () => {
     const portal = fakePortal({ "user.get": ok([{ ID: "1" }], { total: 120, next: 50 }) })
     expect(await transportOf(portal).transport.call("user.get")).toEqual({

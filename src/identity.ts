@@ -26,7 +26,7 @@ export const DESKTOP: ManifestIdentity = {
   docs: "https://wirecat.dev/en/docs/b24",
   // A local application's sign-in exchanges and refreshes its tokens there (apidocs settings/oauth).
   hosts: ["oauth.bitrix.info"],
-  userHosts: "the Bitrix24 portal in your webhook address, or the one you sign in to with a local application",
+  userHosts: "your Bitrix24 portal, and your telephony provider's server where a call recording link leads",
   tagline: "Bitrix24 CRM: deals, leads, contacts and companies",
   syncs: "deals, leads, contacts and companies",
   signIn: {

@@ -158,12 +158,12 @@ describe("recordings", () => {
     expect(portal.calls.filter(({ method }) => method === "download.json")).toHaveLength(1)
   })
 
-  it("never follows a link to another address, and saves the call without it", async () => {
+  it("never follows a link into a private network, and saves the call without it", async () => {
     expect((await b24(["work", "config", "set", "download_recordings", "true"])).code).toBe(0)
-    const elsewhere = row(1, { CALL_RECORD_URL: "https://elsewhere.example/rec.mp3?token=faketoken0" })
+    const elsewhere = row(1, { CALL_RECORD_URL: "https://10.0.0.5/rec.mp3?token=faketoken0" })
     const ran = await b24(["work", "meetings", "sync", "--json"], { portal: portalWith([elsewhere]) })
     expect(ran.code, ran.err).toBe(0)
-    expect(ran.err).toContain("another address")
+    expect(ran.err).toContain("private network")
     expect(ran.err).not.toContain("faketoken0")
     const listed = (await b24(["work", "meetings", "list", "--json"])).json() as { items: unknown[] }
     expect(listed.items).toHaveLength(1)
@@ -267,6 +267,36 @@ describe("meetings transcribe", () => {
       transcribed: 0,
       audio_ms: 0,
       failed: [{ meeting: 1, ref: expect.stringMatching(/^meeting:/), reason: "recording.missing" }],
+    })
+  })
+
+  it("downloads a recording the telephony provider keeps on its own public host", async () => {
+    // A literal public address, so the test resolves no name.
+    const provider = "https://93.184.216.10/records/a1b2/rec.mp3"
+    const portal = portalWith([row(1, { CALL_RECORD_URL: provider })], {
+      "rec.mp3": { text: AUDIO, headers: { "content-type": "audio/mpeg" } },
+    })
+    await b24(["work", "meetings", "sync", "--json"], { portal })
+    const ran = await transcribe(portal)
+    expect(JSON.parse(ran.out).item).toMatchObject({ transcribed: 1, failed: [] })
+    expect(portal.calls.filter(({ method }) => method === "rec.mp3").map(({ url }) => url)).toEqual([provider])
+  })
+
+  it("spends --max-meetings only on calls with a recording", async () => {
+    const portal = portalWith(
+      [
+        row(1, { CALL_RECORD_URL: LINK }),
+        row(2, { CALL_START_DATE: "2026-11-11T10:00:00+03:00" }),
+        row(3, { CALL_START_DATE: "2026-11-12T10:00:00+03:00" }),
+      ],
+      { "download.json": { text: AUDIO, headers: { "content-type": "audio/mpeg" } } },
+    )
+    await b24(["work", "meetings", "sync", "--json"], { portal })
+    const ran = await transcribe(portal, ["--max-meetings", "1"])
+    expect(JSON.parse(ran.out).item).toMatchObject({
+      transcribed: 1,
+      failed: [{ reason: "recording.missing" }, { reason: "recording.missing" }],
+      remaining: 0,
     })
   })
 

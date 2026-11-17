@@ -1531,7 +1531,7 @@
       "github.com",
       "*.githubusercontent.com"
     ],
-    "user_hosts": "the Bitrix24 portal in your webhook address, or the one you sign in to with a local application"
+    "user_hosts": "your Bitrix24 portal, and your telephony provider's server where a call recording link leads"
   },
   "desktop": {
     "tagline": "Bitrix24 CRM: deals, leads, contacts and companies",

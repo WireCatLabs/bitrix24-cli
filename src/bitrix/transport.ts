@@ -1,7 +1,10 @@
+import { lookup as dnsLookup } from "node:dns/promises"
+import { isIP } from "node:net"
 import { CliError, isCliError, realSleep, type SleepLike, wallClock } from "@wirecat/cli-base"
 import { hostFetch, providerWaitMs, readJsonResponse } from "@wirecat/cli-base/http"
 import { apiJson, currentAttempt, type EventSink, providerEvent, providerRequest } from "@wirecat/cli-core/cli"
 import { providerCall } from "@wirecat/cli-core/crm"
+import { isPublicAddress } from "@wirecat/cli-core/documents"
 import type { Pacer } from "@wirecat/cli-core/sends"
 import { type EmployeeRule, employeeRuleOf } from "../api-keys.js"
 import { isRecord } from "../body.js"
@@ -37,9 +40,19 @@ const isTimeout = (error: unknown) =>
 
 export type FetchLike = (url: string, init: RequestInit) => Promise<Response>
 
+/** The addresses a hostname resolves to. */
+export type AddressLookup = (hostname: string) => Promise<string[]>
+
+const systemLookup: AddressLookup = async (hostname) =>
+  (await dnsLookup(hostname, { all: true, verbatim: true })).map(({ address }) => address)
+
+const refusedLink = (message: string) => new CliError("invalid_response", message, { reason: "bitrix.foreign-link" })
+
 export interface BitrixTransportOptions {
   auth: Webhook | AppAuth
   fetch?: FetchLike
+  /** Resolves the host of a download link that leads off the portal. */
+  lookup?: AddressLookup
   timeoutMs?: number
   signal?: AbortSignal
   events?: EventSink
@@ -78,6 +91,8 @@ const unsent = (error: unknown): never => {
 export class BitrixTransport {
   readonly #auth: Webhook | AppAuth
   readonly #fetch: FetchLike
+  readonly #plainFetch: FetchLike | undefined
+  readonly #lookup: AddressLookup
   readonly #timeoutMs: number
   readonly #signal: AbortSignal | undefined
   readonly #events: EventSink | undefined
@@ -95,6 +110,8 @@ export class BitrixTransport {
       ...(options.fetch ? { fetch: options.fetch as typeof fetch } : {}),
       timeoutMs: this.#timeoutMs * 2,
     }) as FetchLike
+    this.#plainFetch = options.fetch
+    this.#lookup = options.lookup ?? systemLookup
     this.#signal = options.signal
     this.#events = options.events
     this.#pacer = options.pacer
@@ -166,26 +183,45 @@ export class BitrixTransport {
     })
   }
 
+  /** Reaches only the link's own host, once the host is known to be on the public internet. */
+  async #outsideFetch(url: URL): Promise<FetchLike> {
+    if (url.protocol !== "https:")
+      throw refusedLink("the portal gave a download link that is not https; b24 does not follow it")
+    const host = url.hostname.replace(/^\[(.*)\]$/, "$1")
+    const addresses = isIP(host)
+      ? [host]
+      : await this.#lookup(host).catch(() => {
+          throw new CliError("provider_unavailable", `${url.hostname} could not be found`, {
+            reason: "bitrix.link-host-unknown",
+          })
+        })
+    if (!addresses.length || !addresses.every(isPublicAddress))
+      throw refusedLink("the portal gave a download link to this computer or a private network; b24 does not follow it")
+    return hostFetch({
+      hosts: [url.hostname],
+      ...(this.#plainFetch ? { fetch: this.#plainFetch as typeof fetch } : {}),
+      timeoutMs: this.#timeoutMs * 2,
+    }) as FetchLike
+  }
+
   /**
    * A file behind a link the portal gave, such as a call's `CALL_RECORD_URL`. Such a link carries a token, so it is
-   * never put into an error or a run record, and it is followed only on the portal's own address, with no redirect.
+   * never put into an error or a run record, and it is followed with no redirect. A portal with an outside telephony
+   * provider gives the provider's own link to a recording; that one is followed only over https, only to a public
+   * address, and with nothing of the portal's sign-in.
    */
   async download(link: string, maxBytes: number): Promise<{ bytes: Uint8Array; type: string | null }> {
     const portal = new URL(this.#auth.origin)
     const url = URL.canParse(link, portal.href) ? new URL(link, portal) : null
-    if (url?.origin !== portal.origin)
-      throw new CliError(
-        "invalid_response",
-        "the portal gave a download link to another address; b24 does not follow it",
-        {
-          reason: "bitrix.foreign-link",
-        },
-      )
-    const at = this.#pacer ? (await this.#pacer.reserve()) - this.#now() : 0
+    if (!url) throw refusedLink("the portal gave a download link b24 cannot read")
+    const onPortal = url.origin === portal.origin
+    const fetch = onPortal ? this.#fetch : await this.#outsideFetch(url)
+    // The portal's request limit does not cover a provider's own server.
+    const at = onPortal && this.#pacer ? (await this.#pacer.reserve()) - this.#now() : 0
     if (at > 0) await this.#wait(at, "a download")
     const end = providerRequest("download", this.#events ?? providerEvent, {
       method: "GET",
-      endpointTemplate: loggedPath(url),
+      endpointTemplate: onPortal ? loggedPath(url) : `${url.hostname}/…`,
       transport: "http",
     })
     const deadline = new AbortController()
@@ -196,14 +232,14 @@ export class BitrixTransport {
     timer.unref()
     const signal = AbortSignal.any([deadline.signal, ...(this.#signal ? [this.#signal] : [])])
     try {
-      const response = await this.#fetch(url.href, { method: "GET", redirect: "error", signal }).catch((error) => {
+      const response = await fetch(url.href, { method: "GET", redirect: "error", signal }).catch((error) => {
         throw this.#unanswered("download", signal.aborted ? signal.reason : error, { reads: true, key: undefined })
       })
       end({ status: response.status })
       if (!response.ok)
         throw new CliError(
           response.status === 401 || response.status === 403 ? "permission_error" : "provider_unavailable",
-          `the portal refused the download (HTTP ${response.status})`,
+          `${onPortal ? "the portal" : url.hostname} refused the download (HTTP ${response.status})`,
           { reason: "bitrix.download-refused", status: response.status },
         )
       const size = Number(response.headers.get("content-length") ?? 0)

@@ -149,16 +149,20 @@ export const transcribeCalls = async (
       report.failed.push(failed(call.id, "recording.too-long", "the call is longer than 60 minutes"))
     else pending.push(call)
   }
+  // A call with no recording costs one read of the portal, so it does not count against the limit.
+  let tried = 0
   for (const [index, call] of pending.entries()) {
-    if (index >= options.limit || options.signal?.aborted) {
+    if (tried >= options.limit || options.signal?.aborted) {
       report.remaining = pending.length - index
-      report.stopped = index < options.limit
+      report.stopped = tried < options.limit
       break
     }
-    const step = `${index + 1}/${Math.min(pending.length, options.limit)} meeting ${call.id}`
+    const step = `${tried + 1}/${Math.min(pending.length, options.limit)} meeting ${call.id}`
     try {
+      tried++
       const found = await recordingOf(ports, call.externalId)
       if (!found) {
+        tried--
         report.failed.push(failed(call.id, "recording.missing", "the call has no recording on the portal"))
         options.progress?.(`${step} failed: recording.missing`)
         continue

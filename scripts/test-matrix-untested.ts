@@ -13,7 +13,6 @@ const SHARED_MEETINGS =
   "cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, " +
   "list, show, transcript and people on b24's calls"
 const SHARED_MODELS = "cli-core's modelCatalogueCommand; its tests download a model from a fake catalogue"
-const TRANSCRIBE_HELPER = "src/calls/calls.test.ts passes it through its transcribe helper, with a fake speech engine"
 const LONG_RUNNING = `starts an HTTP server or a background process that runs until stopped; ${SHARED_MCP}`
 
 export const UNTESTED: { command: string; option?: string; reason: string }[] = [
@@ -145,7 +144,6 @@ export const UNTESTED: { command: string; option?: string; reason: string }[] = 
   { command: "meetings sync", option: "--lookback-days", reason: SHARED_MEETINGS },
   { command: "meetings repair", reason: SHARED_MEETINGS },
   { command: "meetings repair", option: "--yes", reason: SHARED_MEETINGS },
-  { command: "meetings transcribe", option: "--max-meetings", reason: TRANSCRIBE_HELPER },
   {
     command: "meetings transcribe",
     option: "--model",
