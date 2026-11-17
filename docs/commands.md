@@ -1327,7 +1327,7 @@ b24 meetings transcribe [query] [options]
 | `--max-meetings <n>` | at most this many calls transcribed, newest first. Default: `20`. |
 | `--model <model>` | local speech model. Default: `gigaam-v3`. |
 
-**Returns:** call transcription report — transcribed, audio_seconds, failed, without_recording, remaining, stopped; every field: b24 commands info meetings transcribe
+**Returns:** call transcription report — transcribed, audio_ms, failed, remaining, stopped; every field: b24 commands info meetings transcribe
 
 **Example:** `b24 work meetings transcribe --max-meetings 20 --json`, `b24 work meetings transcribe "duration_ms>=60000" --json`
 

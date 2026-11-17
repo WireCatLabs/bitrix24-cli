@@ -252,18 +252,22 @@ describe("meetings transcribe", () => {
     await b24(["work", "meetings", "sync", "--json"], { portal })
     const ran = await transcribe(portal)
     expect(ran.code, ran.err).toBe(0)
-    expect(JSON.parse(ran.out).item).toMatchObject({ transcribed: 1, failed: [], without_recording: 0 })
+    expect(JSON.parse(ran.out).item).toMatchObject({ transcribed: 1, failed: [] })
     expect(statistic(portal).at(-1)?.body).toEqual({ FILTER: { CALL_ID: "externalCall.1" } })
     const transcript = await b24(["work", "meetings", "transcript", "1", "--json"], { portal })
     expect(transcript.out).toContain("Добрый день, это Ольга")
     expect(readdirSync(process.env.B24_STATE_DIR as string)).not.toContain("recordings")
   })
 
-  it("counts a call with no recording on the portal and goes on", async () => {
+  it("lists a call with no recording on the portal as failed, named by its ref, and goes on", async () => {
     const portal = portalWith([row(1)])
     await b24(["work", "meetings", "sync", "--json"], { portal })
     const ran = await transcribe(portal)
-    expect(JSON.parse(ran.out).item).toMatchObject({ transcribed: 0, without_recording: 1 })
+    expect(JSON.parse(ran.out).item).toMatchObject({
+      transcribed: 0,
+      audio_ms: 0,
+      failed: [{ meeting: 1, ref: expect.stringMatching(/^meeting:/), reason: "recording.missing" }],
+    })
   })
 
   it("keeps the recording with download_recordings, and reads the kept file the next time", async () => {
