@@ -356,6 +356,25 @@ describe("meetings transcribe", () => {
     ])
   })
 
+  it("reads a recording sent with no audio type by the extension in its file name, and refuses one without", async () => {
+    const generic = { "content-type": "application/octet-stream;charset=utf-8" }
+    const portal = portalWith(
+      [
+        row(1, { CALL_RECORD_URL: LINK }),
+        row(2, { CALL_RECORD_URL: LINK, CALL_START_DATE: "2026-11-11T10:00:00+03:00" }),
+      ],
+      {
+        "download.json": [
+          { text: AUDIO, headers: generic },
+          { text: AUDIO, headers: { ...generic, "content-disposition": 'attachment; filename="call-1.mp3"' } },
+        ],
+      },
+    )
+    await b24(["work", "meetings", "sync", "--json"], { portal })
+    const report = JSON.parse((await transcribe(portal)).out).item as { transcribed: number; failed: unknown[] }
+    expect(report).toMatchObject({ transcribed: 1, failed: [{ meeting: 2, reason: "recording.not-audio" }] })
+  })
+
   it("lists a call it could not transcribe with the reason, and goes on", async () => {
     const portal = portalWith(
       [
