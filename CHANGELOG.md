@@ -2,6 +2,32 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## 0.26.0 — 18.11.2026
+
+### Changed — may break callers
+
+- **The MCP Registry entry asks which profiles to serve.** It started `mcp serve --profiles all`, so a client that
+  installed the server from the registry reached every account on the computer without the owner choosing. Now
+  `--profiles` is a required argument with the example `personal`: the client asks for one profile, a
+  comma-separated list or `all`. Why: a CLI never picks an account for the owner
+  ([WC-MCP-9](https://github.com/WireCatLabs/cli-base/blob/main/docs/standards/mcp.md#wc-mcp-9--a-server-serves-the-profiles-it-is-told-with-one-connection-for-each)). Watch for: a client set up from the old entry keeps `--profiles all` until it is set up again; a
+  server added by hand or with `mcp config` does not change.
+
+### Fixed
+
+- **Recordings your telephony provider keeps.** A portal that works with an outside telephony provider, such as a
+  Beeline cloud PBX, links each recording to the provider's server. b24 refused such a link, so `meetings transcribe`
+  turned none of these calls into text. It now follows the link over https to an address on the public internet,
+  never to this computer or a local network, and sends nothing of your Bitrix24 sign-in with it. See
+  [Calls](docs/calls.md#recordings).
+- **`meetings transcribe --max-meetings` counts calls with a recording.** A call with no recording on the portal is
+  still listed under `failed`, but it no longer uses up the limit. Before, when the newest calls had no recording,
+  `--max-meetings 1` turned nothing into text.
+- **A recording sent with no audio type.** A telephony provider's server, such as a Beeline cloud PBX, sends a
+  recording as `application/octet-stream` and names the file, `call.mp3`, in its `Content-Disposition`. b24 refused
+  it as not audio (`recording.not-audio`), so `meetings transcribe` turned none of these calls into text. It now takes
+  the format from the file name when the type names none.
+
 ## 0.25.0 — 17.11.2026
 
 ### Changed — may break callers
