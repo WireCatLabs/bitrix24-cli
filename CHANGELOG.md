@@ -2,6 +2,14 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## Unreleased
+
+### Fixed
+
+- **A local application sign-in saved by an earlier b24 keeps working after the upgrade.** Earlier versions kept the
+  portal under another name in the saved sign-in, and the new sign-in store answered "the saved sign-in cannot be
+  read; sign in again".
+
 ## 0.24.0 — 17.11.2026
 
 ### Added

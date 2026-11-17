@@ -16,6 +16,7 @@ import {
   type OAuthProvider,
   oauthAccount,
   type SignInOptions as SignInSteps,
+  type TokenCodec,
   type TokenSet,
   type TokenStorage,
   tokenKeeper,
@@ -39,7 +40,24 @@ export interface AppAuth {
 }
 
 /** Every refresh needs the owner's secret, so the entry keeps it with the portal's address and the user. */
-const codec = accountTokenCodec(PROVIDER)
+const account = accountTokenCodec(PROVIDER)
+
+/** b24 0.22.0 and older kept the portal as `origin`; reading it as `host` keeps that sign-in working after an upgrade. */
+const withHost = (raw: string): string => {
+  try {
+    const entry: unknown = JSON.parse(raw)
+    if (isRecord(entry) && typeof entry.origin === "string" && entry.host === undefined)
+      return JSON.stringify({ ...entry, host: entry.origin })
+  } catch {}
+  return raw
+}
+
+const codec: TokenCodec = {
+  ...account,
+  decode: (raw) => account.decode(withHost(raw)),
+  encode: (input) =>
+    account.encode(input.previous === undefined ? input : { ...input, previous: withHost(input.previous) }),
+}
 
 const paths = (env: NodeJS.ProcessEnv) => resolvePaths({ appName: IDENTITY.appName, prefix: IDENTITY.envPrefix, env })
 
