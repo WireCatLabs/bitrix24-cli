@@ -82,6 +82,9 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 
 ### Fixed
 
+- **A local application sign-in saved by an earlier b24 keeps working after the upgrade.** Earlier versions kept the
+  portal under another name in the saved sign-in, and the new sign-in store answered "the saved sign-in cannot be
+  read; sign in again".
 - **A contact given to a colleague leaves the copy at the next `sync`**, with its phone and e-mail. Before, its one
   phone and e-mail stayed until `sync --rescan`.
 - **A field the portal will not describe still shows**, from `userfield.list`, with no label: `sync` stores it and

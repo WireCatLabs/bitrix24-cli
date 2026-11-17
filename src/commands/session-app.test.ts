@@ -141,6 +141,17 @@ describe("a profile signed in with a local application", () => {
     expect(keyring.get(...ENTRY)).toBe(before)
   })
 
+  it("reads a sign-in that b24 0.22.0 saved with the portal as origin", async () => {
+    const crm = seededCrm({ "user.current": ok({ ID: "7" }) })
+    const { keyring, app } = await signIn(fakeApp(crm))
+    const { host, ...entry } = JSON.parse(keyring.get(...ENTRY) ?? "{}")
+    keyring.set(...ENTRY, JSON.stringify({ ...entry, origin: host }))
+    const status = await b24(["work", "session", "status", "--json"], { keyring })
+    expect(status.json().item).toMatchObject({ kind: "app", portal: "example.bitrix24.test" })
+    const ran = await b24(["work", "sync", "--json"], { keyring, portal: app })
+    expect(ran.code, ran.err).toBe(0)
+  })
+
   it("shows its kind in status and list, and session end forgets it", async () => {
     const { keyring } = await signIn()
     const status = await b24(["work", "session", "status", "--json"], { keyring })
