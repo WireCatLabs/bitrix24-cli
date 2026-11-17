@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**227 ✅ · 88 ⛔ · 0 ❌** — 109 commands, 206 options.
+**228 ✅ · 87 ⛔ · 0 ❌** — 109 commands, 206 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -203,7 +203,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `meetings repair` | `--yes` | ⛔ | cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, list, show, transcript and people on b24's calls |
 | `meetings transcribe` |  | ✅ |  |
 | `meetings transcribe` | `--replace` | ✅ |  |
-| `meetings transcribe` | `--max-meetings` | ⛔ | src/calls/calls.test.ts passes it through its transcribe helper, with a fake speech engine |
+| `meetings transcribe` | `--max-meetings` | ✅ |  |
 | `meetings transcribe` | `--model` | ⛔ | picks the local speech model; src/calls/calls.test.ts runs transcribe on a fake engine that has none |
 | `events list` |  | ✅ |  |
 | `models list` |  | ✅ |  |
