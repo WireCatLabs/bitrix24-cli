@@ -19,6 +19,20 @@ const EXTENSIONS: Record<string, string> = {
 }
 
 const mimeOf = (type: string | null) => (type ?? "").split(";")[0]?.trim().toLowerCase() ?? ""
+
+/** A type that names no format, as a telephony provider's server sends a recording (Beeline cloud PBX, live). */
+const UNNAMED = new Set(["", "application/octet-stream", "binary/octet-stream"])
+
+/**
+ * The audio format the answer names: its type, else, when the type names none, the extension of the file name in
+ * `Content-Disposition`. The decoder reads the format from the bytes again, so a wrong name fails there.
+ */
+const extensionOf = (type: string | null, disposition: string | null | undefined) => {
+  const named = EXTENSIONS[mimeOf(type)]
+  if (named || !UNNAMED.has(mimeOf(type))) return named
+  const extension = /filename\*?=[^;]*\.([a-z0-9]{2,4})["']?\s*(?:;|$)/i.exec(disposition ?? "")?.[1]?.toLowerCase()
+  return extension && extension in MIMES ? extension : undefined
+}
 const MIMES: Record<string, string> = { mp3: "audio/mpeg", wav: "audio/wav", ogg: "audio/ogg", m4a: "audio/mp4" }
 
 /** b24's own state folder, one folder per profile, so Desktop plays a call from the file `meetings show` names. */
@@ -67,7 +81,10 @@ export interface Recordings {
 
 export const recordingsAt = (
   folder: string,
-  download: (link: string, maxBytes: number) => Promise<{ bytes: Uint8Array; type: string | null }>,
+  download: (
+    link: string,
+    maxBytes: number,
+  ) => Promise<{ bytes: Uint8Array; type: string | null; disposition?: string | null }>,
 ): Recordings => {
   let listed: Promise<string[]> | undefined
   const files = () => (listed ??= readdir(folder).catch(() => []))
@@ -80,8 +97,8 @@ export const recordingsAt = (
       throw new CliError("not_found", `call ${record.CALL_ID} has no recording on the portal`, {
         reason: "recording.missing",
       })
-    const { bytes, type } = await download(record.CALL_RECORD_URL, LARGEST_RECORDING)
-    const extension = EXTENSIONS[mimeOf(type)]
+    const { bytes, type, disposition } = await download(record.CALL_RECORD_URL, LARGEST_RECORDING)
+    const extension = extensionOf(type, disposition)
     if (!extension)
       throw new CliError(
         "invalid_response",

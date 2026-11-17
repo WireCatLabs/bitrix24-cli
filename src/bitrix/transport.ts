@@ -210,7 +210,10 @@ export class BitrixTransport {
    * provider gives the provider's own link to a recording; that one is followed only over https, only to a public
    * address, and with nothing of the portal's sign-in.
    */
-  async download(link: string, maxBytes: number): Promise<{ bytes: Uint8Array; type: string | null }> {
+  async download(
+    link: string,
+    maxBytes: number,
+  ): Promise<{ bytes: Uint8Array; type: string | null; disposition: string | null }> {
     const portal = new URL(this.#auth.origin)
     const url = URL.canParse(link, portal.href) ? new URL(link, portal) : null
     if (!url) throw refusedLink("the portal gave a download link b24 cannot read")
@@ -248,7 +251,11 @@ export class BitrixTransport {
         throw new CliError("invalid_response", `the file is larger than ${Math.round(maxBytes / 1e6)} MB`, {
           reason: "bitrix.download-too-large",
         })
-      return { bytes, type: response.headers.get("content-type") }
+      return {
+        bytes,
+        type: response.headers.get("content-type"),
+        disposition: response.headers.get("content-disposition"),
+      }
     } finally {
       clearTimeout(timer)
     }
