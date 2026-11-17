@@ -93,8 +93,10 @@ Each recording is saved in b24's state folder, under `recordings/<profile>/`, re
 gives its path as `local_path`, and WireCat Desktop plays it. A recording can be a few megabytes per call: check the
 space before you turn this on for a busy line.
 
-The link the portal gives for a recording holds an access token. b24 follows it only on the portal's own address,
-right after reading it, and never saves or prints it.
+The link the portal gives for a recording holds an access token. b24 follows it right after reading it, with no
+redirect, and never saves or prints it. When your telephony provider keeps the recordings itself, as a Beeline cloud PBX
+does, the link leads to the provider's server. b24 follows such a link only over https and only to an address on the
+public internet, never to this computer or your local network, and sends nothing of your Bitrix24 sign-in with it.
 
 ## Turn calls into text
 
