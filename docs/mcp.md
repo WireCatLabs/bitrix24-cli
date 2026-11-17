@@ -45,7 +45,7 @@ The server has three tools:
 
 A command is named as on the command line, without the profile, and checks the same permission key. These are never
 offered over MCP: `api call`, `session start` and `session end`. The agent asks you to run them in a terminal. Of
-`schedule`, MCP runs `list`, `run` and `exec`; the commands that add, change or remove a timer are refused unless
+`schedule`, MCP runs `list`, `run` and `exec`. The commands that add, change or remove a timer are refused unless
 `permissions.mcp.authority` is `allow`.
 
 Text from the portal comes marked `untrusted`: deal and lead titles, pipeline and stage names, the names of contacts,

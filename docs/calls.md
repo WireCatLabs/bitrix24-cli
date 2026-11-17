@@ -37,7 +37,7 @@ example because the webhook has no telephony scope, it says why in a note and th
 the calls out of `sync`: `b24 work config set sync_calls false`. `meetings sync` copies only the calls:
 
 ```sh
-b24 work meetings sync                                   # calls since the last sync; the first reads 30 days
+b24 work meetings sync                                   # calls since the last sync, the first reads 30 days
 b24 work meetings sync --since-time 2026-11-01T00:00:00Z # calls from a date on
 b24 work meetings list                                   # newest first, from the store, offline too
 b24 work meetings show 12                                # one call: who, when, how it ended
@@ -106,7 +106,7 @@ b24 work meetings transcribe         # calls of five seconds or more with no tex
 b24 work meetings transcript 12      # one call's text
 ```
 
-A recording kept by `download_recordings` is read from this computer; any other is downloaded for the
+A recording kept by `download_recordings` is read from this computer. Any other is downloaded for the
 transcription, and kept only when `download_recordings` is on. Bitrix24 does not say which side of a stereo
 recording is the employee, so the text names the channels "Channel 1" and "Channel 2". A call of more than an hour
 is skipped.

@@ -51,5 +51,5 @@ type means). [Who is who](usage.md#who-is-who) shows both.
 
 A command that fails is kept as a run, for `b24 runs list` and `runs show`. A command that calls the portal is kept
 when it succeeds too, with the requests it made, unless `record` is `false` (then only failures) or it ran with
-`--no-record`. `record_input` decides whether a run keeps the words you typed; it is `true` unless you set it to `false`. Secrets are masked either way; see
+`--no-record`. `record_input` decides whether a run keeps the words you typed. It is `true` unless you set it to `false`. Secrets are masked either way. See
 [Security](security.md).

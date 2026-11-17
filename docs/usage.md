@@ -41,7 +41,7 @@ Make an inbound webhook in Bitrix24 (Developer resources → Common use cases �
 |---|---|---|
 | `crm` | CRM | Required: deals, leads, contacts, companies, products and activities. |
 | `user_basic` (or `user`) | Users (basic) / Пользователи (базовый) | Required: who made the webhook, and employees' names and e-mails. |
-| `department` | Company Structure / Структура компании | Reporting lines; see [Who is who](#who-is-who). |
+| `department` | Company Structure / Структура компании | Reporting lines. See [Who is who](#who-is-who). |
 | `task` | Tasks / Задачи | The Bitrix24 tasks on your deals ([Activities and tasks](#activities-and-tasks-on-a-deal)). |
 | `telephony` | Telephony / Телефония | The portal's calls ([Calls](calls.md)). The employee also needs the right to view call statistics. |
 | `disk` | Drive / Диск | Client documents, the files of deals and their attachments, for the files feature that comes next. |
@@ -59,7 +59,7 @@ the system keyring. `--credential-storage file` keeps it in a private file inste
 the webhook's employee can.
 
 `b24 work session status --check` shows the employee the webhook acts as, and whether they are an admin.
-`b24 work session end` forgets the address on this computer; the webhook itself stays in Bitrix24 until you delete
+`b24 work session end` forgets the address on this computer. The webhook itself stays in Bitrix24 until you delete
 it there. `b24 session list` lists the profiles on this computer.
 
 One webhook belongs to one profile. `session start` refuses a webhook that another profile here already uses (the
@@ -67,7 +67,7 @@ same portal and the same employee), names that profile, and says how to sign it 
 on one portal are fine when each has its own employee's webhook.
 
 When the portal answers that the webhook may not read who made it, the webhook lacks the "Users (basic)" right
-(`user_basic`; «Пользователи (базовый)» on a Russian portal). Open Developer resources → Integrations, edit the
+(`user_basic`, «Пользователи (базовый)» on a Russian portal). Open Developer resources → Integrations, edit the
 webhook, tick that right and save, then run `session start` again with the address the webhook shows.
 
 ### With a local application
@@ -93,19 +93,19 @@ portal's sign-in in the browser. After you allow the application, the page at `w
 passes the answer back to `b24` on this computer. If the browser cannot reach `b24`, for example over SSH, paste the
 address the browser ended on into the terminal. `session status` then shows `kind: app`. Setting a webhook again with
 `session start` forgets the application's sign-in, and the other way round. `session end` forgets the tokens on this
-computer; Bitrix24 has no way to revoke them, so delete the application in the portal to stop them.
+computer. Bitrix24 has no way to revoke them, so delete the application in the portal to stop them.
 
 ### Remove a profile
 
 ```sh
 b24 work account remove --keep-data --dry-run   # what it would remove and keep, changing nothing
-b24 work account remove --keep-data             # forget the profile; its copy of the portal stays searchable
+b24 work account remove --keep-data             # forget the profile, its copy of the portal stays searchable
 b24 work account remove --delete-data --yes     # also delete the portal's deals, leads, contacts and companies
 ```
 
 `account remove` forgets the profile on this computer: its webhook address, its settings and its files. It asks first,
 or takes `--yes`. The webhook itself stays in Bitrix24 until you delete it there. The store keeps one copy of a
-portal, so `--delete-data` refuses while another profile here reads the same portal; remove that one first, or use
+portal, so `--delete-data` refuses while another profile here reads the same portal. Remove that one first, or use
 `--keep-data`.
 
 ## Sync
@@ -114,13 +114,13 @@ Deals, leads, pipelines and stages are read from the local WireCat store, the on
 brings it up to date:
 
 ```sh
-b24 work sync                    # what changed since the last sync; everything on the first one
+b24 work sync                    # what changed since the last sync, everything on the first one
 b24 work sync --rescan           # everything again, every id too
 b24 work store status            # how far each kind is, and how many are stored
 ```
 
 A sync reads by each record's change time, with an overlap, so a record changed while it ran comes again next time.
-Once a day it also lists every id, and marks deleted the ones the portal no longer has; a list that would mark more
+Once a day it also lists every id, and marks deleted the ones the portal no longer has. A list that would mark more
 than half of them is held back, as a webhook that lost its rights lists none. A sync stops before its deadline or
 `--max-pages` and the next one goes on from there.
 
@@ -135,7 +135,7 @@ other client on the portal itself.
 ```sh
 b24 work users list                                                    # who is who on the portal
 b24 work config set crm.bitrix24:example.bitrix24.ru.unassigned 3327   # copy the deals and leads of user 3327
-b24 work config set crm.bitrix24:example.bitrix24.ru.scope mine        # the default; an old "all" is refused
+b24 work config set crm.bitrix24:example.bitrix24.ru.scope mine        # the default, an old "all" is refused
 b24 work people list name:ivan*                                        # any contact, read from the portal now
 ```
 
@@ -143,12 +143,12 @@ b24 work people list name:ivan*                                        # any con
 else's may choose only themselves, a dismissed user or a user who is not an employee (an extranet, e-mail or bot user, as
 Bitrix24's `USER_TYPE` says). The sync checks the list every time: a user it may not take is left out, with the reason
 in `issues` (`crm.unassigned-dropped`), and their deals and leads leave the copy. A webhook without the `user` scope
-keeps only its own user. A `scope all` set before is refused at the next sync, which says to set `mine`; once set,
+keeps only its own user. A `scope all` set before is refused at the next sync, which says to set `mine`. Once set,
 the deals and leads of users you did not choose are marked deleted here.
 
 The sync answer says which `scope` it applied and the webhook's own user (`self`). A deal given to a user you did not choose
 leaves the local copy at the next sync, and one given to a chosen user arrives. Switching to `mine` marks the others deleted here, from the copy alone, without asking the portal. Deleted
-here means they leave lists and search; their earlier copy stays in the store file. If you never set `scope` and
+here means they leave lists and search. Their earlier copy stays in the store file. If you never set `scope` and
 `mine` would mark more than half of the stored deals or leads deleted, the sync keeps them and says so
 (`crm.narrowing-held`) until you set `scope` to `mine`. Only you set `scope`, `self` and `unassigned`: an
 agent is refused.
@@ -157,13 +157,13 @@ Under `mine` a sync copies only your clients: the contacts and companies assigne
 and the ones named on the deals and leads it copies. The rest of the portal's client base stays on the portal.
 
 One portal's copy belongs to one user: the first sync remembers the webhook's user as `crm.bitrix24:<portal>.self`.
-A sync through a webhook of another user is refused;
+A sync through a webhook of another user is refused.
 `b24 work config unset crm.bitrix24:example.bitrix24.ru.self` gives the copy to the next one.
 
 A profile reads offline only what its own user may read. The portal's administrator, as its last `sync` found, reads
 the whole copy. Anyone else reads only the deals and leads assigned to them, even in a copy their own sync made: the
 unassigned ones and those of the users they chose stay out of lists, `show` (`not_found`), the funnel and `search all`.
-A sign-in that names no portal user reads none; `session start` again fixes it.
+A sign-in that names no portal user reads none. `session start` again fixes it.
 
 ### Who is who
 
@@ -211,7 +211,7 @@ b24 work config set crm.bitrix24:example.bitrix24.com.company-types CUSTOMER=cus
 
 When the webhook lacks the `user` or the `department` scope, the sync reads the rest and says what it could not read
 in `issues`. Nothing it stored before is ended for that. Without `user_basic` the employees come without their e-mail
-addresses, so an employee is not joined to the same person in your mail; a portal that refuses its own companies
+addresses, so an employee is not joined to the same person in your mail. A portal that refuses its own companies
 leaves its employees in no company. The sync keeps these two as gaps of the account, which memo's answers name, not
 in `issues`.
 
@@ -235,7 +235,7 @@ b24 work schedule remove crm
 
 `stage-tasks` names stages, and each deal or lead that moves into one of them opens a task on this computer, beside
 your other WireCat tasks. The sync that brings the move opens it, once per move: a task you dismiss does not come
-back, and the next entry into the same stage opens a new one. A lead's stage is written `lead:<stage id>`;
+back, and the next entry into the same stage opens a new one. A lead's stage is written `lead:<stage id>`.
 `b24 work stages list` shows the ids.
 
 ```sh
@@ -266,7 +266,7 @@ b24 work deals show deal:12
 ```
 
 It is off until you turn it on, and only you can: an agent is refused. The client's phone number or e-mail address
-on a call or a letter is never copied. Tasks need the webhook's or application's `task` scope; without it the sync
+on a call or a letter is never copied. Tasks need the webhook's or application's `task` scope. Without it the sync
 reads the activities and says the tasks were not read.
 
 The portal gives comments one deal or lead per request, so a sync asks each open deal and lead in the copy, and each
@@ -298,14 +298,14 @@ b24 work people show "Anna Ivanova"             # contacts and companies by id, 
 
 `deals`, `leads`, `pipelines` and `stages` are WireCat's shared CRM commands: the same words, query and answer in
 every CRM tool. A deal or lead answers its `pipeline`, `stage`, `status`, `close_date`, and `amount` as a decimal in
-its `currency`; `--offline` reads the same. Bitrix24's leads have no pipelines, so they stand in one pipeline named
+its `currency`. `--offline` reads the same. Bitrix24's leads have no pipelines, so they stand in one pipeline named
 `Leads`.
 
 `people`, `organizations` and `users` are shared CRM commands too, and read the portal itself, so `--offline` refuses
 them. A person or organization gives the portal's own fields under `provider_metadata`, each by its code with its
-label; a list field gives its option's label, and the option's id as `option_id`. A company's industry, revenue and
+label. A list field gives its option's label, and the option's id as `option_id`. A company's industry, revenue and
 currency are there too. `b24 work fields list deals` lists those fields with their type and options, as the last `sync`
-stored them; `leads`, `people` and `organizations` work the same way. Their lists filter by those fields too, by
+stored them. `leads`, `people` and `organizations` work the same way. Their lists filter by those fields too, by
 code or label, when the portal can filter by them, and `--json` can add them:
 
 ```sh
@@ -319,7 +319,7 @@ A list shows the newest first: `--limit` and `--page` change that. The fields a 
 Phones and e-mails are your clients' only, unless you are a Bitrix24 administrator. Your clients are the contacts and
 companies assigned to you, and the ones on your deals and leads. A list shows anyone else's without them. `people show`
 or `organizations show` of one who is not your client gives them, at most 100 such contacts and companies a day (UTC),
-counted for you and your agents together; showing the same one again that day is free, and your own clients are never
+counted for you and your agents together. Showing the same one again that day is free, and your own clients are never
 counted. The count is kept on this computer, so it guards against an accident and an agent, not against someone who
 means to take the base: Bitrix24's own access rights do that.
 
@@ -357,14 +357,14 @@ b24 work organizations update 9 --name "Example LLC" --field "Lead source=Fair"
 ```
 
 A write sends one request, then reads the record back into the store. `--stage` takes a stage of the
-record's own pipeline by name or id, and checks the `move` key too; a won or lost stage checks the `close` key as
+record's own pipeline by name or id, and checks the `move` key too. A won or lost stage checks the `close` key as
 well. `close` moves it to the first won or lost stage of its pipeline. `--field <label or code>=<value>` sets one of the
-portal's own fields, as `fields list` names them; a list field takes its option's label or id, and an empty value
+portal's own fields, as `fields list` names them. A list field takes its option's label or id, and an empty value
 clears the field. A field that names a stage, a pipeline or an owner is refused: those have their own options.
 
 A field that holds several values takes `--field` once per value. A label works once a `sync` has stored the
-fields; before that, name the field by its code. `people` and `organizations` take their names, `--position` and
-`--owner` as options; `api call` writes any other field.
+fields. Before that, name the field by its code. `people` and `organizations` take their names, `--position` and
+`--owner` as options. `api call` writes any other field.
 
 Each write answers an `operation_id`, which the run journal keeps. A write is sent once, and again only when the
 portal refused it for its request limit, which it does before making anything. If it ends with

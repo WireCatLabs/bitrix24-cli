@@ -37,18 +37,18 @@ the fields it refused, never Bitrix24's description, which can quote what was ty
 
 A local application's sign-in is kept in the same place (account `oauth:bitrix24:<profile>`): the application's
 code and key, the access token, which lasts an hour, and the refresh token, which lasts 180 days and changes at each
-renewal. The key goes only to `oauth.bitrix.info`, as Bitrix24 asks, never to the portal; the token goes to the
+renewal. The key goes only to `oauth.bitrix.info`, as Bitrix24 asks, never to the portal. The token goes to the
 portal in the body of each call, never in its address. None of them reaches the output, an error, a log or a run
 record. The sign-in returns through the page `https://wirecat.dev/webhooks/apps/b24-callback`, which passes the one-time
-code to `b24` on this computer in your browser; the code works for 30 seconds and only with the key. Bitrix24 has no
+code to `b24` on this computer in your browser. The code works for 30 seconds and only with the key. Bitrix24 has no
 call that revokes a token: `session end` forgets the sign-in here, and deleting the application in the portal stops it.
 
 ## The webhook's rights
 
 The webhook acts with the rights of the employee who made it. A webhook made by an admin lets an agent read and
-change everything in the CRM. `session status --check` says whose rights it carries; make the webhook with an
+change everything in the CRM. `session status --check` says whose rights it carries. Make the webhook with an
 employee whose rights fit the work, and only the scopes it needs. `sync` uses `crm`, `user_basic` for employees'
-e-mail addresses and `department` for the company structure; `meetings sync` reads the call history with
+e-mail addresses and `department` for the company structure. `meetings sync` reads the call history with
 `telephony`, and a call's recording only with `download_recordings` on ([Calls](calls.md)). `user_basic` is enough: `sync` never changes an
 employee, and the full `user` scope adds the right to invite and edit them. The sync stores each employee's name,
 e-mail address, position and department head in the local store, where every WireCat tool can read them.
@@ -61,7 +61,7 @@ portal link with a token in it (`/rest/…?auth=`, a webhook's `/rest/<user>/<co
 site or a link field you typed yourself stays as it is. `api call` prints `[link removed]` in place of every download
 link, every generated document's public link (`publicUrl`), and every portal link with a token. A copy synced
 before this rule may still hold such links. `b24 work sync --rescan` rewrites every record the portal still lists
-for the profile; a large copy may take several runs, and `b24 work store status` shows how far it got. A record
+for the profile. A large copy may take several runs, and `b24 work store status` shows how far it got. A record
 deleted in the portal, or outside the sync's scope, keeps what it held: `b24 work account remove --delete-data`
 removes the account's whole copy, and the next sync after signing in again builds it anew. SQLite may keep old bytes
 in the store file's free space until it reuses them.
@@ -69,7 +69,7 @@ in the store file's free space until it reuses them.
 ## Clients' phones and e-mails
 
 Unless the webhook's user is a Bitrix24 administrator, the sync copies only their own clients: the contacts and
-companies assigned to them or named on their deals and leads. Lists show phones and e-mails of those alone; `people
+companies assigned to them or named on their deals and leads. Lists show phones and e-mails of those alone. `people
 show` and `organizations show` give them for anyone else's, at most 100 a day for the user and their agents together.
 That count is kept on this computer, so it stops an accident or an agent, not someone who means to take the base:
 Bitrix24's own access rights do that.
@@ -80,7 +80,7 @@ Every write is checked against the permissions and kept in the send journal. `B2
 Assigning a record to another employee is refused until you allow it. A stage change can still start the portal's own
 robots, which may write to your clients: if your portal has such robots, set `permissions.deals.move` and
 `permissions.leads.move` to `readonly` or `deny` before an agent gets the profile over MCP, where `ask` does not ask
-([permissions](permissions.md#stage-changes-start-the-portals-robots)). Every write that sets a stage checks them; a won or lost stage, and `close`, check
+([permissions](permissions.md#stage-changes-start-the-portals-robots)). Every write that sets a stage checks them. A won or lost stage, and `close`, check
 `deals.close` or `leads.close` too, and `api call` with a `stageId` checks both. A deal or lead `--field` that names a
 stage, a pipeline or an owner is refused. Deleting a deal or a lead asks first. `api.crm.deal.update: deny` also stops
 `deals update`, `move` and `close`, and at `ask` they ask too.

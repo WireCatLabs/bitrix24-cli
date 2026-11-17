@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/WireCatLabs/bitrix24-cli/main/docs/images/social-preview.png" alt="Bitrix24 CRM for your AI agent" width="100%">
+  <img src="https://raw.githubusercontent.com/WireCatLabs/bitrix24-cli/main/docs/images/social-preview.png" alt="Bitrix24 CRM CLI for AI agents" width="100%">
 </p>
 
 # b24: Bitrix24 CRM CLI for AI agents
@@ -145,7 +145,7 @@ b24 work pipelines show Sales --since-time 30d   # the last 30 days: closed deal
 ```sh
 b24 work people show "Anna Ivanova"
 b24 work organizations list type:CUSTOMER
-b24 work people create --first-name Anna --last-name Ivanova --phone +79000000001
+b24 work people create --first-name Anna --last-name Ivanova --email anna@example.com
 b24 work users list
 ```
 
