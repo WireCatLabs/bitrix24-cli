@@ -5,7 +5,9 @@
 #
 #   bin/b24-live <account>            # builds this checkout, syncs into the throwaway store and reads; changes nothing
 #   bin/b24-live <account> --write    # also creates one lead and one deal "WireCat test …",
-#                           # changes, moves and deletes each, then syncs again and asks the portal that none is left;
+#                           # changes, moves and deletes each; puts a PDF in the deal's file field, lists and downloads
+#                           # it; creates a contact and a company, lists their files, deletes them;
+#                           # then syncs again and asks the portal that none is left;
 #                           # when every step passed, appends
 #                           # the version and commit to docs/dev/live-checks.txt, which bin/release checks
 #   B24_KEYRING_ACCOUNT=<account> bin/b24-live [--write]
@@ -291,8 +293,128 @@ if [ -z "$on" ]; then fail "the portal has no deal titled \"$title\""; else
       console.log("ok: the sync read the comment into deals show")
     })' "$title comment" || fail "deals show has not the timeline comment"
 fi
+# A small PDF in the deal's first file field, then `files list` and `files download` of it. Not a comment's or an
+# activity's file: those land on the webhook user's Drive, which deleting the deal does not empty.
+printf '\n== b24 live files\n'
+marker="WireCat test file $(date +%s)"
+pdf="$sandbox/wirecat-test.pdf"
+node -e '
+  const [path, text] = process.argv.slice(1)
+  const stream = `BT /F1 12 Tf 72 720 Td (${text}) Tj ET`
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+    `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`,
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+  ]
+  let out = "%PDF-1.4\n"
+  const offsets = objects.map((body, i) => {
+    const at = out.length
+    out += `${i + 1} 0 obj\n${body}\nendobj\n`
+    return at
+  })
+  const xref = out.length
+  out += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`
+  out += offsets.map((at) => `${String(at).padStart(10, "0")} 00000 n \n`).join("")
+  out += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`
+  require("fs").writeFileSync(path, out)' "$pdf" "$marker"
+slot=$(b24 api call crm.item.fields --body '{"entityTypeId":2,"useOriginalUfNames":"Y"}' --json 2>/dev/null | node -e '
+  let s = ""
+  process.stdin.on("data", (d) => (s += d)).on("end", () => {
+    let fields = {}
+    try { fields = JSON.parse(s).item.result.fields ?? {} } catch {}
+    const found = Object.entries(fields).find(([, one]) => one.type === "file" && !one.isReadOnly)
+    if (found) console.log(`${found[0]}|${found[1].isMultiple ? 1 : 0}`)
+  })') || true
+if [ -z "$on" ]; then fail "no deal id to attach a file to"
+elif [ -z "$slot" ]; then echo "deals have no file field — files list and download skipped"
+else
+  code=${slot%|*}
+  body=$(node -e '
+    const [id, code, multiple, path] = process.argv.slice(1)
+    const one = ["wirecat-test.pdf", require("fs").readFileSync(path).toString("base64")]
+    const fields = { [code]: multiple === "1" ? [one] : one }
+    console.log(JSON.stringify({ entityTypeId: 2, id: Number(id), useOriginalUfNames: "Y", fields }))' \
+    "$on" "$code" "${slot#*|}" "$pdf")
+  b24 api call crm.item.update --yes --body "$body" >/dev/null 2>&1 || fail "crm.item.update with a file: exit $?"
+  # How a file field reads with original names: only the keys and the kinds of their values are printed.
+  b24 api call crm.item.get --body "{\"entityTypeId\":2,\"id\":$on,\"useOriginalUfNames\":\"Y\"}" --json 2>/dev/null |
+    node -e '
+      let s = ""
+      process.stdin.on("data", (d) => (s += d)).on("end", () => {
+        let value
+        try { value = JSON.parse(s).item.result.item[process.argv[1]] } catch {}
+        const one = Array.isArray(value) ? value[0] : value
+        const shape = one && typeof one === "object"
+          ? Object.entries(one).map(([k, v]) => `${k}:${typeof v}`).join(",") : typeof one
+        console.log(`the file field reads as ${Array.isArray(value) ? "a list of " : ""}{${shape}}`)
+      })' "$code"
+  listed=$(b24 files list --deal "$on" --json 2>/dev/null) || true
+  printf '%s' "$listed" | node -e '
+    let s = ""
+    process.stdin.on("data", (d) => (s += d)).on("end", () => {
+      let answer = {}
+      try { answer = JSON.parse(s) } catch {}
+      const items = answer.items ?? []
+      const kinds = items.map((one) => one.source).join(",") || "none"
+      const issues = (answer.meta?.issues ?? []).map((one) => `${one.code}/${one.reason ?? ""}`).join(",") || "none"
+      console.log(`files list: ${items.length} file(s) of sources ${kinds}; issues ${issues}`)
+    })'
+  file=$(printf '%s' "$listed" | node -e '
+    let s = ""
+    process.stdin.on("data", (d) => (s += d)).on("end", () => {
+      let items = []
+      try { items = JSON.parse(s).items ?? [] } catch {}
+      const fields = items.filter((one) => one.source === "field")
+      console.log(fields.length === 1 ? fields[0].id : "")
+    })')
+  if [ -z "$file" ]; then fail "files list did not show the one file in the deal's field"; else
+    got=$(b24 files download "$file" --json 2>&1) || true
+    printf '%s' "$got" | node -e '
+      let s = ""
+      process.stdin.on("data", (d) => (s += d)).on("end", () => {
+        const fs = require("fs")
+        const [sent, marker] = process.argv.slice(1)
+        let answer = {}
+        try { answer = JSON.parse(s) } catch {}
+        const item = answer.item
+        if (!item) {
+          console.log(`download failed: ${answer.error?.code ?? "no answer"} ${answer.error?.reason ?? ""}`)
+          process.exit(1)
+        }
+        const same = item.path && fs.existsSync(item.path) && fs.readFileSync(item.path).equals(fs.readFileSync(sent))
+        const read = item.text_status !== "extracted" || (item.text ?? "").includes(marker)
+        console.log(`download: the same bytes ${Boolean(same)}, text ${item.text_status}, the marker found ${read}`)
+        if (!same || !read) process.exit(1)
+      })' "$pdf" "$marker" || fail "files download did not save the file that was attached"
+  fi
+fi
 step deals delete "$deal" --yes --json=ref,removed
 echo "deleted $deal"
+
+# A contact and a company: `files list` reads each, its activities by the record's binding included, without failing.
+# `api call` may not add an activity (crm.activity.* is denied by default), so none is attached here.
+printf '\n== b24 live files of a contact and a company\n'
+for pair in "3 person name" "4 organization title"; do
+  read -r type kind name <<<"$pair"
+  record=$(b24 api call crm.item.add --yes --body "{\"entityTypeId\":$type,\"fields\":{\"$name\":\"$title\"}}" --json \
+    2>/dev/null | value item.result.item.id) || true
+  [ -n "$record" ] || { fail "crm.item.add of a $kind gave no id"; continue; }
+  echo "created $kind $record: $title"
+  b24 files list "--$kind" "$record" --json 2>/dev/null | node -e '
+    let s = ""
+    process.stdin.on("data", (d) => (s += d)).on("end", () => {
+      let answer
+      try { answer = JSON.parse(s) } catch {}
+      if (!answer?.items) process.exit(1)
+      const issues = (answer.meta?.issues ?? []).map((one) => `${one.code}/${one.reason ?? ""}`).join(",") || "none"
+      console.log(`files list --${process.argv[1]}: ${answer.items.length} file(s); issues ${issues}`)
+    })' "$kind" || fail "files list --$kind failed"
+  b24 api call crm.item.delete --yes --body "{\"entityTypeId\":$type,\"id\":$record}" >/dev/null 2>&1 ||
+    fail "crm.item.delete of the $kind: exit $?"
+  echo "deleted $kind $record"
+done
 
 # A sync from the cursor (the updatedTime filter), then a rescan with the id pass: neither brings the deleted ones back.
 changed
@@ -305,6 +427,14 @@ for type in lead deal; do
       fail "the portal answered '$left' ${type}s titled \"$named\""
     fi
   done
+done
+for pair in "3 contact name" "4 company title"; do
+  read -r type kind name <<<"$pair"
+  left=$(b24 api call crm.item.list --body "{\"entityTypeId\":$type,\"select\":[\"id\"],\"filter\":{\"=$name\":\"$title\"}}" \
+    --json | value item.result.items.length)
+  if [ "$left" = 0 ]; then echo "ok: the portal has no $kind named \"$title\""; else
+    fail "the portal answered '$left' ${kind}s named \"$title\""
+  fi
 done
 
 [ "$failed" = 0 ] || { echo "a step failed: no live record" >&2; exit 1; }
