@@ -29,6 +29,8 @@ others=()
 for cli in tg wa drive zm gcal; do
   [ "$cli" = "$command" ] || others+=(--cli "$bin/$cli")
 done
+# A cross-CLI finding a shared package forces, such as a flag cli-core names unlike another CLI, is a declared
+# difference until that package catches up: lint/ takes only this CLI's own lint rules.
 # This CLI's entity schemas and error reasons, from its own `commands info`, so same-entity-schema and
 # same-error-reason measure it. shared-command-contract needs `--complete`, which wants cli-core's doctor contract.
 node "$root/dist/bin/$command.js" commands info --json >"$scratch/info.json"
@@ -37,7 +39,8 @@ require("fs").writeFileSync(process.argv[2], JSON.stringify(info.schemas))
 require("fs").writeFileSync(process.argv[3], JSON.stringify(info.reasons))' \
   "$scratch/info.json" "$scratch/schemas.json" "$scratch/reasons.json"
 "$root/node_modules/.bin/cli-dev" audit --cli "$root/dist/bin/$command.js" "${others[@]}" --for "$command" \
-  --lint "$command=$root/lint" --schemas "$command=$scratch/schemas.json" --reasons "$command=$scratch/reasons.json" \
+  --lint "$command=$root/lint" --differences "$root/config/audit-differences.json" \
+  --schemas "$command=$scratch/schemas.json" --reasons "$command=$scratch/reasons.json" \
   >"$scratch/scorecard.txt" || { cat "$scratch/scorecard.txt"; exit 1; }
 awk -v cli="$command" 'NR == 1 || $1 == cli' "$scratch/scorecard.txt"
 grep -q "^$command  *total " "$scratch/scorecard.txt" || { echo "audit: no scorecard row for $command" >&2; exit 1; }
