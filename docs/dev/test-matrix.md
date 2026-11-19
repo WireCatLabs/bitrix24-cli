@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**228 ✅ · 87 ⛔ · 0 ❌** — 109 commands, 206 options.
+**234 ✅ · 90 ⛔ · 0 ❌** — 112 commands, 212 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -156,6 +156,15 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `changes list` | `--limit` | ✅ |  |
 | `changes list` | `--cursor` | ✅ |  |
 | `changes list` | `--format` | ✅ |  |
+| `files list` |  | ✅ |  |
+| `files list` | `--deal` | ✅ |  |
+| `files list` | `--lead` | ✅ |  |
+| `files list` | `--person` | ✅ |  |
+| `files list` | `--organization` | ✅ |  |
+| `files download` |  | ✅ |  |
+| `files download` | `--max-size` | ⛔ | cli-core's addCrmFileCommands; its crm/cli files tests drive every option, and src/crm/files.test.ts runs files list for each kind of record and files download on b24's portal |
+| `files download` | `--dir` | ⛔ | cli-core's addCrmFileCommands; its crm/cli files tests drive every option, and src/crm/files.test.ts runs files list for each kind of record and files download on b24's portal |
+| `files sync` |  | ⛔ | cli-core's addCrmFileCommands; its crm/cli files tests drive every option, and src/crm/files.test.ts runs files list for each kind of record and files download on b24's portal |
 | `fields list` |  | ✅ |  |
 | `fields list` | `--limit` | ✅ |  |
 | `fields list` | `--page` | ✅ |  |

@@ -349,7 +349,8 @@ A source the webhook may not read is left out, and the answer names it under `is
 a field has no name on the portal, so it is listed as the field's name and the file's id. Files on your own records
 are free. A colleague's record counts toward the same limit of 100 a day as their clients' phones and e-mails, unless
 you are an administrator. `sync` never downloads a file. `files sync` downloads the last week's files of your own deals and leads,
-within limits kept in the `crm.bitrix24:<portal>.files.*` settings; `b24 help files sync` lists them.
+within limits kept in the `crm.bitrix24:<portal>.files.*` settings (`max_files`, `max_file_mb`, `max_run_mb`,
+`run_minutes`, `days`, `max_total_mb`), which `config set` changes.
 
 ## What changed
 
