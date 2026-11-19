@@ -12,7 +12,8 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   and timeline comments. `files download <id>` saves one under the state folder and reads its text, which `search all`
   then finds. A source the webhook may not read, such as activity files without the `disk` scope, is named under
   `issues` and the others are still listed. Each download asks the portal for a fresh link and fetches it from the
-  portal alone; no link reaches the store or an answer. See [Client files](docs/usage.md#client-files).
+  portal alone; no link reaches the store or an answer. `files: deny` also holds on `api call` of the methods these
+  commands read through. See [Client files](docs/usage.md#client-files).
 
 ### Changed — may break callers
 
