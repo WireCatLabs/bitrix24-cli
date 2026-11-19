@@ -59,7 +59,8 @@ A file in a CRM record's custom field is kept as its file id only, in the copy a
 links: Bitrix24's download link carries an access token, and anyone holding it gets the file. A file with no id, and a
 portal link with a token in it (`/rest/…?auth=`, a webhook's `/rest/<user>/<code>/`), show as `[link removed]`. A
 site or a link field you typed yourself stays as it is. `api call` prints `[link removed]` in place of every download
-link, every generated document's public link (`publicUrl`), and every portal link with a token. A copy synced
+link, every generated document's public link (`publicUrl`), every portal link with a token, and any link that
+carries `auth=`, `access_token=`, `api_token=` or `X-Amz-Signature=`, whatever its host. A copy synced
 before this rule may still hold such links. `b24 work sync --rescan` rewrites every record the portal still lists
 for the profile. A large copy may take several runs, and `b24 work store status` shows how far it got. A record
 deleted in the portal, or outside the sync's scope, keeps what it held: `b24 work account remove --delete-data`

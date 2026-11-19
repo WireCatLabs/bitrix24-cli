@@ -345,7 +345,8 @@ A record's files come from four places on the portal:
 | `activity` | A file attached to an e-mail, a call or another activity | `crm` and `disk` |
 | `comment` | A file attached to a timeline comment | `crm` and `disk` |
 
-A source the webhook may not read is left out, and the answer names it under `issues` with the scope to add. A file in
+A source the webhook may not read is left out, and the answer names it under `issues` with the scope to add. Comment
+files are listed without `disk`, since the comment names them, but downloading one needs it. A file in
 a field has no name on the portal, so it is listed as the field's name and the file's id. Files on your own records
 are free. A colleague's record counts toward the same limit of 100 a day as their clients' phones and e-mails, unless
 you are an administrator. `sync` never downloads a file. `files sync` downloads the last week's files of your own deals and leads,
