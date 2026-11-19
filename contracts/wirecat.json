@@ -658,6 +658,45 @@
     },
     {
       "path": [
+        "files",
+        "list"
+      ],
+      "summary": "one record's files, read live from the CRM, with the path of each already…",
+      "effects": {
+        "remote": "read",
+        "local": "read"
+      },
+      "permission": "files.list",
+      "entity": "crm_file"
+    },
+    {
+      "path": [
+        "files",
+        "download"
+      ],
+      "summary": "save one file under the state folder (or --dir) and read its text, which…",
+      "effects": {
+        "remote": "read",
+        "local": "write"
+      },
+      "permission": "files.download",
+      "entity": "crm_file_download"
+    },
+    {
+      "path": [
+        "files",
+        "sync"
+      ],
+      "summary": "download the files of your own deals and leads that changed lately, newest…",
+      "effects": {
+        "remote": "read",
+        "local": "write"
+      },
+      "permission": "files.sync",
+      "entity": "crm_files_sync"
+    },
+    {
+      "path": [
         "fields",
         "list"
       ],
@@ -902,7 +941,7 @@
         "schedule",
         "command"
       ],
-      "summary": "run b24 <args…> on a timer — reads save what they read, so this is how a…",
+      "summary": "run b24 <args…> on a timer — reads save what they read, so this is how the…",
       "effects": {
         "remote": "none",
         "local": "write"
@@ -1680,6 +1719,44 @@
       "app": "bitrix24-cli",
       "env": "B24"
     },
-    "settings": null
+    "settings": null,
+    "accountRemove": {
+      "signOut": [
+        "{profile}",
+        "session",
+        "end",
+        "--record",
+        "--json"
+      ],
+      "remove": {
+        "minVersion": "0.0.0",
+        "keepData": [
+          "{profile}",
+          "account",
+          "remove",
+          "--keep-data",
+          "--record",
+          "--json"
+        ],
+        "deleteData": [
+          "{profile}",
+          "account",
+          "remove",
+          "--delete-data",
+          "--record",
+          "--json"
+        ],
+        "dryRun": "--dry-run",
+        "confirm": "--yes"
+      },
+      "removes": [
+        "signIn"
+      ],
+      "keeps": [
+        "settings",
+        "data",
+        "listed"
+      ]
+    }
   }
 }

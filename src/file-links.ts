@@ -44,21 +44,5 @@ export const fileIdsOf = (value: unknown): unknown => {
   return Object.fromEntries(Object.entries(value).map(([key, inner]) => [key, fileIdsOf(inner)]))
 }
 
-/**
- * An answer with every download link and every tokened portal link replaced by `[link removed]`, the rest as the
- * portal gave it: `api call` prints what an agent may read, and the link alone would hand it the file.
- */
-export const withoutFileLinks = (value: unknown): unknown => {
-  if (Array.isArray(value)) return value.map(withoutFileLinks)
-  if (isTokened(value)) return REMOVED
-  if (!isRecord(value)) return value
-  return Object.fromEntries(
-    Object.entries(value).map(([key, inner]) => [
-      key,
-      isDownloadKey(key) && inner !== null && inner !== "" ? REMOVED : withoutFileLinks(inner),
-    ]),
-  )
-}
-
 /** A link's path for a log or a run record: a webhook's code becomes `:token`, and the query is never part of it. */
 export const loggedPath = (url: URL): string => url.pathname.replace(/^\/rest\/(\d+)\/[^/]+\//i, "/rest/:user/:token/")

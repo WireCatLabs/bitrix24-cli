@@ -144,7 +144,7 @@ b24 account remove [options]
 
 ## `b24 sync`
 
-bring the CRM's copy in the local store up to date: pipelines, companies, contacts, deals and leads that changed since the last sync, or everything with --rescan; a run stops before its deadline or --max-pages and the next one goes on from there. With the activities setting on, also the activities and tasks on the deals and leads it keeps. Then each deal or lead that moved into a stage the stage-tasks setting names opens a local task, once per move
+bring the CRM's copy in the local store up to date: pipelines, companies, contacts, deals and leads that changed since the last sync, or everything with --rescan; a run stops before its deadline or --max-pages and the next one goes on from there
 
 **Changes something on this computer only.**
 
@@ -469,7 +469,7 @@ b24 deals create [options]
 
 **Returns:** crm write — operation_id, untrusted, deal, lead; every field: b24 commands info deals create
 
-**Example:** `b24 work deals create --title "Example kitchen" --amount 15000 --currency EUR`, `b24 work deals create --title "Example office" --pipeline Sales --stage "Quote sent" --field UF_CRM_SOURCE=web`
+**Example:** `b24 work deals create --title "Example kitchen" --amount 15000 --currency EUR`, `b24 work deals create --title "Example office" --pipeline Sales --stage "Quote sent" --field Source=web`
 
 ### `b24 deals update`
 
@@ -498,7 +498,7 @@ b24 deals update <deal> [options]
 
 **Returns:** crm write — operation_id, untrusted, deal, lead; every field: b24 commands info deals update
 
-**Example:** `b24 work deals update deal:12 --amount 18000`, `b24 work deals update deal:12 --field UF_CRM_SOURCE=`
+**Example:** `b24 work deals update deal:12 --amount 18000`, `b24 work deals update deal:12 --field Source=`
 
 ### `b24 deals move`
 
@@ -625,7 +625,7 @@ b24 leads create [options]
 
 **Returns:** crm write — operation_id, untrusted, deal, lead; every field: b24 commands info leads create
 
-**Example:** `b24 work leads create --title "Example kitchen" --amount 15000 --currency EUR`, `b24 work leads create --title "Example office" --pipeline Sales --stage "Quote sent" --field UF_CRM_SOURCE=web`
+**Example:** `b24 work leads create --title "Example kitchen" --amount 15000 --currency EUR`, `b24 work leads create --title "Example office" --pipeline Sales --stage "Quote sent" --field Source=web`
 
 ### `b24 leads update`
 
@@ -654,7 +654,7 @@ b24 leads update <lead> [options]
 
 **Returns:** crm write — operation_id, untrusted, deal, lead; every field: b24 commands info leads update
 
-**Example:** `b24 work leads update lead:12 --amount 18000`, `b24 work leads update lead:12 --field UF_CRM_SOURCE=`
+**Example:** `b24 work leads update lead:12 --amount 18000`, `b24 work leads update lead:12 --field Source=`
 
 ### `b24 leads move`
 
@@ -1029,6 +1029,66 @@ b24 changes list [query] [options]
 **Returns:** crm change — change, at, kind, ref, external_id, account, title, pipeline, and 10 more; every field: b24 commands info changes list
 
 **Example:** `b24 work changes list "at>=1d"`, `b24 work changes list change:won at>=7d --json`, `b24 work changes list "at>=1d" --format report`
+
+## `b24 files`
+
+the files of the CRM's deals, leads, contacts and companies: listed live, downloaded on demand, their text found by search all
+
+### `b24 files list`
+
+one record's files, read live from the CRM, with the path of each already downloaded; another user's record counts toward the day's limit when the CRM sets one
+
+```sh
+b24 files list [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--deal <id>` | the deal whose files to list. |
+| `--lead <id>` | the lead whose files to list. |
+| `--person <id>` | the person whose files to list. |
+| `--organization <id>` | the organization whose files to list. |
+
+**Returns:** crm file — id, name, size, mime, created_at, owner, source, downloaded, and 2 more; every field: b24 commands info files list
+
+**Example:** `b24 work files list --deal 12`, `b24 work files list --person 42 --json`
+
+### `b24 files download`
+
+save one file under the state folder (or --dir) and read its text, which search all then finds; 100 MB at most unless --max-size; another user's record counts toward the day's limit
+
+**Changes something on this computer only.**
+
+```sh
+b24 files download <file> [options]
+```
+
+| Argument | | What it is |
+|---|---|---|
+| `file` | required | the file's id, as files list prints it. |
+
+| Option | What it does |
+|---|---|
+| `--max-size <MB>` | the largest file to take, up to 2048. |
+| `--dir <folder>` | save it here instead, as the owner's own copy: not counted, never dropped. |
+
+**Returns:** crm file download — id, name, size, mime, created_at, owner, source, downloaded, and 5 more; every field: b24 commands info files download
+
+**Example:** `b24 work files download deal:12:record:345`, `b24 work files download deal:12:document:7 --max-size 500 --dir ~/Contracts`
+
+### `b24 files sync`
+
+download the files of your own deals and leads that changed lately, newest first, within the account's files.* limits; stops at its deadline and the next run goes on. Never another user's files. Run it on a schedule: b24 schedule command crm-files --every 1h -- files sync
+
+**Changes something on this computer only.**
+
+```sh
+b24 files sync
+```
+
+**Returns:** crm files sync — owners, downloaded, skipped, complete, untrusted, stopped; every field: b24 commands info files sync
+
+**Example:** `b24 work files sync`
 
 ## `b24 fields`
 
@@ -1457,7 +1517,7 @@ run a b24 command or an agent later or on a timer (systemd, launchd, Task Schedu
 
 ### `b24 schedule command`
 
-run b24 <args…> on a timer — reads save what they read, so this is how a chat's history fills the store
+run b24 <args…> on a timer — reads save what they read, so this is how the store stays current
 
 **Changes something on this computer only.**
 
@@ -1468,7 +1528,7 @@ b24 schedule command <name> <args> [options]
 | Argument | | What it is |
 |---|---|---|
 | `name` | required | lowercase letters, digits and dashes. |
-| `args` | required | the b24 command after its name, e.g. -- messages list <chat> --limit 50. |
+| `args` | required | the b24 command after its name, e.g. -- doctor. |
 
 | Option | What it does |
 |---|---|
@@ -1494,7 +1554,7 @@ b24 schedule agent <name> <harness> <prompt> [options]
 |---|---|---|
 | `name` | required | lowercase letters, digits and dashes. |
 | `harness` | required | the agent to start. One of: `claude`, `codex`, `gemini`, `cursor`, `opencode`, `openclaw`, `hermes`, `grok`, `kimi`. |
-| `prompt` | required | what to do, e.g. "summarize what came in during the last day: b24 personal search messages 'date>1d' --newest --limit 20". |
+| `prompt` | required | what to do, e.g. "say what needs attention in this installation: b24 doctor". |
 
 | Option | What it does |
 |---|---|
@@ -1924,7 +1984,7 @@ b24 config set <setting> <value> [options]
 
 | Argument | | What it is |
 |---|---|---|
-| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, keep_store_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, download_recordings, export_calls, sync_calls, phone_region, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types, crm.<provider>:<account>.scope, crm.<provider>:<account>.unassigned, crm.<provider>:<account>.self, crm.<provider>:<account>.stage-tasks, crm.<provider>:<account>.activities. |
+| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, keep_store_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, download_recordings, export_calls, sync_calls, phone_region, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types, crm.<provider>:<account>.scope, crm.<provider>:<account>.unassigned, crm.<provider>:<account>.self, crm.<provider>:<account>.stage-tasks, crm.<provider>:<account>.activities, crm.<provider>:<account>.files.max_files, crm.<provider>:<account>.files.max_file_mb, crm.<provider>:<account>.files.max_run_mb, crm.<provider>:<account>.files.run_minutes, crm.<provider>:<account>.files.days, crm.<provider>:<account>.files.max_total_mb. |
 | `value` | required | a number, true or false; for a group tg:work,max:Alice,email:me@x. |
 
 | Option | What it does |
@@ -1945,7 +2005,7 @@ b24 config unset <setting> [options]
 
 | Argument | | What it is |
 |---|---|---|
-| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, keep_store_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, download_recordings, export_calls, sync_calls, phone_region, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types, crm.<provider>:<account>.scope, crm.<provider>:<account>.unassigned, crm.<provider>:<account>.self, crm.<provider>:<account>.stage-tasks, crm.<provider>:<account>.activities. |
+| `setting` | required | one of: limit, timeout_ms, color, record, record_input, keep_runs_for_days, keep_successful_runs_for_days, keep_store_runs_for_days, runs_size_limit_mb, permissions, requests_per_minute, search_reranker, embedding_provider, embedding_model, embedding_base_url, embedding_dims, models, download_recordings, export_calls, sync_calls, phone_region, update_check, skill_hint, search_stemmers.cyrillic, search_stemmers.latin, owner_languages, crm.<provider>:<account>.links, crm.<provider>:<account>.company-types, crm.<provider>:<account>.scope, crm.<provider>:<account>.unassigned, crm.<provider>:<account>.self, crm.<provider>:<account>.stage-tasks, crm.<provider>:<account>.activities, crm.<provider>:<account>.files.max_files, crm.<provider>:<account>.files.max_file_mb, crm.<provider>:<account>.files.max_run_mb, crm.<provider>:<account>.files.run_minutes, crm.<provider>:<account>.files.days, crm.<provider>:<account>.files.max_total_mb. |
 
 | Option | What it does |
 |---|---|

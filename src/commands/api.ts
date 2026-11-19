@@ -20,7 +20,7 @@ import {
   terminalAsker,
   withQuery,
 } from "@wirecat/cli-core/cli"
-import { CRM_ASSIGN_OTHERS_KEY, refuseForeignClientReads } from "@wirecat/cli-core/crm"
+import { CRM_ASSIGN_OTHERS_KEY, refuseForeignClientReads, withoutFileLinks } from "@wirecat/cli-core/crm"
 import { guardedWrite, guardFor, keyedGuard, type Level, levelFor, newOperationId } from "@wirecat/cli-core/sends"
 import { Command } from "commander"
 import * as v from "valibot"
@@ -40,7 +40,6 @@ import type { BitrixTransport } from "../bitrix/transport.js"
 import { type Body, parseBody } from "../body.js"
 import { permissions } from "../config.js"
 import { bitrixCrmSource } from "../crm/source.js"
-import { withoutFileLinks } from "../file-links.js"
 import { IDENTITY } from "../identity.js"
 import { contextOf, signInOf, transportFor, withPortal } from "../portal.js"
 

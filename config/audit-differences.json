@@ -1,0 +1,10 @@
+[
+  {
+    "group": "shared-roots",
+    "rule": "same-flag-meaning",
+    "target": "b24+zm --person",
+    "expected": "b24: <id>, zm: <uid>",
+    "reason": "cli-core's files list names a CRM contact with --person <id>; zoom-cli's --person is a user id. The flag is cli-core's (addCrmFileCommands), so it changes there, and this entry goes with it",
+    "review_after": "2027-02-19"
+  }
+]

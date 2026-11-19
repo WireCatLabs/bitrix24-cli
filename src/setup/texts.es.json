@@ -8,7 +8,7 @@
   "scope.department": "`{code}` (estructura de la empresa): recomendado. Los departamentos y sus jefes, para que la copia sepa quién depende de quién.",
   "scope.task": "`{code}` (tareas): opcional. Las tareas de Bitrix24 de tus negociaciones y prospectos.",
   "scope.telephony": "`{code}` (telefonía): opcional, para las llamadas. El historial de llamadas del portal. El empleado también necesita permiso para ver las estadísticas de llamadas.",
-  "scope.disk": "`{code}` (Drive): opcional, para archivos: documentos de clientes, archivos de las negociaciones y adjuntos. Te servirá cuando b24 trabaje con archivos.",
+  "scope.disk": "`{code}` (Drive): opcional, para archivos: documentos de clientes, archivos de las negociaciones y adjuntos. Con él, `files list` y `files download` leen los archivos de las actividades y los comentarios.",
   "scope.documentgenerator": "`{code}` (generador de documentos): opcional, para documentos hechos con plantillas. La documentación de Bitrix24 pone los métodos de documentos del CRM en `crm` en una página y en este permiso en otra, así que marca los dos.",
   "webhook.access": "¿No aparece el webhook entrante? Un administrador lo permite en los ajustes de Bitrix24, en Seguridad → Integraciones de Bitrix24, en el campo de quién puede crear webhooks entrantes.",
   "address.title": "Pega la dirección del webhook",

@@ -16,10 +16,11 @@ signed-in profile: [install](installation.md) sets one up.
 2. [Sign in](#sign-in)
 3. [Sync](#sync)
 4. [Read](#read)
-5. [What changed](#what-changed)
-6. [Write](#write)
-7. [Output for scripts](#output-for-scripts)
-8. [Agents](#agents)
+5. [Client files](#client-files)
+6. [What changed](#what-changed)
+7. [Write](#write)
+8. [Output for scripts](#output-for-scripts)
+9. [Agents](#agents)
 
 ## The profile comes first
 
@@ -44,8 +45,8 @@ Make an inbound webhook in Bitrix24 (Developer resources → Common use cases �
 | `department` | Company Structure / Структура компании | Reporting lines. See [Who is who](#who-is-who). |
 | `task` | Tasks / Задачи | The Bitrix24 tasks on your deals ([Activities and tasks](#activities-and-tasks-on-a-deal)). |
 | `telephony` | Telephony / Телефония | The portal's calls ([Calls](calls.md)). The employee also needs the right to view call statistics. |
-| `disk` | Drive / Диск | Client documents, the files of deals and their attachments, for the files feature that comes next. |
-| `documentgenerator` | Document Generator / Генератор документов | Documents made from templates. Bitrix24's docs name `crm` on the method pages and this scope in the scope table, so tick both. |
+| `disk` | Drive / Диск | The files attached to activities and timeline comments ([Client files](#client-files)). |
+| `documentgenerator` | Document Generator / Генератор документов | Documents made from templates ([Client files](#client-files)). Bitrix24's docs name `crm` on the method pages and this scope in the scope table, so tick both. |
 
 `b24 work setup` shows the same steps in the terminal, and WireCat Desktop draws them. Or sign in directly:
 
@@ -322,6 +323,35 @@ or `organizations show` of one who is not your client gives them, at most 100 su
 counted for you and your agents together. Showing the same one again that day is free, and your own clients are never
 counted. The count is kept on this computer, so it guards against an accident and an agent, not against someone who
 means to take the base: Bitrix24's own access rights do that.
+
+## Client files
+
+`files list` shows the files of one deal, lead, contact or company, read from the portal now. `files download` saves
+one on this computer and reads its text, so `search all` finds it later.
+
+```sh
+b24 work files list --deal 12                      # the deal's files, each with an id
+b24 work files download deal:12:document:61        # saved in the state folder, its text in the answer
+b24 work files download deal:12:document:61 --dir ~/Documents/clients
+b24 work files sync                                # prefetches the files of your own deals and leads
+```
+
+A record's files come from four places on the portal:
+
+| Source | What it is | Scope |
+|---|---|---|
+| `field` | A file in one of the record's own file fields | `crm` |
+| `document` | A document made from a template: a contract, an invoice, a quote. The PDF when the portal has made it, else the Word file | `crm` (and `documentgenerator`) |
+| `activity` | A file attached to an e-mail, a call or another activity | `crm` and `disk` |
+| `comment` | A file attached to a timeline comment | `crm` and `disk` |
+
+A source the webhook may not read is left out, and the answer names it under `issues` with the scope to add. Comment
+files are listed without `disk`, since the comment names them, but downloading one needs it. A file in
+a field has no name on the portal, so it is listed as the field's name and the file's id. Files on your own records
+are free. A colleague's record counts toward the same limit of 100 a day as their clients' phones and e-mails, unless
+you are an administrator. `sync` never downloads a file. `files sync` downloads the last week's files of your own deals and leads,
+within limits kept in the `crm.bitrix24:<portal>.files.*` settings (`max_files`, `max_file_mb`, `max_run_mb`,
+`run_minutes`, `days`, `max_total_mb`), which `config set` changes.
 
 ## What changed
 

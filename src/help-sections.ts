@@ -13,6 +13,7 @@ const SECTIONS: Record<string, HelpSection> = {
   users: "read",
   api: "read",
   meetings: "read",
+  files: "read",
   events: "read",
   models: "setup",
   calls: "write",
@@ -25,8 +26,8 @@ export const placeInSections = (program: Command) => {
   for (const command of program.commands) {
     const section = SECTIONS[command.name()]
     if (section) inSection(command, section)
-    // The calls' sync sits beside the CRM's: both are what a timer runs.
-    if (command.name() === "meetings")
+    // The calls' and the files' syncs sit beside the CRM's: all are what a timer runs.
+    if (command.name() === "meetings" || command.name() === "files")
       for (const child of command.commands) if (child.name() === "sync") inSection(child, "automate")
     if (SPLIT.has(command.name()))
       for (const child of command.commands)

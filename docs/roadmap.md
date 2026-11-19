@@ -27,7 +27,9 @@ funnel board: each stage's deals or leads, with their number and their total in 
 `--format csv`. `schedule` runs `sync` on a timer. `changes list` shows what changed in the copy, and `--format
 report` makes it a morning digest. With `activities` on, the sync also reads the calls, e-mails, to-dos, tasks and
 comments on deals and leads. `meetings sync` copies the portal's calls, `meetings transcribe` turns their recordings
-into text on this computer, and `calls export` writes other phone systems' calls into Bitrix24. `b24 api` reaches any
+into text on this computer, and `calls export` writes other phone systems' calls into Bitrix24. `files list` and
+`files download` read a record's files: its file fields, documents made from templates, and the files of its
+activities and comments; `search all` finds the text of a downloaded one. `b24 api` reaches any
 portal method by name. Every command is in the [command reference](commands.md).
 
 ## Next
@@ -36,8 +38,6 @@ portal method by name. Every command is in the [command reference](commands.md).
   deals and leads, so they read from the local store and work offline.
 - **Custom fields of contacts kept locally.** The values of your portal's own fields on contacts are stored with the
   contact, so you can read them offline.
-- **Client files and documents.** The files of deals and their attachments, and documents made from the portal's
-  templates. The setup already asks for the `disk` and `documentgenerator` scopes they need.
 
 ## Later
 

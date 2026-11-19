@@ -95,7 +95,7 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
 
 /**
  * cli-core's shared CRM commands over the portal: `sync`, `store`, `deals`, `leads`, `pipelines`, `stages`, `fields`,
- * `search all`, and `people`, `organizations` and `users` read live.
+ * `search all`, `people`, `organizations` and `users` read live, and `files` of deals, leads, contacts and companies.
  */
 export const crmSharedCommands = (): Command[] => {
   const holder = new Command(IDENTITY.command)
@@ -104,6 +104,7 @@ export const crmSharedCommands = (): Command[] => {
     open: openProfile,
     writes: BITRIX_WRITES,
     live: ["person", "organization", "user"],
+    files: true,
   })
   return [...holder.commands]
 }

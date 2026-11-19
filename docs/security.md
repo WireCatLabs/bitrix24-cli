@@ -59,12 +59,20 @@ A file in a CRM record's custom field is kept as its file id only, in the copy a
 links: Bitrix24's download link carries an access token, and anyone holding it gets the file. A file with no id, and a
 portal link with a token in it (`/rest/…?auth=`, a webhook's `/rest/<user>/<code>/`), show as `[link removed]`. A
 site or a link field you typed yourself stays as it is. `api call` prints `[link removed]` in place of every download
-link, every generated document's public link (`publicUrl`), and every portal link with a token. A copy synced
+link, every generated document's public link (`publicUrl`), every portal link with a token, and any link that
+carries `auth=`, `access_token=`, `api_token=` or `X-Amz-Signature=`, whatever its host. A copy synced
 before this rule may still hold such links. `b24 work sync --rescan` rewrites every record the portal still lists
 for the profile. A large copy may take several runs, and `b24 work store status` shows how far it got. A record
 deleted in the portal, or outside the sync's scope, keeps what it held: `b24 work account remove --delete-data`
 removes the account's whole copy, and the next sync after signing in again builds it anew. SQLite may keep old bytes
 in the store file's free space until it reuses them.
+
+`files download` asks the portal for a fresh link at each download, fetches it from the portal's own address only,
+and keeps the link nowhere: not in the store, a log or an answer. A saved file is readable by your OS user alone
+(file 600, folders 700), and its text is kept in the store, so `search all` finds it; a profile that is not an
+administrator finds only the text of files on records assigned to it. An agent over MCP gets the file's path and its
+text marked as untrusted, never its bytes. `disk` lets `api call disk.*` read any Drive file the webhook's employee
+may open, so a `disk.*` call through `api call` asks first, and one that makes a public link is refused.
 
 ## Clients' phones and e-mails
 

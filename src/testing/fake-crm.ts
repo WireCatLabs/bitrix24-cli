@@ -6,6 +6,17 @@ type Type = keyof typeof REST3_FIELDS
 
 const TYPES: readonly Type[] = ["deal", "lead", "contact", "company"]
 const ENTITY_TYPES: Record<number, Type> = { 1: "lead", 2: "deal", 3: "contact", 4: "company" }
+const TYPE_IDS: Record<Type, number> = { lead: 1, deal: 2, contact: 3, company: 4 }
+
+/** What every fake file link carries in place of a portal's token: it must reach no answer, file or error. */
+export const FAKE_FILE_TOKEN = "wirecatfakefiletoken42"
+
+/** A file's bytes on the fake portal; synthetic, never a portal's. */
+export interface FakeFile {
+  bytes: string
+  host?: string
+  html?: boolean
+}
 
 /** A custom field as `crm.<type>.field.list` and `crm.<type>.userfield.list` describe it; synthetic, never a portal's. */
 interface CustomField {
@@ -118,16 +129,18 @@ const brokenFilter = (): Reply => ({
 })
 
 /** The scope each method needs, from the top of its page in the API reference. */
-type Scope = "crm" | "user" | "department"
+type Scope = "crm" | "user" | "department" | "disk"
 /** `user.admin` is in scope `basic`, which every webhook has (apidocs user-admin). */
 const scopeOf = (method: string): Scope | null =>
   method === "user.admin"
     ? null
     : method.startsWith("user.")
       ? "user"
-      : method.startsWith("department.")
-        ? "department"
-        : "crm"
+      : method.startsWith("disk.")
+        ? "disk"
+        : method.startsWith("department.")
+          ? "department"
+          : "crm"
 /** REST 3.0 serves the CRM objects by type, but not their REST 2 `userfield` lists (apidocs rest-v3). */
 const apiOf = (method: string): 2 | 3 =>
   /^crm\.(deal|lead|contact|company|mycompany)\./.test(method) && !/\.userfield\./.test(method) ? 3 : 2
@@ -352,13 +365,102 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
       all.slice(start, start + 2),
       start + 2 < all.length ? { next: start + 2, total: all.length } : { total: all.length },
     )
-  // REST 2's item read, which `show` asks for the custom fields: here the row's own `UF_` fields.
+  // REST 2's item read: the whole row, custom fields under their own `UF_` names (`useOriginalUfNames: "Y"`).
   methods["crm.item.get"] = ({ body }) => {
     const kind = ENTITY_TYPES[Number(body.entityTypeId)]
     const row = kind ? rows[kind].get(Number(body.id)) : undefined
-    return row
-      ? ok({ item: Object.fromEntries(Object.entries(row).filter(([key]) => key.startsWith("UF_"))) })
-      : missing()
+    return row ? ok({ item: row }) : { status: 400, body: { error: "NOT_FOUND", error_description: "Not found" } }
+  }
+  /** A file's bytes behind its tokened link; `host` puts the link elsewhere, `html` answers a sign-in page. */
+  const blobs = new Map<string, FakeFile>()
+  const linkOf = (key: string, file: FakeFile) => {
+    blobs.set(key, file)
+    return `https://${file.host ?? "example.bitrix24.test"}/rest/download.json?auth=${FAKE_FILE_TOKEN}&token=${key}`
+  }
+  const documents: Raw[] = []
+  const activities: { ID: number; type: number; owner: number; files: number[] }[] = []
+  const comments: { ID: number; type: string; owner: number; files: number[] }[] = []
+  const drive = new Map<number, { NAME: string; SIZE: number; file: FakeFile }>()
+  methods["download.json"] = ({ url }) => {
+    const file = blobs.get(new URL(url).searchParams.get("token") ?? "")
+    if (!file) return { status: 404, body: { error: "NOT_FOUND" } }
+    return file.html
+      ? { text: "<html>sign in</html>", headers: { "content-type": "text/html" } }
+      : { text: file.bytes, headers: { "content-type": "application/octet-stream" } }
+  }
+  // apidocs crm-document-generator-document-list: the file links come whatever `select` says; pages of 50.
+  methods["crm.documentgenerator.document.list"] = ({ body }) => {
+    const filter = (body.filter ?? {}) as Raw
+    const all = documents.filter(
+      (one) => one.entityTypeId === Number(filter.entityTypeId) && one.entityId === Number(filter.entityId),
+    )
+    const start = Number(body.start ?? 0)
+    return ok(
+      { documents: all.slice(start, start + 2).map(({ file: _, ...one }) => one) },
+      start + 2 < all.length ? { next: start + 2, total: all.length } : { total: all.length },
+    )
+  }
+  methods["crm.documentgenerator.document.get"] = ({ body }) => {
+    const found = documents.find((one) => one.id === String(body.id))
+    if (!found) return { status: 400, body: { error: "NOT_FOUND", error_description: "Not found" } }
+    const { file, ...document } = found
+    const machine = linkOf(`document-${found.id}`, file as FakeFile)
+    return ok({ document: { ...document, downloadUrlMachine: machine, pdfUrlMachine: machine } })
+  }
+  // apidocs crm.activity.list: `FILES` only when selected, each an id and a browser link.
+  methods["crm.activity.list"] = ({ body }) => {
+    const [binding] = ((body.filter as Raw)?.BINDINGS ?? []) as { OWNER_TYPE_ID: number; OWNER_ID: number }[]
+    const all = activities
+      .filter((one) => binding && one.type === binding.OWNER_TYPE_ID && one.owner === binding.OWNER_ID)
+      .map((one) => ({
+        ID: String(one.ID),
+        ...(((body.select ?? []) as string[]).includes("FILES")
+          ? {
+              FILES: one.files.map((file) => ({
+                id: file,
+                url: `https://example.bitrix24.test/bitrix/tools/crm_show_file.php?fileId=${file}&auth=`,
+              })),
+            }
+          : {}),
+      }))
+    return paged(all, Number(body.start ?? 0))
+  }
+  // apidocs crm.timeline.comment.list: `FILES` keyed by the Drive file's id, whatever `select` says.
+  methods["crm.timeline.comment.list"] = ({ body }) => {
+    const filter = (body.filter ?? {}) as Raw
+    const all = comments
+      .filter((one) => one.type === filter.ENTITY_TYPE && one.owner === Number(filter.ENTITY_ID))
+      .map((one) => ({
+        ID: String(one.ID),
+        CREATED: "2026-01-02T10:00:00+03:00",
+        ...(one.files.length
+          ? {
+              FILES: Object.fromEntries(
+                one.files.map((file) => [
+                  String(file),
+                  {
+                    id: file,
+                    name: drive.get(file)?.NAME,
+                    size: drive.get(file)?.SIZE,
+                    urlDownload: `https://example.bitrix24.test/disk/downloadFile/${file}/?&ncc=1`,
+                  },
+                ]),
+              ),
+            }
+          : {}),
+      }))
+    return paged(all, Number(body.start ?? 0))
+  }
+  methods["disk.file.get"] = ({ body }) => {
+    const found = drive.get(Number(body.id))
+    if (!found) return { status: 400, body: { error: "ERROR_NOT_FOUND", error_description: "Could not find entity" } }
+    return ok({
+      ID: String(body.id),
+      NAME: found.NAME,
+      SIZE: String(found.SIZE),
+      CREATE_TIME: "2026-01-02T10:00:00+03:00",
+      DOWNLOAD_URL: linkOf(`drive-${body.id}`, found.file),
+    })
   }
   methods["user.get"] = ({ body }) => {
     const filter = (body.FILTER ?? {}) as Record<string, unknown>
@@ -453,6 +555,40 @@ export const fakeCrm = (more: Parameters<typeof fakePortal>[0] = {}) => {
       clock = ms
     },
     remove: (type: Type, id: number) => rows[type].delete(id),
+    /** A file field's value as `crm.item.get` gives it: an id, a browser link and the tokened `urlMachine`. */
+    fieldFile: (fileId: number, file: FakeFile) => ({
+      id: fileId,
+      url: `https://example.bitrix24.test/bitrix/services/main/ajax.php?action=crm.controller.item.getFile&fileId=${fileId}`,
+      urlMachine: linkOf(`field-${fileId}`, file),
+    }),
+    /** A generated document on a record; `pdf` when the portal has made its PDF. */
+    putDocument: (type: Type, owner: number, document: { id: number; title: string; pdf?: boolean } & FakeFile) =>
+      documents.push({
+        id: String(document.id),
+        title: document.title,
+        number: `2026-${document.id}`,
+        createTime: "2026-01-02T10:00:00+03:00",
+        entityTypeId: TYPE_IDS[type],
+        entityId: owner,
+        pdfId: document.pdf ? String(document.id + 1000) : null,
+        file: document,
+      }),
+    /** The Drive file is gone, while the activities and comments still name it. */
+    forgetDrive: (fileId: number) => drive.delete(fileId),
+    /** One method answers this from now on, as a portal without its module or with its own fault would. */
+    answer: (method: string, reply: Reply) => {
+      answers[method] = () => reply
+    },
+    /** A Drive file attached to an activity bound to a record. */
+    putActivityFile: (type: Type, owner: number, activity: number, drive_: { id: number; name: string } & FakeFile) => {
+      drive.set(drive_.id, { NAME: drive_.name, SIZE: drive_.bytes.length, file: drive_ })
+      activities.push({ ID: activity, type: TYPE_IDS[type], owner, files: [drive_.id] })
+    },
+    /** A Drive file attached to a timeline comment on a record. */
+    putCommentFile: (type: Type, owner: number, comment: number, drive_: { id: number; name: string } & FakeFile) => {
+      drive.set(drive_.id, { NAME: drive_.name, SIZE: drive_.bytes.length, file: drive_ })
+      comments.push({ ID: comment, type, owner, files: [drive_.id] })
+    },
     loseNextAnswer: () => {
       lose = true
     },

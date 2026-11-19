@@ -153,6 +153,18 @@ b24 work users list
 These read the portal itself, so they need the network. Lists give the phones and e-mails of your own clients. For
 anyone else's, `show` gives them, at most 100 such contacts and companies a day.
 
+### Client files
+
+```sh
+b24 work files list --deal 42                    # contracts, invoices and attachments on the deal
+b24 work files download deal:42:document:61      # saved on your computer; its text is found by search all
+```
+
+A deal's, lead's, contact's or company's files: its file fields, the documents made from your templates, and the
+files of its e-mails, calls and comments. The files of e-mails, calls and comments need the `disk` scope.
+
+More: [client files](https://github.com/WireCatLabs/bitrix24-cli/blob/main/docs/usage.md#client-files)
+
 ### Calls
 
 ```sh
@@ -236,7 +248,7 @@ More: [permissions](https://wirecat.dev/en/docs/b24/permissions) · [settings](h
 - Tested on cloud Bitrix24. A self-hosted (on-premise) portal is not tested. `b24` uses REST 3.0 for the CRM.
 - `b24` needs the portal's REST API. A cloud portal has it on Bitrix24's Vibe+ plans or for the 15-day trial, and the
   Essentials plans do not include it ([Bitrix24's page](https://apidocs.bitrix24.com/first-steps/access-to-rest-api.html)).
-- `people`, `organizations`, `products` and `users` ask the portal on every read and refuse `--offline`.
+- `people`, `organizations`, `products`, `users` and `files list` ask the portal on every read and refuse `--offline`.
 - Bitrix24 makes a repeated write a second time, even with the same `Idempotency-Key`. After `outcome_unknown`, look
   at the record before you write it again.
 - Another npm package, `b24-cli`, also installs a command named `b24`. If yours runs the wrong tool, call `wcat-b24`,

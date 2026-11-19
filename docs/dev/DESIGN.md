@@ -276,6 +276,22 @@ and `type`); field names are from the REST 3.0 field pages and the `user.get` an
 - `api call` keeps the whole `voximplant` family denied, the call history too, since its answer holds those links.
 - A number without `+` needs `phone_region`: the store's `phone_countries` never decides an identifier.
 
+### Client files (2026-11-19)
+
+- The adapter is `src/crm/files.ts`, cli-core's `CrmSource.files(owner)`; the commands, the store, the limits and
+  search are cli-core's. One `crm.item.get` (REST 2, original `UF_` names) gives the record's assignee and its file
+  fields; then `crm.documentgenerator.document.list`, `crm.activity.list` (`BINDINGS`, `select: FILES`) and
+  `crm.timeline.comment.list`. Each kind the webhook may not read is a gap with its scope; the others still list.
+- A field's file is told by its shape (`id` and `urlMachine`), as `fileIdsOf` does. It has no name on the portal:
+  listed as the field's label and the file id, so only a PDF's text is read by content.
+- A document is its PDF when `pdfId` is set at listing, else its DOCX; never waited for (apidocs: 30-40 s).
+- Activity and comment files are Drive files: `disk.file.get` gives the name and size of an activity's (its `FILES`
+  has none) and, at each download, `DOWNLOAD_URL`. That an activity's `FILES[].id` is a Drive id is not yet checked
+  on a live portal.
+- Every `open` asks for a fresh link and fetches it through `BitrixTransport.openFile`: cli-core's `fetchCrmFile`,
+  the portal's host only, redirects too, with the headers apidocs asks for. A portal that redirects a download to
+  another host fails it.
+
 ## Open questions for the owner
 
 - A `leads` table in cli-core, or leads only as source records: the owner's portal runs its main funnel on leads
