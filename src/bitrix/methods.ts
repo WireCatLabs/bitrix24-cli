@@ -43,6 +43,7 @@ const SCOPES = new Map([
   ["tasks", "task"],
   ["department", "department"],
   ["im", "im"],
+  ["disk", "disk"],
   ["calendar", "calendar"],
 ])
 /** In scope `basic` (apidocs common/users: user-admin, user-access; common/system). */

@@ -13,8 +13,8 @@ import { b24, signedIn, synced } from "./testing/harness.js"
 const PRODUCT = { ID: "11", NAME: "Chair", PRICE: "99.90", CURRENCY_ID: "EUR", ACTIVE: "Y", SECTION_ID: "2" }
 const USER = { ID: "7", NAME: "Anna", LAST_NAME: "Admin", EMAIL: "anna@example.test" }
 
-const portal = () =>
-  seededCrm({
+const portal = () => {
+  const crm = seededCrm({
     "user.current": ok(USER),
     "user.admin": ok(true),
     "user.get": ok([USER]),
@@ -23,6 +23,9 @@ const portal = () =>
     "crm.item.get": ok({ item: {} }),
     "voximplant.statistic.get": ok([]),
   })
+  crm.putCommentFile("deal", 102, 900, { id: 901, name: "notes.txt", bytes: "Example notes" })
+  return crm
+}
 
 // The writes name stored deals and leads, so each case gets its own copy of one synced store.
 let seeded = ""
@@ -79,6 +82,8 @@ describe("every remote command runs inside cli-core's run", () => {
       "users show": ["work", "users", "show", "7"],
       "api call": ["work", "api", "call", "crm.deal.update", "--body", '{"id":102,"fields":{"title":"Example"}}'],
       "meetings sync": ["work", "meetings", "sync"],
+      "files list": ["work", "files", "list", "--deal", "1"],
+      "files download": ["work", "files", "download", "deal:102:comment:900.901"],
     },
     skip: {
       "mcp serve": "listens until stopped; src/mcp.test.ts and src/permissions.test.ts run it",
@@ -90,6 +95,9 @@ describe("every remote command runs inside cli-core's run", () => {
       "calls export":
         "off until export_calls is on and two denied methods are allowed, and needs the application sign-in; " +
         "src/calls/export.test.ts runs it against a strict fake",
+      "files sync":
+        "reads only the copy's deals changed in the last files.days, and the seeded copy's are older, so it asks the " +
+        "portal nothing; cli-core's crm/cli files tests run it against a fake CRM",
       "models download": "cli-core's modelCatalogueCommand downloads hundreds of MB; cli-core tests it",
       setup: "asks its questions in a terminal; its check is the same checkedWebhook that session start runs here",
       "setup apply": "takes its answers as JSON on stdin; src/setup/flow.test.ts drives it against the fake",

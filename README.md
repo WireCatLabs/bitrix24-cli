@@ -153,6 +153,18 @@ b24 work users list
 These read the portal itself, so they need the network. Lists give the phones and e-mails of your own clients. For
 anyone else's, `show` gives them, at most 100 such contacts and companies a day.
 
+### Client files
+
+```sh
+b24 work files list --deal 42                    # contracts, invoices and attachments on the deal
+b24 work files download deal:42:document:61      # saved on your computer; its text is found by search all
+```
+
+A deal's, lead's, contact's or company's files: its file fields, the documents made from your templates, and the
+files of its e-mails, calls and comments. The last two need the `disk` scope.
+
+More: [client files](https://github.com/WireCatLabs/bitrix24-cli/blob/main/docs/usage.md#client-files)
+
 ### Calls
 
 ```sh

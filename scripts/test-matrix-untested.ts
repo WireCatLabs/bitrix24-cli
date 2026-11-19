@@ -13,6 +13,9 @@ const SHARED_MEETINGS =
   "cli-core's addMeetingCommands; its meetings/cli tests drive every option, and src/calls/calls.test.ts runs sync, " +
   "list, show, transcript and people on b24's calls"
 const SHARED_MODELS = "cli-core's modelCatalogueCommand; its tests download a model from a fake catalogue"
+const SHARED_FILES =
+  "cli-core's addCrmFileCommands; its crm/cli files tests drive every option, and src/crm/files.test.ts runs " +
+  "files list for each kind of record and files download on b24's portal"
 const LONG_RUNNING = `starts an HTTP server or a background process that runs until stopped; ${SHARED_MCP}`
 
 export const UNTESTED: { command: string; option?: string; reason: string }[] = [
@@ -22,6 +25,9 @@ export const UNTESTED: { command: string; option?: string; reason: string }[] = 
       "cli-core's setupCommand asks the flow's questions in a terminal; its setup-command tests drive that, and " +
       "src/setup/flow.test.ts runs this flow through setup apply and setup run apply",
   },
+  { command: "files download", option: "--dir", reason: SHARED_FILES },
+  { command: "files download", option: "--max-size", reason: SHARED_FILES },
+  { command: "files sync", reason: SHARED_FILES },
   { command: "store info", reason: SHARED_STORE },
   { command: "store check", reason: SHARED_STORE },
   { command: "store migrate", reason: SHARED_STORE },

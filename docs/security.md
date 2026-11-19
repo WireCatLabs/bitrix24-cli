@@ -66,6 +66,13 @@ deleted in the portal, or outside the sync's scope, keeps what it held: `b24 wor
 removes the account's whole copy, and the next sync after signing in again builds it anew. SQLite may keep old bytes
 in the store file's free space until it reuses them.
 
+`files download` asks the portal for a fresh link at each download, fetches it from the portal's own address only,
+and keeps the link nowhere: not in the store, a log or an answer. A saved file is readable by your OS user alone
+(file 600, folders 700), and its text is kept in the store, so `search all` finds it; a profile that is not an
+administrator finds only the text of files on records assigned to it. An agent over MCP gets the file's path and its
+text marked as untrusted, never its bytes. `disk` lets `api call disk.*` read any Drive file the webhook's employee
+may open, so a `disk.*` call through `api call` asks first, and one that makes a public link is refused.
+
 ## Clients' phones and e-mails
 
 Unless the webhook's user is a Bitrix24 administrator, the sync copies only their own clients: the contacts and

@@ -17,6 +17,7 @@ import { isAdmin, clientsOf as namedClients } from "./clients.js"
 import type { Condition } from "./conditions.js"
 import { DEAL, fromBitrixDeal } from "./deal.js"
 import { loadFields } from "./fields.js"
+import { recordFiles } from "./files.js"
 import { type ItemType, listedRows } from "./items.js"
 import { fromBitrixLead, LEAD } from "./lead.js"
 import { ORGANIZATION, toOrganization } from "./organization.js"
@@ -529,6 +530,11 @@ export const bitrixCrmSource = (
       return new Set(externalIds.filter((one) => found.has(one)))
     },
     fields: (kind, context) => fields(kind, metered(context)),
+    // The field titles name a field's files: the copy's, so a listing costs no request for them after a sync.
+    files(owner, context) {
+      const caller = metered(context)
+      return recordFiles(caller, portal, owner, () => known(owner.kind, caller), context)
+    },
     async users(context) {
       const users = await portalUsers(metered(context))
       // user.get leaves out a field the scope does not cover, without an error (apidocs user-scope).

@@ -1,15 +1,16 @@
 import { lookup as dnsLookup } from "node:dns/promises"
 import { isIP } from "node:net"
 import { CliError, isCliError, realSleep, type SleepLike, wallClock } from "@wirecat/cli-base"
-import { hostFetch, providerWaitMs, readJsonResponse } from "@wirecat/cli-base/http"
+import { type FetchLike as HttpFetch, hostFetch, providerWaitMs, readJsonResponse } from "@wirecat/cli-base/http"
 import { apiJson, currentAttempt, type EventSink, providerEvent, providerRequest } from "@wirecat/cli-core/cli"
-import { providerCall } from "@wirecat/cli-core/crm"
+import { fetchCrmFile, providerCall } from "@wirecat/cli-core/crm"
 import { isPublicAddress } from "@wirecat/cli-core/documents"
 import type { Pacer } from "@wirecat/cli-core/sends"
 import { type EmployeeRule, employeeRuleOf } from "../api-keys.js"
 import { isRecord } from "../body.js"
 import { isAdmin } from "../crm/clients.js"
 import { loggedPath } from "../file-links.js"
+import { VERSION } from "../version.js"
 import { bitrixError } from "./errors.js"
 import { methodOf, type RestVersion } from "./methods.js"
 import type { AppAuth } from "./oauth.js"
@@ -259,6 +260,27 @@ export class BitrixTransport {
     } finally {
       clearTimeout(timer)
     }
+  }
+
+  /**
+   * A CRM file's bytes behind a link the portal just gave for it (`urlMachine`, `DOWNLOAD_URL`, a document's
+   * `pdfUrlMachine`), streamed. Only the portal's own host is asked, redirects too (cli-core `fetchCrmFile`), and no
+   * error names the link, which carries a token. The headers are the ones apidocs files/how-to-download-files asks
+   * for: without them a signed link may still answer no file.
+   */
+  async openFile(link: string, signal?: AbortSignal): Promise<ReadableStream<Uint8Array>> {
+    const portal = new URL(this.#auth.origin)
+    const url = URL.canParse(link, portal.href) ? new URL(link, portal) : null
+    if (!url) throw refusedLink("the portal gave a file link b24 cannot read")
+    const at = this.#pacer ? (await this.#pacer.reserve()) - this.#now() : 0
+    if (at > 0) await this.#wait(at, "a download")
+    const stop = [...(signal ? [signal] : []), ...(this.#signal ? [this.#signal] : [])]
+    return fetchCrmFile(url.href, {
+      hosts: [portal.hostname],
+      headers: { "User-Agent": `b24/${VERSION}`, Accept: "*/*", Referer: `${portal.origin}/` },
+      ...(stop.length ? { signal: AbortSignal.any(stop) } : {}),
+      ...(this.#plainFetch ? { fetch: this.#plainFetch as HttpFetch } : {}),
+    })
   }
 
   /** Here, where every write passes, so neither a command nor its permission level can get round it. */
