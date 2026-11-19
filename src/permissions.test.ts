@@ -509,6 +509,10 @@ describe("api call reads check the command key of what they read", () => {
     ["fields.list", "crm.deal.userfield.list", {}],
     ["pipelines.list", "crm.category.list", { entityTypeId: 2 }],
     ["stages.list", "crm.status.list", {}],
+    ["files.list", "crm.documentgenerator.document.list", {}],
+    ["files.download", "crm.documentgenerator.document.get", { id: 5 }],
+    ["files.list", "crm.timeline.comment.list", {}],
+    ["files.download", "disk.file.get", { id: 5 }],
   ])("%s: deny refuses api call %s before any request", async (key, method, body) => {
     const portal = fakePortal({ [method]: ok([]) })
     await withPermissions({ [key]: "deny" }, async () => {

@@ -198,6 +198,10 @@ const readKeysOf = (method: string, body: Body): string[] => {
   if (method.startsWith("crm.mycompany.")) return ["organizations.list"]
   if (method.startsWith("crm.category.")) return ["pipelines.list"]
   if (method.startsWith("crm.status.")) return ["stages.list"]
+  // The methods `files` reads through: a list names the files, a get hands over a download link.
+  if (/^crm\.documentgenerator\.document\.(list|get)$/.test(method) || method === "disk.file.get")
+    return method.endsWith(".list") ? ["files.list"] : ["files.download"]
+  if (method.startsWith("crm.timeline.comment.")) return ["files.list"]
   return []
 }
 
