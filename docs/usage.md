@@ -46,7 +46,7 @@ Make an inbound webhook in Bitrix24 (Developer resources → Common use cases �
 | `task` | Tasks / Задачи | The Bitrix24 tasks on your deals ([Activities and tasks](#activities-and-tasks-on-a-deal)). |
 | `telephony` | Telephony / Телефония | The portal's calls ([Calls](calls.md)). The employee also needs the right to view call statistics. |
 | `disk` | Drive / Диск | The files attached to activities and timeline comments ([Client files](#client-files)). |
-| `documentgenerator` | Document Generator / Генератор документов | Documents made from templates ([Client files](#client-files)). Bitrix24's docs name `crm` on the method pages and this scope in the scope table, so tick both. |
+| `documentgenerator` | Document Generator / Генератор документов | Documents made from templates ([Client files](#client-files)). Bitrix24's docs name `crm` on the method pages and this scope in the scope table. A webhook with `crm` alone lists them too. |
 
 `b24 work setup` shows the same steps in the terminal, and WireCat Desktop draws them. Or sign in directly:
 
@@ -341,7 +341,7 @@ A record's files come from four places on the portal:
 | Source | What it is | Scope |
 |---|---|---|
 | `field` | A file in one of the record's own file fields | `crm` |
-| `document` | A document made from a template: a contract, an invoice, a quote. The PDF when the portal has made it, else the Word file | `crm` (and `documentgenerator`) |
+| `document` | A document made from a template: a contract, an invoice, a quote. The PDF when the portal has made it, else the Word file | `crm` |
 | `activity` | A file attached to an e-mail, a call or another activity | `crm` and `disk` |
 | `comment` | A file attached to a timeline comment | `crm` and `disk` |
 
