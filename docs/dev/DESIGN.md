@@ -287,7 +287,12 @@ and `type`); field names are from the REST 3.0 field pages and the `user.get` an
 - A document is its PDF when `pdfId` is set at listing, else its DOCX; never waited for (apidocs: 30-40 s).
 - Activity and comment files are Drive files: `disk.file.get` gives the name and size of an activity's (its `FILES`
   has none) and, at each download, `DOWNLOAD_URL`. That an activity's `FILES[].id` is a Drive id is not yet checked
-  on a live portal.
+  on a live portal: the owner's webhook has no `disk` scope.
+- Checked live on 2026-11-19 (`bin/b24-live --write`): a file field read with original names is a list of
+  `{ id, url, urlMachine }`, and its `urlMachine` downloads from the portal's own host, no redirect to another.
+  `crm.documentgenerator.document.list` answers with the `crm` scope alone; for a record that does not exist it
+  answers `ACCESS_DENIED`. The activity filter by `BINDINGS` is accepted for contacts and companies; that it
+  returns only their activities is not checked, since `api call` may not add an activity.
 - Every `open` asks for a fresh link and fetches it through `BitrixTransport.openFile`: cli-core's `fetchCrmFile`,
   the portal's host only, redirects too, with the headers apidocs asks for. A portal that redirects a download to
   another host fails it.
