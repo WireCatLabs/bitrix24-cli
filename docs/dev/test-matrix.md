@@ -21,10 +21,6 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `session status` | `--check` | ✅ |  |
 | `session end` |  | ✅ |  |
 | `session list` |  | ✅ |  |
-| `account remove` |  | ✅ |  |
-| `account remove` | `--keep-data` | ✅ |  |
-| `account remove` | `--delete-data` | ✅ |  |
-| `account remove` | `--dry-run` | ✅ |  |
 | `sync` |  | ✅ |  |
 | `sync` | `--rescan` | ✅ |  |
 | `sync` | `--max-pages` | ✅ |  |
@@ -176,6 +172,10 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `search all` | `--page` | ✅ |  |
 | `search all` | `--exact` | ✅ |  |
 | `search all` | `--timezone` | ✅ |  |
+| `account remove` |  | ✅ |  |
+| `account remove` | `--keep-data` | ✅ |  |
+| `account remove` | `--delete-data` | ✅ |  |
+| `account remove` | `--dry-run` | ✅ |  |
 | `products list` |  | ✅ |  |
 | `products list` | `--limit` | ✅ |  |
 | `products list` | `--page` | ✅ |  |

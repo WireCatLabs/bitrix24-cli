@@ -148,7 +148,7 @@ describe("session", () => {
         expect(ran.json().error).toMatchObject({
           code: "conflict",
           reason: "session.duplicate",
-          message: expect.stringContaining("b24 work account remove --keep-data"),
+          message: expect.stringContaining("b24 work session end"),
         })
         expect(asked.calls).toHaveLength(0)
         expect(keyring.get("bitrix24-cli", "token:home")).toBeNull()
