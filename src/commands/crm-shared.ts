@@ -10,6 +10,7 @@ import { permissions } from "../config.js"
 import { BITRIX_WRITES } from "../crm/capabilities.js"
 import { IDENTITY } from "../identity.js"
 import { contextOf, signInOf, storedSignIn, transportFor } from "../portal.js"
+import { B24_ACCOUNT } from "./account.js"
 
 /** The sign-in's own portal user, read offline from its entry; a profile with none reads none of the copy's deals. */
 const ownUser = (command: Command): string | null => {
@@ -105,6 +106,7 @@ export const crmSharedCommands = (): Command[] => {
     writes: BITRIX_WRITES,
     live: ["person", "organization", "user"],
     files: true,
+    account: B24_ACCOUNT,
   })
   return [...holder.commands]
 }

@@ -118,30 +118,6 @@ b24 session list
 
 **Example:** `b24 session list`, `b24 session list --json`
 
-## `b24 account`
-
-this profile on this computer
-
-### `b24 account remove`
-
-sign the profile out, then forget it on this computer: its settings, its saved sign-in and its files; --keep-data leaves its messages in the store, where search still finds them, --delete-data deletes them; asks first, or --yes
-
-**Changes something on this computer only.**
-
-```sh
-b24 account remove [options]
-```
-
-| Option | What it does |
-|---|---|
-| `--keep-data` | leave what the store holds of this account, still searchable. |
-| `--delete-data` | delete what the store and the tool's own files hold of this account. |
-| `--dry-run` | list what it would remove and keep, and change nothing. |
-
-**Returns:** account removal — profile, data, dry_run, account, revoked, config_file, removed, kept; every field: b24 commands info account remove
-
-**Example:** `b24 personal account remove --keep-data --dry-run`, `b24 personal account remove --delete-data --yes`
-
 ## `b24 sync`
 
 bring the CRM's copy in the local store up to date: pipelines, companies, contacts, deals and leads that changed since the last sync, or everything with --rescan; a run stops before its deadline or --max-pages and the next one goes on from there
@@ -1145,6 +1121,30 @@ b24 search all <query> [options]
 **Returns:** hit — kind, ref, provider, account, title, timestamp, excerpt, url, and 18 more; every field: b24 commands info search all
 
 **Example:** `b24 work search all Example LLC`, `b24 work search all website --only crm --json`
+
+## `b24 account`
+
+this profile on this computer
+
+### `b24 account remove`
+
+sign the profile out, then forget it on this computer: its settings, its saved sign-in and its files; --keep-data leaves its messages in the store, where search still finds them, --delete-data deletes them; asks first, or --yes
+
+**Changes something on this computer only.**
+
+```sh
+b24 account remove [options]
+```
+
+| Option | What it does |
+|---|---|
+| `--keep-data` | leave what the store holds of this account, still searchable. |
+| `--delete-data` | delete what the store and the tool's own files hold of this account. |
+| `--dry-run` | list what it would remove and keep, and change nothing. |
+
+**Returns:** account removal — profile, data, dry_run, account, revoked, config_file, removed, kept; every field: b24 commands info account remove
+
+**Example:** `b24 personal account remove --keep-data --dry-run`, `b24 personal account remove --delete-data --yes`
 
 ## `b24 products`
 

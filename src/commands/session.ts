@@ -1,4 +1,4 @@
-import { CliError, isCliError, type KeyringStore } from "@wirecat/cli-base"
+import { CliError, isCliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
 import { readSecret } from "@wirecat/cli-core"
 import {
@@ -26,31 +26,15 @@ import {
   secretInputOf,
   signInSteps,
 } from "@wirecat/cli-core/cli"
+import { refuseTakenCrmAccount } from "@wirecat/cli-core/crm/cli"
 import { Command } from "commander"
 import { appSignIn, appSourceOf, appStorage, portalHost } from "../bitrix/oauth.js"
-import { parseWebhook, type Webhook } from "../bitrix/webhook.js"
+import { parseWebhook } from "../bitrix/webhook.js"
 import { configuration } from "../config.js"
 import { IDENTITY } from "../identity.js"
 import { appAuthFor, type B24Environment, contextOf, transportFor, withPortal } from "../portal.js"
 import { webhookUser } from "../whoami.js"
-import { portalsHere } from "./account.js"
-
-/** A second profile on the same webhook user would sync the same copy twice and split its permissions. */
-const refuseDuplicate = (env: NodeJS.ProcessEnv, keyring: KeyringStore | undefined, profile: string, at: Webhook) => {
-  const portal = new URL(at.origin).host
-  const other = portalsHere(env, keyring, { savedOnly: true }).find(
-    (one) => one.profile !== profile && one.portal === portal && one.userId === at.userId,
-  )
-  if (!other) return
-  const b24 = IDENTITY.command
-  throw new CliError(
-    "conflict",
-    `profile ${other.profile} already uses this webhook (${portal}, user ${at.userId}). Use \`${b24} ${other.profile}\`, ` +
-      `sign it in again with \`${b24} ${other.profile} session start\`, or remove it with ` +
-      `\`${b24} ${other.profile} account remove --keep-data\` and then sign in as ${profile}`,
-    { reason: "session.duplicate", profile: other.profile, portal },
-  )
-}
+import { B24_ACCOUNT } from "./account.js"
 
 const USER_METHODS = new Set(["user.current", "user.admin"])
 
@@ -76,10 +60,15 @@ export const refuseSignInHere = (command: Command) => {
  * here uses it, and the portal answers who made it. Keeps nothing.
  */
 export const checkedWebhook = async (command: Command, address: string) => {
-  const { env, profile, keyring, run } = contextOf(command)
+  const { env, profile, keyring, settings, run } = contextOf(command)
   const webhook = parseWebhook(address)
   const portal = new URL(webhook.origin).host
-  refuseDuplicate(env, keyring, profile, webhook)
+  refuseTakenCrmAccount(
+    IDENTITY,
+    B24_ACCOUNT,
+    { env, profile, profiles: settings.configuredProfiles, ...(keyring ? { keyring } : {}) },
+    { account: portal, user: webhook.userId },
+  )
   const user = await run((events) => webhookUser(transportFor(command, webhook, events))).catch((error: unknown) => {
     if (
       isCliError(error) &&

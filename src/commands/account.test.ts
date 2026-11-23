@@ -86,11 +86,55 @@ describe("account remove", () => {
     )
     const refused = await b24(["work", "account", "remove", "--delete-data", "--yes", "--json"], { keyring })
     expect(refused.code).not.toBe(0)
-    expect(refused.json().error).toMatchObject({ code: "conflict", reason: "account-remove.portal-shared" })
+    expect(refused.json().error).toMatchObject({
+      code: "conflict",
+      reason: "account-remove.account-shared",
+      details: { profiles: ["home"], account: "example.bitrix24.test" },
+    })
     expect(keyring.get("bitrix24-cli", "token:work")).toBe(FAKE_HOOK)
     const kept = await b24(["work", "account", "remove", "--keep-data", "--yes", "--json"], { keyring })
     expect(kept.code).toBe(0)
     expect(keyring.get("bitrix24-cli", "token:home")).toBe(COLLEAGUE_HOOK)
+  })
+
+  it("--delete-data --dry-run warns that another profile reads the same portal, and changes nothing", async () => {
+    const { keyring } = await syncedWork()
+    const colleague = fakePortal({ "user.current": ok({ ID: "9" }), "user.admin": ok(false), "department.get": ok([]) })
+    expect((await b24(["home", "session", "start"], { keyring, portal: colleague, stdin: COLLEAGUE_HOOK })).code).toBe(
+      0,
+    )
+    const ran = await b24(["work", "account", "remove", "--delete-data", "--dry-run", "--json"], { keyring })
+    expect(ran.code).toBe(0)
+    expect(ran.err).toContain("without --dry-run this refuses: home also reads Bitrix24 account example.bitrix24.test")
+    expect(await storedAccounts()).toContain("bitrix24:example.bitrix24.test")
+  })
+
+  it("--delete-data still refuses when the other profile's webhook is unreadable, from what session start kept", async () => {
+    const { keyring } = await syncedWork()
+    const colleague = fakePortal({ "user.current": ok({ ID: "9" }), "user.admin": ok(false), "department.get": ok([]) })
+    expect((await b24(["home", "session", "start"], { keyring, portal: colleague, stdin: COLLEAGUE_HOOK })).code).toBe(
+      0,
+    )
+    keyring.set("bitrix24-cli", "token:home", "not a webhook")
+    const refused = await b24(["work", "account", "remove", "--delete-data", "--yes", "--json"], { keyring })
+    expect(refused.json().error).toMatchObject({ code: "conflict", reason: "account-remove.account-shared" })
+    expect(await storedAccounts()).toContain("bitrix24:example.bitrix24.test")
+  })
+
+  it("--delete-data refuses when nothing tells which portal another profile holds", async () => {
+    const { keyring } = await syncedWork()
+    const accounts = join(process.env.B24_STATE_DIR ?? "", "accounts")
+    writeFileSync(join(accounts, "home.json"), `${JSON.stringify({ account: "unknown" })}\n`)
+    keyring.set("bitrix24-cli", "token:home", "not a webhook")
+    const refused = await b24(["work", "account", "remove", "--delete-data", "--yes", "--json"], { keyring })
+    expect(refused.json().error).toMatchObject({
+      code: "conflict",
+      reason: "account-remove.account-unknown",
+      details: { profile: "home" },
+    })
+    expect(keyring.get("bitrix24-cli", "token:work")).toBe(FAKE_HOOK)
+    expect(await storedAccounts()).toContain("bitrix24:example.bitrix24.test")
+    expect((await b24(["work", "account", "remove", "--keep-data", "--yes", "--json"], { keyring })).code).toBe(0)
   })
 
   it("asks what happens to the data, and refuses without --yes when it cannot ask", async () => {

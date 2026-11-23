@@ -23,7 +23,6 @@ import {
 import { appUpdate } from "@wirecat/cli-core/update"
 import type { Command } from "commander"
 import { appSourceOf } from "./bitrix/oauth.js"
-import { accountCommand } from "./commands/account.js"
 import { apiCommand } from "./commands/api.js"
 import { callsCommand } from "./commands/calls.js"
 import { crmSharedCommands } from "./commands/crm-shared.js"
@@ -109,7 +108,6 @@ export const definition = (): ProgramDefinition => {
     commands: () => [
       commandsCommand(IDENTITY),
       sessionCommand(),
-      accountCommand(),
       ...crmSharedCommands(),
       productsCommand(),
       callsCommand(),
