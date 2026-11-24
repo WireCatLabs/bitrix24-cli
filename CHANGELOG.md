@@ -2,7 +2,7 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
-## 0.27.0 — 19.11.2026
+## 0.27.0 — 24.11.2026
 
 ### Added
 
@@ -24,6 +24,23 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 
 - **`search all` can answer a new hit kind, `crm_file`**, the text of a downloaded file. A script that switches over
   `kind` gets it. It comes with `@wirecat/cli-core` 0.710.0, whose store moves to version 69 (forward-only).
+- **`account remove --delete-data` refuses with `account-remove.account-shared`, detail `account`.** It was
+  `account-remove.portal-shared` with detail `portal`. The command is now cli-core's shared CRM one (`@wirecat/cli-core`
+  0.722.0). It still refuses while another profile here reads the same portal, even one whose session ended. Under
+  `--dry-run` it now warns and lists what would go, where it used to fail.
+- **`account remove --delete-data` refuses when b24 cannot tell which portal another profile holds**
+  (`account-remove.account-unknown`, detail `profile`): a profile whose saved webhook is unreadable and that
+  `session start` never remembered. `--keep-data` still removes.
+- **`session start` refuses a second sign-in to the same portal and user with the shared words.** The reason stays
+  `session.duplicate`; its detail `portal` is now `account`, and the message says to end the other profile with
+  `b24 <profile> session end`. A webhook sign-in to a profile named `files` or `foreign-contacts`, folders every
+  portal shares, is refused with `profile.reserved`.
+
+### Fixed
+
+- **A deal that enters a stage in the same second its `stage-tasks` rules were set now opens its task**
+  (`@wirecat/cli-core` 0.739.0). The portal's stage history keeps whole seconds, so such a move read as made before
+  the rules and opened none.
 
 ## 0.26.0 — 18.11.2026
 
