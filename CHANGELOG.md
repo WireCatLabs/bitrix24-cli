@@ -2,6 +2,48 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## 0.27.0 — 24.11.2026
+
+### Added
+
+- **Client files: `files list`, `files download` and `files sync`.** `files list --deal 12` (or `--lead`, `--person`,
+  `--organization`) reads one record's files from the portal: the files in its file fields, the documents made from
+  templates (the PDF when the portal has made it, else the Word file), and the Drive files attached to its activities
+  and timeline comments. `files download <id>` saves one under the state folder and reads its text, which `search all`
+  then finds. A source the webhook may not read, such as activity files without the `disk` scope, is named under
+  `issues` and the others are still listed. Each download asks the portal for a fresh link and fetches it from the
+  portal alone; no link reaches the store or an answer. `files: deny` also holds on `api call` of the methods these
+  commands read through. See [Client files](docs/usage.md#client-files).
+
+### Changed — may break callers
+
+- **`api call` hides more links.** It now uses cli-core's rule: besides the download keys and the portal's tokened
+  paths, any link that carries `auth=`, `access_token=`, `api_token=` or `X-Amz-Signature=` prints as
+  `[link removed]`, whatever its host. Drive's `ERROR_NOT_FOUND` (such as `api call disk.file.get` of a missing file)
+  is now `not_found`, exit 6, not `validation_error`.
+- **`search all` can answer a new hit kind, `crm_file`**, the text of a downloaded file. A script that switches over
+  `kind` gets it. It comes with `@wirecat/cli-core` 0.710.0, whose store moves to version 69 (forward-only).
+- **`account remove --delete-data` refuses with `account-remove.account-shared`, detail `account`.** It was
+  `account-remove.portal-shared` with detail `portal`. The command is now cli-core's shared CRM one (`@wirecat/cli-core`
+  0.722.0). It still refuses while another profile here reads the same portal, even one whose session ended. Under
+  `--dry-run` it now warns and lists what would go, where it used to fail.
+- **`account remove --delete-data` refuses when b24 cannot tell which portal another profile holds**
+  (`account-remove.account-unknown`, detail `profile`): a profile whose saved webhook is unreadable and that
+  `session start` never remembered. `--keep-data` still removes.
+- **`session start` refuses a second sign-in to the same portal and user with the shared words.** The reason stays
+  `session.duplicate`; its detail `portal` is now `account`, and the message says to end the other profile with
+  `b24 <profile> session end`. A webhook sign-in to a profile named `files` or `foreign-contacts`, folders every
+  portal shares, is refused with `profile.reserved`.
+- **An MCP server no longer offers `schedule exec`, and it runs only a schedule file in b24's own schedules folder**
+  (`@wirecat/cli-core` 0.739.0). A link or `..` that leads elsewhere is refused with `schedule.outside-folder`.
+  Installed timers keep running. An agent runs a saved schedule with `schedule run <name>`.
+
+### Fixed
+
+- **A deal that enters a stage in the same second its `stage-tasks` rules were set now opens its task**
+  (`@wirecat/cli-core` 0.739.0). The portal's stage history keeps whole seconds, so such a move read as made before
+  the rules and opened none.
+
 ## 0.26.0 — 18.11.2026
 
 ### Changed — may break callers

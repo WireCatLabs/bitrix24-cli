@@ -1,6 +1,6 @@
 {
   "name": "@wirecat/bitrix24-cli",
-  "version": "0.26.0",
+  "version": "0.27.0",
   "description": "Read and change a Bitrix24 portal's CRM — deals, leads, contacts, companies — from the terminal, scripts and AI agents",
   "license": "Apache-2.0",
   "author": "Viacheslav Ptsarev",
@@ -60,7 +60,7 @@
     "docs:spell": "cspell lint --config cspell.json --no-progress --no-summary README.md SECURITY.md CHANGELOG.md AGENTS.md CLAUDE.md 'docs/*.md' 'skills/**/*.md'"
   },
   "dependencies": {
-    "@wirecat/cli-core": "0.722.0",
+    "@wirecat/cli-core": "0.739.0",
     "commander": "15.0.0",
     "valibot": "1.5.0"
   },
