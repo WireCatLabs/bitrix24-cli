@@ -121,7 +121,7 @@ describe("sync scope", () => {
     // The id pass marks only rows saved an hour before it started, so a row a sync is still writing is never taken.
     vi.useFakeTimers({ toFake: ["Date"], now: Date.now() + 2 * 3_600_000 })
     try {
-      await b24(["work", "sync", "--rescan", "--json"], { portal: crm })
+      await b24(["work", "sync", "--rescan", "--allow-deletions", "1", "--json"], { portal: crm })
     } finally {
       vi.useRealTimers()
     }

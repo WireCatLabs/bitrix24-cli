@@ -6,6 +6,7 @@ describe("every option of the CRM commands runs against the fake portal", () => 
     const { portal } = await synced()
     for (const argv of [
       ["sync", "--rescan", "--max-pages", "50"],
+      ["sync", "--allow-deletions", "5"],
       ["deals", "list", "--limit", "1", "--page", "2"],
       ["leads", "list", "--limit", "5", "--page", "1"],
       ["pipelines", "list", "kind:deal"],
