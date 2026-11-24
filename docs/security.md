@@ -122,8 +122,9 @@ not offered over MCP.
 terminal. The timer runs `b24 schedule exec <file>`, and the schedule file in the state folder holds the words, the
 profile, your `PATH` and the folders `b24` uses (`B24_CONFIG_DIR`, `B24_STATE_DIR`, `MESSAGING_STORE`), never the
 webhook's address. Each run checks the permissions again. `B24_READ_ONLY` refuses
-`schedule command`, `remove`, `run` and `exec`. Over MCP an agent may run `schedule run` and `schedule exec`, each
-behind its own permission key (`schedule.run`, `schedule.exec`). Adding, pausing, resuming or removing a timer over MCP
+`schedule command`, `remove`, `run` and `exec`. Over MCP an agent may run a saved schedule with `schedule run`,
+behind the permission key `schedule.run`; `schedule exec` runs only a file in the tool's own schedules folder and is
+not offered over MCP. Adding, pausing, resuming or removing a timer over MCP
 is refused unless the profile sets `permissions.mcp.authority` to `allow`.
 
 ## MCP in the browser

@@ -28,7 +28,7 @@ it("serves search, read and write, and runs a command through the CLI", async ()
   }
 })
 
-it("pins b24's own commands an agent can find, and offers schedule run and exec but never api call", async () => {
+it("pins b24's own commands an agent can find, and offers schedule run but never schedule exec or api call", async () => {
   const program = createProgram()
   const authority = changesAuthorityAt(program)
   const options = {
@@ -49,7 +49,6 @@ it("pins b24's own commands an agent can find, and offers schedule run and exec 
     "schedule list",
     "schedule agents list",
     "schedule run",
-    "schedule exec",
   ])
   expect(catalogue["deals update"]).toBe("write")
 })
