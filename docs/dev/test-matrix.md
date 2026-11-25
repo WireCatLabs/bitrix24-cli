@@ -7,7 +7,7 @@ ran it · ⛔ not tested offline, with the reason and where it is checked instea
 Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 [TESTING.md](TESTING.md) for how, and for the states and failures that cut across commands.
 
-**234 ✅ · 90 ⛔ · 0 ❌** — 112 commands, 212 options.
+**234 ✅ · 91 ⛔ · 0 ❌** — 112 commands, 213 options.
 
 | Command | Option | | Note |
 |---|---|---|---|
@@ -24,6 +24,7 @@ Measured from the test run (`coverage/argv.jsonl`), not searched for — see
 | `sync` |  | ✅ |  |
 | `sync` | `--rescan` | ✅ |  |
 | `sync` | `--max-pages` | ✅ |  |
+| `sync` | `--embed` | ⛔ | cli-core's CRM sync embeds activities; its src/crm/cli/activity-meaning.test.ts drives sync --embed and search all by meaning on a CRM program with the small test model, and a test here would need a model on disk |
 | `store status` |  | ✅ |  |
 | `store apply` |  | ✅ |  |
 | `store apply` | `--yes` | ⛔ | cli-core 0.670.0 src/crm/cli/commands.test.ts removes the counted contacts only with --yes |

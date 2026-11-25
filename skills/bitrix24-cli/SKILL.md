@@ -52,6 +52,13 @@ and lists the profiles in `details.profiles`. **Never pick one for the owner**; 
   and still exit `0`: read `complete`, `scope` and `issues`; answer "unknown", not "none", for what they name.
   `search all` names in `missing` a kind it did not search. Before you say something is not there, search in other
   words, and `sync` if the store is old.
+- **Ask by meaning before reading every comment.** «Кто жаловался, что монтаж перенесли» or "who got a cheaper
+  offer" is one `search all "<the question in plain words>" --json`: with the `activities` setting on, it finds deals
+  and leads by what their timeline comments, e-mails, calls and tasks mean, in Russian or any language, once
+  `sync --embed` has built their vectors (it says so when they are missing; run it again while it offers to). It
+  also corrects a misspelt name or a Russian name typed in Latin letters (and the reverse) and lists near-duplicate
+  names after the exact ones (`match: corrected`): check those before you answer from the first hit. List and read
+  every activity only when that search finds nothing.
 - **Won or lost is `status`, never the stage's name** (leads stand in one pipeline, `Leads`). `fields list` is as old
   as the last `sync`.
 - **Never infer what Bitrix24 does not hold:** contact roles on a deal, reporting lines between contacts, a parent
