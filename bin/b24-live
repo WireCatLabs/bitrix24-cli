@@ -57,6 +57,8 @@ left_deals=()
 left_items=()
 cleanup() {
   trap '' INT TERM HUP PIPE
+  # errexit applies inside a trap: one failed delete or echo must not stop the rest, nor keep the copied store.
+  set +e
   local one
   for one in "${left_leads[@]}"; do b24 leads delete "$one" --yes >/dev/null 2>&1 || echo "!! left lead $one"; done
   for one in "${left_deals[@]}"; do b24 deals delete "$one" --yes >/dev/null 2>&1 || echo "!! left deal $one"; done
@@ -64,6 +66,8 @@ cleanup() {
     b24 api call crm.item.delete --yes --body "{\"entityTypeId\":${one%:*},\"id\":${one#*:}}" >/dev/null 2>&1 ||
       echo "!! left CRM item ${one#*:} of type ${one%:*}"
   done
+  cp -r "$sandbox/data/bitrix24-cli/runs" "$logs/$stamp-runs" 2>/dev/null
+  rm -rf "$sandbox"
 }
 # Drops one id from the list it was tracked in, once its delete succeeded.
 forget() {
@@ -72,7 +76,7 @@ forget() {
   for one in "${list[@]}"; do [ "$one" = "$2" ] || kept+=("$one"); done
   list=("${kept[@]}")
 }
-trap 'cleanup; cp -r "$sandbox/data/bitrix24-cli/runs" "$logs/$stamp-runs" 2>/dev/null; rm -rf "$sandbox"' EXIT
+trap cleanup EXIT
 b24() {
   HOME="$sandbox" XDG_CONFIG_HOME="$sandbox/config" XDG_DATA_HOME="$sandbox/data" XDG_STATE_HOME="$sandbox/state" \
     XDG_CACHE_HOME="$sandbox/cache" MESSAGING_STORE="$sandbox/wirecat.db" DBUS_SESSION_BUS_ADDRESS=disabled: \
