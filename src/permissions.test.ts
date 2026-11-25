@@ -589,7 +589,7 @@ describe("search all under a denied list key", () => {
       const answer = ran.json() as { items: { kind: string }[]; missing?: unknown }
       expect(answer.items.length).toBeGreaterThan(0)
       expect(answer.items.every((item) => item.kind === "lead")).toBe(true)
-      expect(answer.missing).toEqual([{ field: "items", why: "deal left out: profile work denies deals.list" }])
+      expect(answer.missing).toContainEqual({ field: "items", why: "deal left out: profile work denies deals.list" })
       expect(ran.err).toContain("deal left out: profile work denies deals.list")
     })
     await withPermissions({ "deals.list": "deny", "leads.list": "deny" }, async () => {

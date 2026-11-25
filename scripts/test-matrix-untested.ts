@@ -20,6 +20,13 @@ const LONG_RUNNING = `starts an HTTP server or a background process that runs un
 
 export const UNTESTED: { command: string; option?: string; reason: string }[] = [
   {
+    command: "sync",
+    option: "--embed",
+    reason:
+      "cli-core's CRM sync embeds activities; its src/crm/cli/activity-meaning.test.ts drives sync --embed and search " +
+      "all by meaning on a CRM program with the small test model, and a test here would need a model on disk",
+  },
+  {
     command: "setup",
     reason:
       "cli-core's setupCommand asks the flow's questions in a terminal; its setup-command tests drive that, and " +

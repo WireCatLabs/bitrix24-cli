@@ -132,10 +132,11 @@ b24 sync [options]
 |---|---|
 | `--rescan` | list everything again, every id too, dropping a round in progress. |
 | `--max-pages <pages>` | at most this many requests to the CRM in this run. |
+| `--embed` | also index new activities and tasks for search all by meaning, with a model already downloaded. |
 
-**Returns:** crm sync — provider, account, scope, pipelines, skipped_owner_rejected, stage_tasks, synced, issues, and 9 more; every field: b24 commands info sync
+**Returns:** crm sync — provider, account, scope, pipelines, skipped_owner_rejected, stage_tasks, synced, issues, and 10 more; every field: b24 commands info sync
 
-**Example:** `b24 work sync`, `b24 work sync --rescan`, `b24 work sync --max-pages 20`
+**Example:** `b24 work sync`, `b24 work sync --rescan`, `b24 work sync --embed`
 
 ## `b24 store`
 

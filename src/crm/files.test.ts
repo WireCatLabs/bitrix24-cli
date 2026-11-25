@@ -30,7 +30,6 @@ const portalWithFiles = () => {
 const read = async (stream: ReadableStream<Uint8Array>) => new Response(stream).text()
 
 describe("crmFilesContract over the fake portal", () => {
-  // Windows has no POSIX modes, and cli-core's contract asserts 0600 and 0700 there too (cli-core fix pending).
   for (const { name, run } of crmFilesContract(() => {
     const { source, own, theirs } = portalWithFiles()
     return {
@@ -42,7 +41,7 @@ describe("crmFilesContract over the fake portal", () => {
       refused: [`deal:${own}:comment:802.932`, `deal:${own}:comment:803.933`],
     }
   }))
-    it.skipIf(process.platform === "win32" && name.includes("600 in 700"))(name, run)
+    it(name, run)
 })
 
 describe("a record's files on the portal", () => {
