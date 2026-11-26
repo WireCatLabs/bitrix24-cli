@@ -2,7 +2,14 @@ import { lookup as dnsLookup } from "node:dns/promises"
 import { isIP } from "node:net"
 import { CliError, isCliError, realSleep, type SleepLike, wallClock } from "@wirecat/cli-base"
 import { type FetchLike as HttpFetch, hostFetch, providerWaitMs, readJsonResponse } from "@wirecat/cli-base/http"
-import { apiJson, currentAttempt, type EventSink, providerEvent, providerRequest } from "@wirecat/cli-core/cli"
+import {
+  apiJson,
+  currentAttempt,
+  type EventSink,
+  providerEvent,
+  providerRequest,
+  timeLimit,
+} from "@wirecat/cli-core/cli"
 import { fetchCrmFile, providerCall } from "@wirecat/cli-core/crm"
 import { isPublicAddress } from "@wirecat/cli-core/documents"
 import type { Pacer } from "@wirecat/cli-core/sends"
@@ -228,12 +235,7 @@ export class BitrixTransport {
       endpointTemplate: onPortal ? loggedPath(url) : `${url.hostname}/…`,
       transport: "http",
     })
-    const deadline = new AbortController()
-    const timer = setTimeout(
-      () => deadline.abort(new DOMException("download timed out", "TimeoutError")),
-      6 * this.#timeoutMs,
-    )
-    timer.unref()
+    const deadline = timeLimit(6 * this.#timeoutMs)
     const signal = AbortSignal.any([deadline.signal, ...(this.#signal ? [this.#signal] : [])])
     try {
       const response = await fetch(url.href, { method: "GET", redirect: "error", signal }).catch((error) => {
@@ -258,7 +260,7 @@ export class BitrixTransport {
         disposition: response.headers.get("content-disposition"),
       }
     } finally {
-      clearTimeout(timer)
+      deadline.clear()
     }
   }
 
@@ -320,13 +322,7 @@ export class BitrixTransport {
     const app = "accessToken" in auth
     const token = app ? await auth.accessToken(run.refresh).catch(unsent) : undefined
     const path = `/rest/${run.api === 3 ? "api/" : ""}`
-    // Not AbortSignal.timeout: its timer holds the run's async context until the deadline (tg-cli, 2026-11-05).
-    const deadline = new AbortController()
-    const timer = setTimeout(
-      () => deadline.abort(new DOMException(`${method} timed out`, "TimeoutError")),
-      this.#timeoutMs,
-    )
-    timer.unref()
+    const deadline = timeLimit(this.#timeoutMs)
     const end = providerRequest(method, this.#events ?? providerEvent, {
       method: "POST",
       endpointTemplate: `${path}${app ? "" : ":user/:token/"}${method}`,
@@ -397,7 +393,7 @@ export class BitrixTransport {
         ...(typeof answer.next === "number" ? { next: answer.next } : {}),
       }
     } finally {
-      clearTimeout(timer)
+      deadline.clear()
     }
   }
 

@@ -25,6 +25,8 @@ import {
   rootOf,
   secretInputOf,
   signInSteps,
+  storageOf,
+  type TokenStorage,
 } from "@wirecat/cli-core/cli"
 import { refuseTakenCrmAccount } from "@wirecat/cli-core/crm/cli"
 import { Command } from "commander"
@@ -86,7 +88,7 @@ const answer = (command: Command, item: unknown) => renderAnswer(command, output
 const PASTE = "If the browser did not come back here, paste the address it ended on: "
 
 /** The local application's sign-in; the webhook's address and the application's key are never a flag (WC-SECR-5). */
-const startWithApp = async (command: Command, args: StartArgs, storage: "keyring" | "file") => {
+const startWithApp = async (command: Command, args: StartArgs, storage: TokenStorage) => {
   const { env, profile, tokens, keyring, run, environment } = contextOf(command)
   const host = portalHost(args.portal ?? "")
   const clientId = (args.clientId ?? env[`${IDENTITY.envPrefix}_BITRIX24_CLIENT_ID`] ?? "").trim()
@@ -163,7 +165,7 @@ const startWithApp = async (command: Command, args: StartArgs, storage: "keyring
 }
 
 interface StartArgs {
-  credentialStorage: string
+  credentialStorage: TokenStorage
   portal?: string
   clientId?: string
 }
@@ -193,7 +195,8 @@ const startCommand = () =>
       "--credential-storage <storage>",
       "where the sign-in is kept: keyring (the default, which falls back to a private file by itself when no " +
         "keyring works), or file, not recommended",
-      "keyring",
+      storageOf,
+      "keyring" as TokenStorage,
     )
     .option("--portal <host>", "sign in through a local application on this portal, such as example.bitrix24.ru")
     .option(
@@ -203,8 +206,6 @@ const startCommand = () =>
     )
     .action(async function (this: Command, args: StartArgs) {
       const storage = args.credentialStorage
-      if (storage !== "keyring" && storage !== "file")
-        throw new CliError("validation_error", "--credential-storage takes keyring or file")
       const { env, profile, tokens, keyring } = contextOf(this)
       refuseSignInHere(this)
       if (args.portal !== undefined) return answer(this, await startWithApp(this, args, storage))
@@ -301,10 +302,10 @@ const listCommand = () =>
       const items = profilesHere(IDENTITY, configuredProfiles, env).map((profile) => {
         try {
           const from = store.read(profile)?.source ?? appSourceOf(env, profile, environment.keyring)
-          return { profile, signed_in: from !== undefined, token_from: from ?? null }
+          return { profile, signed_in: from !== undefined, state: from ? "saved" : "missing", token_from: from ?? null }
         } catch (error) {
           if (!(error instanceof CliError)) throw error
-          return { profile, signed_in: null, token_from: null, error: error.message }
+          return { profile, signed_in: null, state: "unknown", token_from: null, error: error.message }
         }
       })
       renderAnswer(

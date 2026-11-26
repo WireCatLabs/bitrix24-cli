@@ -8,6 +8,7 @@ import {
   systemKeyring,
 } from "@wirecat/cli-base"
 import { hostFetch } from "@wirecat/cli-base/http"
+import { timeLimit } from "@wirecat/cli-core/cli"
 import {
   accountTokenCodec,
   credentialStorage,
@@ -132,9 +133,7 @@ const exchange = async (
     client_secret: context.client.clientSecret ?? "",
     [grant === "refresh_token" ? "refresh_token" : "code"]: given ?? "",
   })
-  const deadline = new AbortController()
-  const timer = setTimeout(() => deadline.abort(), REQUEST_MS)
-  timer.unref()
+  const deadline = timeLimit(REQUEST_MS)
   const signal = context.signal ? AbortSignal.any([context.signal, deadline.signal]) : deadline.signal
   try {
     let response: Response
@@ -177,7 +176,7 @@ const exchange = async (
       scopes: typeof scope === "string" ? scope.split(",").filter(Boolean) : [],
     }
   } finally {
-    clearTimeout(timer)
+    deadline.clear()
   }
 }
 

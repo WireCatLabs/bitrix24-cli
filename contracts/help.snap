@@ -31,6 +31,7 @@ Works with:
   linear                             Linear issues and projects, searchable with your other WireCat data
 
 Start here:   b24 work session start  (any profile name works)
+              b24 session list        your profiles and their logged-in accounts
 Next:         b24 commands            every command, by section
               b24 guide               scenarios: command sequences for common tasks
               b24 help options        output, offline, timeouts, dry run
