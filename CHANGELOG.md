@@ -4,6 +4,38 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
 
 ## 0.28.0 — 25.11.2026
 
+### Added
+
+- **`search all` finds deals and leads by the meaning of their activities:** calls, e-mails, comments and tasks, in
+  other words or another language, with the activity's excerpt in the hit. `b24 work sync --embed` builds the index
+  with a model already downloaded (`b24 models download embeddinggemma`); until then `search all` says it searched by
+  words only. Needs `activities` on (`@wirecat/cli-core` 0.751.0).
+- **`sync --embed` and `search all` by meaning** (cli-core 0.751.0). With the `activities` setting on, `sync --embed`
+  indexes the copied timeline comments, e-mails, calls, meetings and tasks with a model already downloaded, and
+  `search all` then finds deals and leads by what their activities mean, in Russian or any language, not only by
+  their words. The skill tells an agent to ask by meaning before it reads every activity; the detail is in
+  `b24 skill show reading`.
+
+### Changed — may break callers
+
+- **`synced[].saved` in the `sync` answer counts only rows that changed** (new, different, deleted or back again), so
+  a sync with nothing new answers 0.
+- **b24 is built on cli-core 1.0 and cli-base 1.0.** After its first run the store is at version 74, and only tools
+  on cli-core 1.0 open it: upgrade every WireCat CLI on this computer together. The migration keeps a rollback copy,
+  and refuses to run when it cannot write one (`store migrate --no-backup` migrates anyway).
+- **`sync --rescan` no longer lets a sync mark most of a kind deleted.** It only lists everything again. When the
+  guard holds a pass, `sync --allow-deletions <count>` lets it mark at most that many records deleted. The flag is
+  for the owner in a terminal; the MCP server does not offer it.
+- **MCP no longer offers `schedule exec`.** It is the timer's own entry and runs only a schedule file in b24's
+  schedules folder. An agent runs a saved schedule with `schedule run <name>`. See
+  [Security](docs/security.md#timers).
+- **An MCP call that names a refused folder answers `permission_error`**, not `validation_error`.
+
+### Fixed
+
+- `search all` lists a name one letter off the one that matched after it, and finds a Latin name typed in Cyrillic
+  letters and a Russian name typed in Latin letters, each marked `match: corrected`.
+
 ## 0.27.0 — 24.11.2026
 
 ### Added
