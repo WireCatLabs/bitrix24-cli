@@ -211,7 +211,7 @@ export const meetingsMount = () => {
         await Promise.all([
           import("@wirecat/cli-core/crm/cli"),
           import("../store.js"),
-          import("@wirecat/cli-core/store"),
+          import("@wirecat/cli-core/store/areas"),
           import("../calls/source.js"),
           import("../calls/recordings.js"),
           import("../crm/source.js"),
@@ -237,7 +237,7 @@ export const meetingsMount = () => {
       // The CRM sync's own rule decides whose calls are copied: the signed-in user, or the users chosen in
       // `unassigned` that rule keeps. A stored `all` refuses, as the CRM sync does: a copy is never the whole portal.
       const users = async () => {
-        const { crmSettingKey } = await import("@wirecat/cli-core/store")
+        const { crmSettingKey } = await import("@wirecat/cli-core/store/areas")
         const scope = await store.crm.scope(account)
         const source = crm.bitrixCrmSource(portal, Date.now, memory.NO_MEMORY, async () => ({
           mode: scope.mode,

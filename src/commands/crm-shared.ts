@@ -48,7 +48,7 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
   const portal = () => (transport ??= transportFor(command, signInOf(command)))
   let source: ReturnType<typeof bitrixCrmSource> | undefined
   const asked = async () => {
-    const { crmSettingKey } = await import("@wirecat/cli-core/store")
+    const { crmSettingKey } = await import("@wirecat/cli-core/store/areas")
     const scope = await store.crm.scope(account)
     return {
       mode: scope.mode,
@@ -61,7 +61,7 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
   const copy = {
     fields: (kind: CrmKind) => store.crm.fields(account, kind),
     contacts: async (externalIds: readonly string[]) => {
-      const { crmIdentityId } = await import("@wirecat/cli-core/store")
+      const { crmIdentityId } = await import("@wirecat/cli-core/store/areas")
       const held = new Set<string>()
       for (const externalId of externalIds)
         if (await store.people.personOf({ provider: PROVIDER.name, id: crmIdentityId(account, externalId) }))

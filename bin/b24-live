@@ -10,15 +10,19 @@
 #                           # then syncs again and asks the portal that none is left;
 #                           # when every step passed, appends
 #                           # the version and commit to docs/dev/live-checks.txt, which bin/release checks
-#   B24_KEYRING_ACCOUNT=<account> bin/b24-live [--write]
+#   bin/b24-live <account> --write --lead-only   # the lead's writes alone: no deal, comment, file, contact or company
+#   B24_KEYRING_ACCOUNT=<account> bin/b24-live [--write [--lead-only]]
+# The log keeps ids, refs, statuses and counts only: never a client's title, name, amount or price.
 # <account> is the keyring entry `secret-tool store --label=… service bitrix24 account <account>` holds the webhook in.
 set -euo pipefail
 
 write=""
+lead_only=""
 given=""
 for arg in "$@"; do
   case "$arg" in
     --write) write=1 ;;
+    --lead-only) lead_only=1 ;;
     *) given=$arg ;;
   esac
 done
@@ -28,6 +32,7 @@ account=${given:-${B24_KEYRING_ACCOUNT:-}}
   echo "  bin/b24-live <account> [--write]   or   B24_KEYRING_ACCOUNT=<account> bin/b24-live [--write]" >&2
   exit 2
 }
+[ -z "$lead_only" ] || [ -n "$write" ] || { echo "--lead-only goes with --write" >&2; exit 2; }
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 # Built here, so the live record names the commit that actually ran.
@@ -45,10 +50,37 @@ logs="${XDG_CACHE_HOME:-$HOME/.cache}/b24-live"
 (umask 077 && mkdir -p "$logs")
 exec > >(umask 077 && tee "$logs/$stamp.log") 2>&1
 echo "log: $logs/$stamp.log"
-trap 'cp -r "$sandbox/data/bitrix24-cli/runs" "$logs/$stamp-runs" 2>/dev/null; rm -rf "$sandbox"' EXIT
+# What the check created and has not deleted yet: a step that stops the script halfway leaves none of it on the portal.
+# Only these ids are ever deleted, each by its own id.
+left_leads=()
+left_deals=()
+left_items=()
+cleanup() {
+  trap '' INT TERM HUP PIPE
+  # errexit applies inside a trap: one failed delete or echo must not stop the rest, nor keep the copied store.
+  set +e
+  local one
+  for one in "${left_leads[@]}"; do b24 leads delete "$one" --yes >/dev/null 2>&1 || echo "!! left lead $one"; done
+  for one in "${left_deals[@]}"; do b24 deals delete "$one" --yes >/dev/null 2>&1 || echo "!! left deal $one"; done
+  for one in "${left_items[@]}"; do
+    b24 api call crm.item.delete --yes --body "{\"entityTypeId\":${one%:*},\"id\":${one#*:}}" >/dev/null 2>&1 ||
+      echo "!! left CRM item ${one#*:} of type ${one%:*}"
+  done
+  cp -r "$sandbox/data/bitrix24-cli/runs" "$logs/$stamp-runs" 2>/dev/null
+  rm -rf "$sandbox"
+}
+# Drops one id from the list it was tracked in, once its delete succeeded.
+forget() {
+  local -n list=$1
+  local kept=() one
+  for one in "${list[@]}"; do [ "$one" = "$2" ] || kept+=("$one"); done
+  list=("${kept[@]}")
+}
+trap cleanup EXIT
 b24() {
   HOME="$sandbox" XDG_CONFIG_HOME="$sandbox/config" XDG_DATA_HOME="$sandbox/data" XDG_STATE_HOME="$sandbox/state" \
     XDG_CACHE_HOME="$sandbox/cache" MESSAGING_STORE="$sandbox/wirecat.db" DBUS_SESSION_BUS_ADDRESS=disabled: \
+    env -u B24_CONFIG_DIR -u B24_STATE_DIR -u B24_CACHE_DIR -u WIRECAT_STATE_DIR -u WIRECAT_CONFIG_DIR \
     node "$root/dist/bin/b24.js" live "$@"
 }
 failed=0
@@ -65,14 +97,26 @@ value() {
     })' "$1"
 }
 
-step session status --check
 # Nothing is chosen, as on a new install: a sync copies the signed-in user's deals, where the test lead and deal go.
 me=$(b24 session status --check --json 2>/dev/null | value item.user.id)
 [ -n "$me" ] || { echo "!! session status gave no user"; exit 1; }
+echo "ok: signed in as user $me"
+# A sync's answer, shortened to its state, each kind's count and the issues' reasons.
+synced() {
+  node -e '
+    let s = ""
+    process.stdin.on("data", (d) => (s += d)).on("end", () => {
+      let item = {}
+      try { item = JSON.parse(s).item ?? {} } catch {}
+      const kinds = (item.synced ?? []).map((one) => `${one.kind} saved ${one.saved}${one.error ? " (failed)" : ""}`)
+      const reasons = [...new Set((item.issues ?? []).map((one) => one.reason ?? one.code))]
+      console.log(`${item.state ?? "no state"}; ${kinds.join(", ") || "no kinds"}; issues ${reasons.join(",") || "none"}`)
+    })'
+}
 echo "the first sync copies the portal into an empty store at the portal's pace, a request a second: minutes"
 printf '\n== b24 live sync\n'
 first=$(b24 sync --json=state,synced,issues,scope) || fail "exit $?"
-printf '%s\n' "$first"
+printf '%s' "$first" | synced
 scope=$(printf '%s' "$first" | value item.scope.self):$(printf '%s' "$first" | value item.scope.also)
 [ "$scope" = "$me:[]" ] || fail "with no one chosen the sync must copy the signed-in user $me alone, got $scope"
 # The second sync asks only for what changed, through the updatedTime filter; every kind must answer it.
@@ -127,12 +171,12 @@ if [ -z "$portal" ]; then fail "session status gave no portal"; else
     echo "no deal in the copy — deals show with activities skipped"
   fi
 fi
-step pipelines list --json=ref,name,kind
-step stages list --json=pipeline_name,name,outcome,external_id,open
-step deals list status:open --limit 3 --json=ref,title,pipeline_name,stage,status,amount,currency,close_date
-step leads list --limit 3 --json=ref,title,stage,status,amount,currency
-step people list --limit 3 --json=id,name
-step organizations list --limit 3 --json=id,name
+step pipelines list --json=ref,kind
+step stages list --json=pipeline,external_id,outcome,open
+step deals list status:open --limit 3 --json=ref,status
+step leads list --limit 3 --json=ref,status
+step people list --limit 3 --json=id
+step organizations list --limit 3 --json=id
 
 # The funnel board of one deal pipeline: only the shape is printed, never a stage's name or sum.
 board=$(b24 pipelines list --json 2>/dev/null | node -e '
@@ -184,10 +228,10 @@ csv() {
 }
 csv deals
 csv people
-step products list --limit 3
-step users list --limit 3 --json=id,name
-step fields list deals --all
-step fields list leads --all
+step products list --limit 3 --json=id
+step users list --limit 3 --json=id
+step fields list deals --all --json=code,type
+step fields list leads --all --json=code,type
 
 # Picks a custom field from `fields list` at run time, so no portal's own codes are written here:
 # `list` prints `<code>:<option id>` of a list field a list can filter by, `string` the code of a one-value text field,
@@ -209,7 +253,7 @@ pick() {
 
 term=$(pick organizations list)
 if [ -n "$term" ]; then
-  step organizations list "$term" --limit 3 --json=id,name
+  step organizations list "$term" --limit 3 --json=id
 else
   echo "no list field on companies that a list can filter by — skipped the filtered organizations list"
 fi
@@ -220,7 +264,7 @@ if [ -z "$write" ]; then
   exit 0
 fi
 
-title="WireCat test $(date +%Y-%m-%dT%H:%M)"
+title="WireCat test $(date +%Y-%m-%dT%H:%M:%S)"
 
 # A lead: created with one custom string field, named by its label, when the portal has one, renamed, moved, closed
 # lost, deleted. Never closed won: a won lead is a converted one.
@@ -229,11 +273,14 @@ field=()
 if [ -n "$custom" ]; then field=(--field "${custom#*|}=$title"); else echo "no labelled one-value string field on leads — no --field"; fi
 # Bitrix24 made a second record for a create repeated with one Idempotency-Key, so --operation-id must be refused
 # before anything is sent.
-if b24 leads create --title "$title" --operation-id "wirecat-live-$(date +%s)" --json >/dev/null 2>&1; then
+if stray=$(b24 leads create --title "$title" --operation-id "wirecat-live-$(date +%s)" --json 2>/dev/null); then
   fail "leads create took --operation-id"
-else echo "ok: leads create refuses --operation-id"; fi
+  stray=$(printf '%s' "$stray" | value item.lead.ref)
+  [ -z "$stray" ] || left_leads+=("$stray")
+else stray=""; echo "ok: leads create refuses --operation-id"; fi
 lead=$(b24 leads create --title "$title" "${field[@]}" --json | value item.lead.ref)
 [ -n "$lead" ] || { echo "!! leads create gave no ref"; exit 1; }
+left_leads+=("$lead")
 echo "created $lead: $title"
 step leads show "$lead" --json=ref,title,stage,status,assignee
 if [ -n "$custom" ]; then
@@ -245,9 +292,13 @@ fi
 step leads update "$lead" --title "$title (renamed)" --json=operation_id,lead.title
 step leads move "$lead" IN_PROCESS --json=lead.stage,lead.status
 step leads close "$lead" lost --json=lead.stage,lead.status
-step leads delete "$lead" --yes --json=ref,removed
-echo "deleted $lead"
+printf '\n== b24 live leads delete %s\n' "$lead"
+if b24 leads delete "$lead" --yes --json=ref,removed; then
+  forget left_leads "$lead"
+  echo "deleted $lead"
+else fail "exit $?"; fi
 
+if [ -n "$lead_only" ]; then echo "--lead-only: no deal, timeline comment, file, contact or company"; else
 # A deal in the first deal pipeline: created, given a close date, moved to its second open stage, deleted.
 stages=$(b24 stages list kind:deal --json)
 pipeline=$(printf '%s' "$stages" | value items.0.pipeline)
@@ -258,8 +309,12 @@ next=$(printf '%s' "$stages" | node -e '
     const open = items.filter((one) => one.pipeline === items[0]?.pipeline && one.outcome === "open")
     console.log(open[1]?.external_id ?? "")
   })')
-deal=$(b24 deals create --title "$title" --pipeline "$pipeline" --json | value item.deal.ref)
+made=$(b24 deals create --title "$title" --pipeline "$pipeline" --json)
+deal=$(printf '%s' "$made" | value item.deal.ref)
 [ -n "$deal" ] || { echo "!! deals create gave no ref"; exit 1; }
+left_deals+=("$deal")
+# The portal's own id of the deal just created: the comment and the file below target it, never a search's answer.
+on=$(printf '%s' "$made" | value item.deal.external_id)
 echo "created $deal: $title"
 step deals update "$deal" --close-date "$(date -d '+30 days' +%Y-%m-%d)" --json=deal.close_date
 if [ -n "$next" ]; then
@@ -276,9 +331,7 @@ if [ -n "$next" ]; then
 else echo "one open stage only — no move"; fi
 # A comment in the deal's timeline: the next sync reads it as an activity of kind comment. It goes with the deal.
 printf '\n== b24 live timeline comment\n'
-on=$(b24 api call crm.deal.list --body "{\"select\":[\"id\"],\"filter\":[[\"title\",\"=\",\"$title\"]]}" --json |
-  value item.result.items.0.id)
-if [ -z "$on" ]; then fail "the portal has no deal titled \"$title\""; else
+if [ -z "$on" ]; then fail "deals create gave no external_id"; else
   b24 api call crm.timeline.comment.add --yes \
     --body "{\"fields\":{\"ENTITY_ID\":$on,\"ENTITY_TYPE\":\"deal\",\"COMMENT\":\"$title comment\"}}" >/dev/null ||
     fail "crm.timeline.comment.add: exit $?"
@@ -390,8 +443,11 @@ else
       })' "$pdf" "$marker" || fail "files download did not save the file that was attached"
   fi
 fi
-step deals delete "$deal" --yes --json=ref,removed
-echo "deleted $deal"
+printf '\n== b24 live deals delete %s\n' "$deal"
+if b24 deals delete "$deal" --yes --json=ref,removed; then
+  forget left_deals "$deal"
+  echo "deleted $deal"
+else fail "exit $?"; fi
 
 # A contact and a company: `files list` reads each, its activities by the record's binding included, without failing.
 # `api call` may not add an activity (crm.activity.* is denied by default), so none is attached here.
@@ -401,6 +457,7 @@ for pair in "3 person name" "4 organization title"; do
   record=$(b24 api call crm.item.add --yes --body "{\"entityTypeId\":$type,\"fields\":{\"$name\":\"$title\"}}" --json \
     2>/dev/null | value item.result.item.id) || true
   [ -n "$record" ] || { fail "crm.item.add of a $kind gave no id"; continue; }
+  left_items+=("$type:$record")
   echo "created $kind $record: $title"
   b24 files list "--$kind" "$record" --json 2>/dev/null | node -e '
     let s = ""
@@ -411,10 +468,12 @@ for pair in "3 person name" "4 organization title"; do
       const issues = (answer.meta?.issues ?? []).map((one) => `${one.code}/${one.reason ?? ""}`).join(",") || "none"
       console.log(`files list --${process.argv[1]}: ${answer.items.length} file(s); issues ${issues}`)
     })' "$kind" || fail "files list --$kind failed"
-  b24 api call crm.item.delete --yes --body "{\"entityTypeId\":$type,\"id\":$record}" >/dev/null 2>&1 ||
-    fail "crm.item.delete of the $kind: exit $?"
-  echo "deleted $kind $record"
+  if b24 api call crm.item.delete --yes --body "{\"entityTypeId\":$type,\"id\":$record}" >/dev/null 2>&1; then
+    forget left_items "$type:$record"
+    echo "deleted $kind $record"
+  else fail "crm.item.delete of the $kind: exit $?"; fi
 done
+fi
 
 # A sync from the cursor (the updatedTime filter), then a rescan with the id pass: neither brings the deleted ones back.
 changed
