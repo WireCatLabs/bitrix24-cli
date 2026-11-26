@@ -157,7 +157,12 @@ describe("a profile signed in with a local application", () => {
     const status = await b24(["work", "session", "status", "--json"], { keyring })
     expect(status.json().item).toMatchObject({ kind: "app", token_from: "keyring", portal: "example.bitrix24.test" })
     const listed = await b24(["session", "list", "--json"], { keyring })
-    expect(listed.json().items).toContainEqual({ profile: "work", signed_in: true, token_from: "keyring" })
+    expect(listed.json().items).toContainEqual({
+      profile: "work",
+      signed_in: true,
+      state: "saved",
+      token_from: "keyring",
+    })
     expect((await b24(["work", "session", "end", "--json"], { keyring })).code).toBe(0)
     expect(keyring.get(...ENTRY)).toBeNull()
     const ended = await b24(["work", "session", "status", "--json"], { keyring })
