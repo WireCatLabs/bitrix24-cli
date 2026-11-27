@@ -60,7 +60,7 @@
     "docs:spell": "cspell lint --config cspell.json --no-progress --no-summary README.md SECURITY.md CHANGELOG.md AGENTS.md CLAUDE.md 'docs/*.md' 'skills/**/*.md'"
   },
   "dependencies": {
-    "@wirecat/cli-core": "1.3.0",
+    "@wirecat/cli-core": "2.0.0",
     "commander": "15.0.0",
     "valibot": "1.5.0"
   },
