@@ -1,14 +1,10 @@
 # Use it
 
-Find a deal, move it or see what changed overnight with one short command, the same one your agent runs. Bitrix24's
-REST API speaks in method names, field codes such as `UF_CRM_…` and stage ids such as `C1:WON`, and `b24` takes stage
-names and field labels instead.
+See which deals are stuck in a stage, move one or read what changed overnight, with commands that take stage names
+and field labels as your portal shows them. Your agent runs the same commands when you ask it in your own words.
 
-You find the deals stuck in a stage, or close one as won, in one line. An agent does the same from your request.
-
-Every command starts with a profile, the name you gave one portal's sign-in. `sync` copies your deals and leads into
-the WireCat local store, where the reads find them. `api call` reaches any other Bitrix24 method. You need a
-signed-in profile: [install](installation.md) sets one up.
+`sync` copies your deals and leads to your computer, where the reads find them, offline too. `api call` reaches any
+other Bitrix24 method. You need a signed-in profile, as [install](installation.md) shows.
 
 **On this page:**
 
@@ -35,79 +31,7 @@ command without one stops with exit code 2 and lists the profiles on this comput
 
 ## Sign in
 
-Make an inbound webhook in Bitrix24 (Developer resources → Common use cases → Other → Inbound webhook). Under
-**Assign permissions** (in Russian «права доступа»), tick these, and copy the webhook's address:
-
-| Scope | In Bitrix24 (EN / RU) | Needed for |
-|---|---|---|
-| `crm` | CRM | Required: deals, leads, contacts, companies, products and activities. |
-| `user_basic` (or `user`) | Users (basic) / Пользователи (базовый) | Required: who made the webhook, and employees' names and e-mails. |
-| `department` | Company Structure / Структура компании | Reporting lines. See [Who is who](#who-is-who). |
-| `task` | Tasks / Задачи | The Bitrix24 tasks on your deals ([Activities and tasks](#activities-and-tasks-on-a-deal)). |
-| `telephony` | Telephony / Телефония | The portal's calls ([Calls](calls.md)). The employee also needs the right to view call statistics. |
-| `disk` | Drive / Диск | The files attached to activities and timeline comments ([Client files](#client-files)). |
-| `documentgenerator` | Document Generator / Генератор документов | Documents made from templates ([Client files](#client-files)). Bitrix24's docs name `crm` on the method pages and this scope in the scope table. A webhook with `crm` alone lists them too. |
-
-`b24 work setup` shows the same steps in the terminal, and WireCat Desktop draws them. Or sign in directly:
-
-```sh
-b24 work session start
-```
-
-`b24` asks for the address without showing it, or reads it from stdin, checks it against the portal and keeps it in
-the system keyring. `--credential-storage file` keeps it in a private file instead, for a computer with no keyring.
-`B24_TOKEN` set to the address is used before either. The address is the password: anyone who has it can do what
-the webhook's employee can.
-
-`b24 work session status --check` shows the employee the webhook acts as, and whether they are an admin.
-`b24 work session end` forgets the address on this computer. The webhook itself stays in Bitrix24 until you delete
-it there. `b24 session list` lists the profiles on this computer.
-
-One webhook belongs to one profile. `session start` refuses a webhook that another profile here already uses (the
-same portal and the same employee), names that profile, and says how to sign it in again or remove it. Two profiles
-on one portal are fine when each has its own employee's webhook.
-
-When the portal answers that the webhook may not read who made it, the webhook lacks the "Users (basic)" right
-(`user_basic`, «Пользователи (базовый)» on a Russian portal). Open Developer resources → Integrations, edit the
-webhook, tick that right and save, then run `session start` again with the address the webhook shows.
-
-### With a local application
-
-A webhook acts as the employee who made it. A local application acts as the employee who signs in, and its tokens
-last only an hour, renewed by `b24`. A Bitrix24 administrator, or an employee allowed to, creates it once:
-
-1. Developer resources → Common use cases → Other → Local application.
-2. Choose **Server** mode. Set **Your handler path** to `https://wirecat.dev/webhooks/apps/b24-callback`. Leave
-   **Initial installation path** and the menu item texts empty, and **Application completes the installation itself**
-   off, so the portal installs it on save.
-3. Under **Assign permissions**, tick the same scopes as for a webhook (the table above), and save.
-4. Copy the **Application ID (client_id)** and the **Application key (client_secret)** Bitrix24 shows.
-
-Then sign in:
-
-```sh
-b24 work session start --portal example.bitrix24.ru --client-id local.0123abcd.45678901
-```
-
-`b24` asks for the key without showing it, or reads it from stdin or `B24_BITRIX24_CLIENT_SECRET`, and opens the
-portal's sign-in in the browser. After you allow the application, the page at `wirecat.dev/webhooks/apps/b24-callback`
-passes the answer back to `b24` on this computer. If the browser cannot reach `b24`, for example over SSH, paste the
-address the browser ended on into the terminal. `session status` then shows `kind: app`. Setting a webhook again with
-`session start` forgets the application's sign-in, and the other way round. `session end` forgets the tokens on this
-computer. Bitrix24 has no way to revoke them, so delete the application in the portal to stop them.
-
-### Remove a profile
-
-```sh
-b24 work account remove --keep-data --dry-run   # what it would remove and keep, changing nothing
-b24 work account remove --keep-data             # forget the profile, its copy of the portal stays searchable
-b24 work account remove --delete-data --yes     # also delete the portal's deals, leads, contacts and companies
-```
-
-`account remove` forgets the profile on this computer: its webhook address, its settings and its files. It asks first,
-or takes `--yes`. The webhook itself stays in Bitrix24 until you delete it there. The store keeps one copy of a
-portal, so `--delete-data` refuses while another profile here reads the same portal. Remove that one first, or use
-`--keep-data`.
+The webhook, the scopes to tick, a local application and removing a profile are on [install](installation.md#sign-in).
 
 ## Sync
 
@@ -127,44 +51,44 @@ than half of them is held back, as a webhook that lost its rights lists none. A 
 
 ### Whose deals and leads
 
-A sync copies the deals and leads of the Bitrix24 users you choose in `crm.bitrix24:<portal>.unassigned`, and the
-clients on them. Until you choose, it copies the deals and leads of the user who signed in, the webhook's or the
-local application's own user. A chosen list replaces that user, who is left out unless named: choose when the webhook
-is a colleague's, or when you work on someone else's portal. No sync copies the whole CRM, an administrator's either: find any
-other client on the portal itself.
+A sync copies your own deals and leads, with their clients: those of the user who signed in, the webhook's or the
+local application's own user. To copy a colleague's too, list their user ids and your own in
+`crm.bitrix24:<portal>.unassigned`. The list replaces your own user, so name yourself in it. No sync copies the whole
+CRM, an administrator's either: find any other client on the portal itself.
 
 ```sh
-b24 work users list                                                    # who is who on the portal
-b24 work config set crm.bitrix24:example.bitrix24.ru.unassigned 3327   # copy the deals and leads of user 3327
-b24 work config set crm.bitrix24:example.bitrix24.ru.scope mine        # the default, an old "all" is refused
-b24 work people list name:ivan*                                        # any contact, read from the portal now
+b24 work users list                                                         # who is who on the portal
+b24 work config set crm.bitrix24:example.bitrix24.ru.unassigned 3327,4410   # user 3327's deals and your own (4410)
+b24 work people list name:ivan*                                             # any contact, read from the portal now
 ```
 
-`example.bitrix24.ru` stands for your portal's host. A Bitrix24 administrator's webhook may choose anyone. Anyone
-else's may choose only themselves, a dismissed user or a user who is not an employee (an extranet, e-mail or bot user, as
-Bitrix24's `USER_TYPE` says). The sync checks the list every time: a user it may not take is left out, with the reason
-in `issues` (`crm.unassigned-dropped`), and their deals and leads leave the copy. A webhook without the `user` scope
-keeps only its own user. A `scope all` set before is refused at the next sync, which says to set `mine`. Once set,
-the deals and leads of users you did not choose are marked deleted here.
+`example.bitrix24.ru` stands for your portal's host.
 
-The sync answer says which `scope` it applied and the webhook's own user (`self`). A deal given to a user you did not choose
-leaves the local copy at the next sync, and one given to a chosen user arrives. Switching to `mine` marks the others deleted here, from the copy alone, without asking the portal. Deleted
-here means they leave lists and search. Their earlier copy stays in the store file. If you never set `scope` and
-`mine` would mark more than half of the stored deals or leads deleted, the sync keeps them and says so
-(`crm.narrowing-held`) until you set `scope` to `mine`. Only you set `scope`, `self` and `unassigned`: an
-agent is refused.
+| Who signed in | Whose deals and leads a sync may copy | What the profile reads offline |
+|---|---|---|
+| A Bitrix24 administrator | Anyone's | The whole copy |
+| Any other employee | Their own, a dismissed user's, or a user's who is not an employee (an extranet, e-mail or bot user, as Bitrix24's `USER_TYPE` says) | Only the deals and leads assigned to them |
+| A webhook without the `user` scope | Only its own user's | As above, by whether its user is an administrator |
 
-Under `mine` a sync copies only your clients: the contacts and companies assigned to you or to an unassigned user,
+The sync checks the list every time. A user it may not take is left out, with the reason in `issues`
+(`crm.unassigned-dropped`), and their deals and leads leave the copy.
+
+The sync answer says which `scope` it applied and the webhook's own user (`self`). A deal given to a user you did not
+choose leaves the local copy at the next sync, and one given to a chosen user arrives. A deal that leaves the copy
+leaves lists and search, and its earlier copy stays in the store file. Only you set `scope`, `self` and
+`unassigned`: an agent is refused.
+
+A sync copies only your clients: the contacts and companies assigned to you or to an unassigned user,
 and the ones named on the deals and leads it copies. The rest of the portal's client base stays on the portal.
 
 One portal's copy belongs to one user: the first sync remembers the webhook's user as `crm.bitrix24:<portal>.self`.
 A sync through a webhook of another user is refused.
 `b24 work config unset crm.bitrix24:example.bitrix24.ru.self` gives the copy to the next one.
 
-A profile reads offline only what its own user may read. The portal's administrator, as its last `sync` found, reads
-the whole copy. Anyone else reads only the deals and leads assigned to them, even in a copy their own sync made: the
-unassigned ones and those of the users they chose stay out of lists, `show` (`not_found`), the funnel and `search all`.
-A sign-in that names no portal user reads none. `session start` again fixes it.
+A profile reads offline only what its own user may read, as the table says. Whether the user is an administrator
+comes from the last `sync`. For anyone else, the unassigned deals and those of the users they chose stay out of lists,
+`show` (`not_found`), the funnel and `search all`, even in a copy their own sync made. A sign-in that names no portal
+user reads none. `session start` again fixes it.
 
 ### Who is who
 
@@ -199,7 +123,7 @@ To have new relationships wait for your review instead, set the account's `links
 `bitrix24:` and your portal's address:
 
 ```sh
-b24 work config set crm.bitrix24:example.bitrix24.com.links review
+b24 work config set crm.bitrix24:example.bitrix24.ru.links review
 ```
 
 A company type, such as `CUSTOMER`, means nothing by itself, since an admin can rename or add types. Say what a type
@@ -207,7 +131,7 @@ means, and the next sync makes each company of that type a customer of your own 
 partner of it:
 
 ```sh
-b24 work config set crm.bitrix24:example.bitrix24.com.company-types CUSTOMER=customer-of,SUPPLIER=supplier
+b24 work config set crm.bitrix24:example.bitrix24.ru.company-types CUSTOMER=customer-of,SUPPLIER=supplier
 ```
 
 When the webhook lacks the `user` or the `department` scope, the sync reads the rest and says what it could not read
@@ -276,8 +200,7 @@ lost, with nothing else changed, is read once the deal changes. An edited commen
 
 ### Ask memo about a client
 
-The relationships the sync stores are what `memo` answers from. These commands need a `memo` version that has them,
-which is not released yet:
+`memo` answers from the relationships the sync stores:
 
 ```sh
 memo context person:12                    # a person's companies, deals and reporting lines, with what was not read

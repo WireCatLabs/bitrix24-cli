@@ -60,9 +60,8 @@ links: Bitrix24's download link carries an access token, and anyone holding it g
 portal link with a token in it (`/rest/…?auth=`, a webhook's `/rest/<user>/<code>/`), show as `[link removed]`. A
 site or a link field you typed yourself stays as it is. `api call` prints `[link removed]` in place of every download
 link, every generated document's public link (`publicUrl`), every portal link with a token, and any link that
-carries `auth=`, `access_token=`, `api_token=` or `X-Amz-Signature=`, whatever its host. A copy synced
-before this rule may still hold such links. `b24 work sync --rescan` rewrites every record the portal still lists
-for the profile. A large copy may take several runs, and `b24 work store status` shows how far it got. A record
+carries `auth=`, `access_token=`, `api_token=` or `X-Amz-Signature=`, whatever its host. If your copy still holds
+such links, `b24 work sync --rescan` rewrites every record the portal still lists for the profile. A large copy may take several runs, and `b24 work store status` shows how far it got. A record
 deleted in the portal, or outside the sync's scope, keeps what it held: `b24 work account remove --delete-data`
 removes the account's whole copy, and the next sync after signing in again builds it anew. SQLite may keep old bytes
 in the store file's free space until it reuses them.

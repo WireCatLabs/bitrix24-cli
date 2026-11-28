@@ -57,7 +57,6 @@ A timer that runs `sync` keeps the calls up to date too.
 
 The same rule as for deals: a copy is never the whole portal. `meetings sync` copies the calls of the signed-in user,
 or of the users you chose in `crm.bitrix24:<portal>.unassigned` (see [Whose deals and leads](usage.md#whose-deals-and-leads)).
-A profile whose `scope` is `all` refuses to sync calls until you set it to `mine`.
 
 ## The client and the employee
 
@@ -131,7 +130,7 @@ Calls from another phone system, such as pbx, can land on the client's contact i
 beside the portal's own calls. It is off until you turn it on, and it writes each call once.
 
 Bitrix24 lets only an application write a call, not a webhook. Sign the profile in as a local application first
-([with a local application](usage.md#with-a-local-application)), with your portal's host and Application ID in place
+([with a local application](installation.md#with-a-local-application)), with your portal's host and Application ID in place
 of these examples:
 
 ```sh
