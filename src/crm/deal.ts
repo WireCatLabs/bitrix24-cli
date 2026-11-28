@@ -1,5 +1,4 @@
-import type { CrmItem } from "@wirecat/cli-core"
-import { crmValues } from "@wirecat/cli-core/crm"
+import { type CrmItem, crmValues } from "@wirecat/cli-core"
 import type { ItemType } from "./items.js"
 import type { Raw } from "./values.js"
 

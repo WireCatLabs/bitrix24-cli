@@ -1,5 +1,4 @@
-import type { CrmDepartment, CrmUser } from "@wirecat/cli-core"
-import { crmValues } from "@wirecat/cli-core/crm"
+import { type CrmDepartment, type CrmUser, crmValues } from "@wirecat/cli-core"
 import type { BitrixCaller } from "../bitrix/transport.js"
 import { rest2Rows } from "./rows.js"
 import { fullName, type Raw, yes } from "./values.js"

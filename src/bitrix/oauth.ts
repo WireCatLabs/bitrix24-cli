@@ -8,7 +8,6 @@ import {
   systemKeyring,
 } from "@wirecat/cli-base"
 import { hostFetch } from "@wirecat/cli-base/http"
-import { timeLimit } from "@wirecat/cli-core/cli"
 import {
   accountTokenCodec,
   credentialStorage,
@@ -19,9 +18,10 @@ import {
   type SignInOptions as SignInSteps,
   type TokenCodec,
   type TokenSet,
-  type TokenStorage,
+  type OAuthTokenStorage as TokenStorage,
+  timeLimit,
   tokenKeeper,
-} from "@wirecat/cli-core/oauth"
+} from "@wirecat/cli-core"
 import { isRecord } from "../body.js"
 import { IDENTITY } from "../identity.js"
 

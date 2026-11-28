@@ -1,10 +1,19 @@
 import { CliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
 import { defineQuery, fieldsHelp, parseLucene, validateQuery } from "@wirecat/cli-base/query"
-import { answerEntity, type BaseEnvironment, baseContext, environmentOf, FETCH, fromFile } from "@wirecat/cli-core/cli"
-import { MEETING_QUERY, type MeetingStore, type MeetingTranscriptReceiptStore } from "@wirecat/cli-core/meetings"
-import { queryWordsAfterOptions } from "@wirecat/cli-core/meetings/cli"
-import type { refreshMeetingIndex } from "@wirecat/cli-core/services"
+import {
+  answerEntity,
+  type BaseEnvironment,
+  baseContext,
+  environmentOf,
+  FETCH,
+  fromFile,
+  MEETING_QUERY,
+  type MeetingStore,
+  type MeetingTranscriptReceiptStore,
+  queryWordsAfterOptions,
+  type refreshMeetingIndex,
+} from "@wirecat/cli-core"
 import { Command } from "commander"
 import * as v from "valibot"
 import type { Recordings } from "../calls/recordings.js"
@@ -15,7 +24,7 @@ import { IDENTITY } from "../identity.js"
 import { DEFAULT_SPEECH_MODEL } from "./models.js"
 
 export type Speech = Pick<
-  typeof import("@wirecat/cli-core/speech"),
+  typeof import("@wirecat/cli-core"),
   | "findModel"
   | "isInstalled"
   | "modelsDirectory"
@@ -100,7 +109,7 @@ export const transcribeCommand = (deps: TranscribeDeps): Command => {
     const context = baseContext(this, configuration.resolveSettings)
     const query = callQuery(words.join(" ").trim() || DEFAULT_QUERY)
     const { env } = context
-    const speech: Speech = environmentOf<SpeechEnvironment>(this).speech ?? (await import("@wirecat/cli-core/speech"))
+    const speech: Speech = environmentOf<SpeechEnvironment>(this).speech ?? (await import("@wirecat/cli-core"))
     const chosen = speech.findModel(model)
     if (!chosen) throw new CliError("validation_error", `no speech model ${model}; see ${IDENTITY.command} models list`)
     if (!speech.isInstalled(chosen, speech.modelsDirectory(env)))
@@ -136,7 +145,7 @@ export const transcribeCommand = (deps: TranscribeDeps): Command => {
     )
     // What a search would do first: without it, search all and memo miss the new transcripts until then.
     if (report.transcribed > 0) {
-      const { refreshMeetingIndex } = await import("@wirecat/cli-core/services")
+      const { refreshMeetingIndex } = await import("@wirecat/cli-core")
       await refreshMeetingIndex(deps.store(), deps.accountId())
     }
     deps.write(report, this)

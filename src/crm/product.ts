@@ -1,5 +1,5 @@
 import { CliError } from "@wirecat/cli-base"
-import { type CrmQueryField, type CrmWindow, crmValues } from "@wirecat/cli-core/crm"
+import { type CrmQueryField, type CrmWindow, crmValues } from "@wirecat/cli-core"
 import * as v from "valibot"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { type Condition, rest2Filter } from "./conditions.js"

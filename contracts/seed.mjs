@@ -9,7 +9,15 @@ import { pathToFileURL } from "node:url"
 const entry = realpathSync(process.argv[2])
 const fromPrevious = createRequire(entry)
 const previous = (path) => import(pathToFileURL(join(dirname(entry), "..", path)).href)
-const core = (name) => import(pathToFileURL(fromPrevious.resolve(`@wirecat/cli-core/${name}`)).href)
+// cli-core 2.x names an entry per area; 3.x serves them all from ".", so a previous release on either one loads.
+const core = async (name) => {
+  try {
+    return await import(pathToFileURL(fromPrevious.resolve(`@wirecat/cli-core/${name}`)).href)
+  } catch (error) {
+    if (error?.code !== "ERR_PACKAGE_PATH_NOT_EXPORTED") throw error
+    return import(pathToFileURL(fromPrevious.resolve("@wirecat/cli-core")).href)
+  }
+}
 
 if (!process.env.WIRECAT_CONTRACT_DENIED) throw new Error("requires the isolated contract runner")
 

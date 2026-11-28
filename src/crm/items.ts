@@ -1,4 +1,4 @@
-import type { CrmPage, CrmWindow } from "@wirecat/cli-core/crm"
+import type { CrmPage, CrmWindow } from "@wirecat/cli-core"
 import type { BitrixCaller } from "../bitrix/transport.js"
 import { type Condition, needsRest2, rest2Filter, rest3Filter } from "./conditions.js"
 import { rest2Rows, rest3Rows } from "./rows.js"

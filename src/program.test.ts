@@ -1,6 +1,6 @@
 import { chmodSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
-import { checkGuide } from "@wirecat/cli-core/cli"
+import { checkGuide } from "@wirecat/cli-core"
 import { expect, it } from "vitest"
 import { IDENTITY } from "./identity.js"
 import { createProgram, run } from "./program.js"

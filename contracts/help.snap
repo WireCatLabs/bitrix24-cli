@@ -20,7 +20,8 @@ Works with:
   zm                                 Zoom meetings: transcripts and summaries, searchable with your other WireCat data
   drive                              Google Drive and Docs as local text, searchable with your other WireCat data
   gcal                               Google Calendar events, searchable with your other WireCat data
-  memo context <person>              one person across messengers, mail, notes and meetings
+  wcat context <person>              one person across messengers, mail, notes and meetings
+  files                              notes folders, Obsidian vaults, PDF and Word files, searchable with your other WireCat data
   mail                               IMAP mail in the same local store: search your mailbox offline, next to your other WireCat data
   amo                                amoCRM and Kommo: deals, contacts and companies, searchable with your other WireCat data
   attio                              Attio CRM: deals, people and companies, searchable with your other WireCat data

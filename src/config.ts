@@ -1,5 +1,13 @@
-import { type Configuration, commandPathKey, commandPermissions, plain, settingsFor } from "@wirecat/cli-core/cli"
-import { CRM_WRITE_DEFAULTS, CRM_WRITE_KEYS, crmAlsoChecks } from "@wirecat/cli-core/crm"
+import {
+  type Configuration,
+  CRM_WRITE_DEFAULTS,
+  CRM_WRITE_KEYS,
+  commandPathKey,
+  commandPermissions,
+  crmAlsoChecks,
+  plain,
+  settingsFor,
+} from "@wirecat/cli-core"
 import * as v from "valibot"
 import { API_DEFAULTS, API_KEYS, apiKey, crmApiKeys } from "./api-keys.js"
 import { FINISH, REGISTER } from "./calls/log.js"

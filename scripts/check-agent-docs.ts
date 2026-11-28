@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { readdirSync, readFileSync } from "node:fs"
 import { withVersion } from "@wirecat/cli-base/skill"
-import { validateSkill } from "@wirecat/cli-core/skill-validation"
+import { validateSkill } from "@wirecat/cli-core/testing"
 import { VERSION } from "../dist/version.js"
 import { createProgram } from "./command-program.ts"
 

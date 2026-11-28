@@ -1,8 +1,7 @@
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises"
 import { dirname, join } from "node:path"
 import { CliError, resolvePaths } from "@wirecat/cli-base"
-import type { Meeting, MeetingDetails } from "@wirecat/cli-core/meetings"
-import type { MessageStore } from "@wirecat/cli-core/store"
+import type { Meeting, MeetingDetails, MessageStore } from "@wirecat/cli-core"
 import { IDENTITY } from "../identity.js"
 
 export const REGISTER = "telephony.externalcall.register"

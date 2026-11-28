@@ -1,9 +1,5 @@
 import { isCliError } from "@wirecat/cli-base"
-import type { CrmKind } from "@wirecat/cli-core"
-import { outputFor } from "@wirecat/cli-core/cli"
-import type { CrmRun } from "@wirecat/cli-core/crm/cli"
-import { addCrmCommands, openCrmStore } from "@wirecat/cli-core/crm/cli"
-import type { AccountKey } from "@wirecat/cli-core/store"
+import { type AccountKey, addCrmCommands, type CrmKind, type CrmRun, openCrmStore, outputFor } from "@wirecat/cli-core"
 import { Command } from "commander"
 import { crmApiKeys } from "../api-keys.js"
 import { permissions } from "../config.js"
@@ -48,7 +44,7 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
   const portal = () => (transport ??= transportFor(command, signInOf(command)))
   let source: ReturnType<typeof bitrixCrmSource> | undefined
   const asked = async () => {
-    const { crmSettingKey } = await import("@wirecat/cli-core/store/areas")
+    const { crmSettingKey } = await import("@wirecat/cli-core")
     const scope = await store.crm.scope(account)
     return {
       mode: scope.mode,
@@ -61,7 +57,7 @@ const openProfile = async (command: Command, { readOnly }: { readOnly: boolean }
   const copy = {
     fields: (kind: CrmKind) => store.crm.fields(account, kind),
     contacts: async (externalIds: readonly string[]) => {
-      const { crmIdentityId } = await import("@wirecat/cli-core/store/areas")
+      const { crmIdentityId } = await import("@wirecat/cli-core")
       const held = new Set<string>()
       for (const externalId of externalIds)
         if (await store.people.personOf({ provider: PROVIDER.name, id: crmIdentityId(account, externalId) }))

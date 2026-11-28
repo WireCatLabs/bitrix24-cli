@@ -3,6 +3,7 @@ import { defineQuery, queryFieldsOf } from "@wirecat/cli-base/query"
 import {
   answerEntity,
   commandPath,
+  conditionsOf,
   itemOf,
   listQuery,
   nativeTerms,
@@ -14,8 +15,7 @@ import {
   typedQuery,
   withPaging,
   withQuery,
-} from "@wirecat/cli-core/cli"
-import { conditionsOf } from "@wirecat/cli-core/crm"
+} from "@wirecat/cli-core"
 import { Command } from "commander"
 import type { Condition } from "../crm/conditions.js"
 import { getProduct, listProducts, PRODUCT_FIELDS, PRODUCT_NAME, productSchema } from "../crm/product.js"

@@ -1,4 +1,4 @@
-import { type CrmPage, type CrmWindow, crmValues, walk } from "@wirecat/cli-core/crm"
+import { type CrmPage, type CrmWindow, crmValues, walk } from "@wirecat/cli-core"
 import type { BitrixCaller } from "../bitrix/transport.js"
 import type { Raw } from "./values.js"
 

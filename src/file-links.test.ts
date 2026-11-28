@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs"
-import { withoutFileLinks } from "@wirecat/cli-core/crm"
+import { withoutFileLinks } from "@wirecat/cli-core"
 import { describe, expect, it } from "vitest"
 import { customFields } from "./crm/values.js"
 import { fileIdsOf, REMOVED } from "./file-links.js"

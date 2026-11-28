@@ -1,5 +1,5 @@
 import { memoryKeyring } from "@wirecat/cli-base"
-import { openCache } from "@wirecat/cli-core/store"
+import { openCache } from "@wirecat/cli-core"
 import { describe, expect, it, vi } from "vitest"
 import { fakeCrm } from "../testing/fake-crm.js"
 import { FAKE_HOOK } from "../testing/fake-portal.js"

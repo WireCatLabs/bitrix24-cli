@@ -1,4 +1,4 @@
-import { environmentOf, modelCatalogueCommand, outputFor, profileFree, renderAnswer } from "@wirecat/cli-core/cli"
+import { environmentOf, modelCatalogueCommand, outputFor, profileFree, renderAnswer } from "@wirecat/cli-core"
 import type { Command } from "commander"
 import { IDENTITY } from "../identity.js"
 

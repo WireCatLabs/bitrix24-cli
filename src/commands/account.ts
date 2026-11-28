@@ -1,6 +1,5 @@
 import type { KeyringStore } from "@wirecat/cli-base"
-import { ProfileTokenStore, recalledAccount } from "@wirecat/cli-core/cli"
-import type { CrmAccountOptions } from "@wirecat/cli-core/crm/cli"
+import { type CrmAccountOptions, ProfileTokenStore, recalledAccount } from "@wirecat/cli-core"
 import { parseWebhook } from "../bitrix/webhook.js"
 import { configuration } from "../config.js"
 import { IDENTITY } from "../identity.js"

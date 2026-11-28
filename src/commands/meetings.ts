@@ -1,6 +1,8 @@
 import { CliError } from "@wirecat/cli-base"
 import { annotate, metaOf } from "@wirecat/cli-base/commands"
 import {
+  type AccountKey,
+  addMeetingCommands,
   environmentOf,
   fetchesOnly,
   fromFile,
@@ -8,6 +10,10 @@ import {
   inCommandRun,
   itemOf,
   listOf,
+  type MeetingCommandDeps,
+  type MeetingSource,
+  type MeetingStore,
+  type MessageStore,
   NO_EFFECTS,
   outputFor,
   overrideSharedContract,
@@ -18,10 +24,7 @@ import {
   snakeKeys,
   writeNewFile,
   writesNewFileOnlyWith,
-} from "@wirecat/cli-core/cli"
-import type { MeetingSource, MeetingStore } from "@wirecat/cli-core/meetings"
-import { addMeetingCommands, type MeetingCommandDeps } from "@wirecat/cli-core/meetings/cli"
-import type { AccountKey, MessageStore } from "@wirecat/cli-core/store"
+} from "@wirecat/cli-core"
 import { Command } from "commander"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import type { Recordings } from "../calls/recordings.js"
@@ -209,9 +212,9 @@ export const meetingsMount = () => {
       const { env, profile, settings } = contextOf(at)
       const [{ openCrmStore }, { openB24Store, PROVIDER }, { crmIdentityId }, calls, recordings, crm, memory] =
         await Promise.all([
-          import("@wirecat/cli-core/crm/cli"),
+          import("@wirecat/cli-core"),
           import("../store.js"),
-          import("@wirecat/cli-core/store/areas"),
+          import("@wirecat/cli-core"),
           import("../calls/source.js"),
           import("../calls/recordings.js"),
           import("../crm/source.js"),
@@ -237,7 +240,7 @@ export const meetingsMount = () => {
       // The CRM sync's own rule decides whose calls are copied: the signed-in user, or the users chosen in
       // `unassigned` that rule keeps. A stored `all` refuses, as the CRM sync does: a copy is never the whole portal.
       const users = async () => {
-        const { crmSettingKey } = await import("@wirecat/cli-core/store/areas")
+        const { crmSettingKey } = await import("@wirecat/cli-core")
         const scope = await store.crm.scope(account)
         const source = crm.bitrixCrmSource(portal, Date.now, memory.NO_MEMORY, async () => ({
           mode: scope.mode,

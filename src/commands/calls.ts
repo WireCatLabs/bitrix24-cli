@@ -3,7 +3,12 @@ import { CliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
 import {
   fromFile,
+  guardedWrite,
+  guardFor,
   itemOf,
+  keyedGuard,
+  levelFor,
+  newOperationId,
   outputFor,
   REMOTE_WRITE,
   readOnlyLockOf,
@@ -11,8 +16,7 @@ import {
   renderAnswer,
   snakeKeys,
   terminalAsker,
-} from "@wirecat/cli-core/cli"
-import { guardedWrite, guardFor, keyedGuard, levelFor, newOperationId } from "@wirecat/cli-core/sends"
+} from "@wirecat/cli-core"
 import { Command } from "commander"
 import { CALLS_LOG_KEYS, EXPORT_CALLS, permissions } from "../config.js"
 import { IDENTITY } from "../identity.js"
@@ -75,7 +79,7 @@ const planFor = async (env: NodeJS.ProcessEnv, host: string, options: Options) =
  * so it cannot tell which portal this profile is; each one's calls are listed under its name.
  */
 const portalsOf = async (env: NodeJS.ProcessEnv) => {
-  const { storePath } = await import("@wirecat/cli-core/store")
+  const { storePath } = await import("@wirecat/cli-core")
   if (!existsSync(storePath(env))) return []
   const { openB24Store } = await import("../store.js")
   const store = await openB24Store(env, { readOnly: true })

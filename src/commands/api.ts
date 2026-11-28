@@ -3,25 +3,32 @@ import { annotate } from "@wirecat/cli-base/commands"
 import type { QueryRegistry } from "@wirecat/cli-base/query"
 import {
   answerEntity,
+  CRM_ASSIGN_OTHERS_KEY,
   environmentOf,
+  guardedWrite,
+  guardFor,
   itemOf,
+  keyedGuard,
+  type Level,
   LOCAL_READ,
+  levelFor,
   listOf,
   NO_EFFECTS,
+  newOperationId,
   outputFor,
   queryTerms,
   REMOTE_WRITE,
   readApiBody,
   readOnlyLockOf,
   readOnlyRefusal,
+  refuseForeignClientReads,
   renderAnswer,
   snakeKeys,
   termField,
   terminalAsker,
+  withoutFileLinks,
   withQuery,
-} from "@wirecat/cli-core/cli"
-import { CRM_ASSIGN_OTHERS_KEY, refuseForeignClientReads, withoutFileLinks } from "@wirecat/cli-core/crm"
-import { guardedWrite, guardFor, keyedGuard, type Level, levelFor, newOperationId } from "@wirecat/cli-core/sends"
+} from "@wirecat/cli-core"
 import { Command } from "commander"
 import * as v from "valibot"
 import {

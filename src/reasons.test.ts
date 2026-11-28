@@ -1,4 +1,4 @@
-import { failureContext } from "@wirecat/cli-core/cli"
+import { failureContext } from "@wirecat/cli-core"
 import { expect, it } from "vitest"
 import { DETAILS, REASONS } from "./reasons.js"
 

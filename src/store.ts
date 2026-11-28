@@ -1,4 +1,4 @@
-import type { MessageStore } from "@wirecat/cli-core/store"
+import type { MessageStore } from "@wirecat/cli-core"
 import { IDENTITY } from "./identity.js"
 
 export const PROVIDER = {
@@ -13,9 +13,9 @@ export const PROVIDER = {
  * open writes nothing, the entry included, and fails when the file is missing or needs a migration.
  */
 export const openB24Store = async (env: NodeJS.ProcessEnv, { readOnly = false } = {}): Promise<MessageStore> => {
-  const { ensureSqlite } = await import("@wirecat/cli-core/sqlite-runtime")
+  const { ensureSqlite } = await import("@wirecat/cli-core/start")
   await ensureSqlite()
-  const { openStore, storePath } = await import("@wirecat/cli-core/store")
+  const { openStore, storePath } = await import("@wirecat/cli-core")
   const store = await openStore({
     path: storePath(env),
     env,

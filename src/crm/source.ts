@@ -1,15 +1,20 @@
 import { CliError, isCliError } from "@wirecat/cli-base"
-import type { CrmField, CrmItem, CrmKind, CrmOrganization, CrmRecords, CrmValue } from "@wirecat/cli-core"
 import {
   type CrmCallContext,
   type CrmChanges,
   type CrmCondition,
+  type CrmField,
   type CrmIdPage,
+  type CrmItem,
+  type CrmKind,
   type CrmLiveKind,
+  type CrmOrganization,
+  type CrmRecords,
   type CrmSource,
+  type CrmValue,
   crmValues,
   crmWindowOf,
-} from "@wirecat/cli-core/crm"
+} from "@wirecat/cli-core"
 import type { BitrixCaller, BitrixTransport } from "../bitrix/transport.js"
 import { type Role, roleOf } from "../whoami.js"
 import { type ActivityOwners, ownersOf, readActivities } from "./activities.js"

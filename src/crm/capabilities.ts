@@ -1,4 +1,4 @@
-import { CRM_VERBS, type CrmWriteCapabilities } from "@wirecat/cli-core/crm"
+import { CRM_VERBS, type CrmWriteCapabilities } from "@wirecat/cli-core"
 
 /**
  * Not idempotent: on a live portal (2026-11-07) a create repeated with the same `Idempotency-Key` made a second lead,

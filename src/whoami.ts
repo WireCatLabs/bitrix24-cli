@@ -1,5 +1,5 @@
 import { isCliError } from "@wirecat/cli-base"
-import { crmValues } from "@wirecat/cli-core/crm"
+import { crmValues } from "@wirecat/cli-core"
 import type { BitrixCaller, BitrixTransport } from "./bitrix/transport.js"
 
 const { fieldOf, rawsOf } = crmValues

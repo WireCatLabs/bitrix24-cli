@@ -1,4 +1,4 @@
-import type { CrmCondition } from "@wirecat/cli-core/crm"
+import type { CrmCondition } from "@wirecat/cli-core"
 
 /** One filter condition in Bitrix24's own field names, before it is written for REST 3.0 or REST 2. */
 export interface Condition {
