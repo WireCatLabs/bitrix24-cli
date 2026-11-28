@@ -31,7 +31,12 @@ command without one stops with exit code 2 and lists the profiles on this comput
 
 ## Sign in
 
-The webhook, the scopes to tick, a local application and removing a profile are on [install](installation.md#sign-in).
+The webhook, the scopes to tick and removing a profile are on [install](installation.md#sign-in).
+
+### With a local application
+
+A local application acts as the employee who signs in, not the one who made a webhook. Its steps are on
+[install](installation.md#with-a-local-application).
 
 ## Sync
 

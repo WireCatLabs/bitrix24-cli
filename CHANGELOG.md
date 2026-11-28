@@ -441,7 +441,7 @@ Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest firs
   signs in. The application key is asked without showing it, or read from stdin or `B24_BITRIX24_CLIENT_SECRET`. The
   sign-in returns through `https://wirecat.dev/webhooks/apps/b24-callback`, or the address you paste. Tokens are renewed
   by themselves. `session status` and `session list` show the kind of sign-in, and `session end` forgets either. The
-  incoming webhook stays the quick way; see [sign in](docs/installation.md#with-a-local-application).
+  incoming webhook stays the quick way; see [sign in](docs/usage.md#with-a-local-application).
 
 ### Fixed
 
