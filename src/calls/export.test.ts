@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import { type KeyringStore, memoryKeyring } from "@wirecat/cli-base"
-import { type MeetingSource, pull, type SourceMeeting } from "@wirecat/cli-core/meetings"
+import { type MeetingSource, pull, type SourceMeeting } from "@wirecat/cli-core"
 import { beforeEach, describe, expect, it } from "vitest"
 import { RELAY_URL } from "../bitrix/oauth.js"
 import { openB24Store } from "../store.js"

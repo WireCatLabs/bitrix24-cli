@@ -6,13 +6,14 @@ import {
   apiJson,
   currentAttempt,
   type EventSink,
+  fetchCrmFile,
+  type Pacer,
+  providerCall,
   providerEvent,
   providerRequest,
   timeLimit,
-} from "@wirecat/cli-core/cli"
-import { fetchCrmFile, providerCall } from "@wirecat/cli-core/crm"
+} from "@wirecat/cli-core"
 import { isPublicAddress } from "@wirecat/cli-core/documents"
-import type { Pacer } from "@wirecat/cli-core/sends"
 import { type EmployeeRule, employeeRuleOf } from "../api-keys.js"
 import { isRecord } from "../body.js"
 import { isAdmin } from "../crm/clients.js"

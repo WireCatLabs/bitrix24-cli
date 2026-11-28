@@ -5,10 +5,11 @@ import {
   type EventSink,
   environmentOf,
   type GlobalFlags,
+  Pacer,
   ProfileTokenStore,
+  pacePathFor,
   refuseOffline,
-} from "@wirecat/cli-core/cli"
-import { Pacer, pacePathFor } from "@wirecat/cli-core/sends"
+} from "@wirecat/cli-core"
 import type { Command } from "commander"
 import { type AppAuth, appAuthOf } from "./bitrix/oauth.js"
 import { BitrixTransport, type FetchLike } from "./bitrix/transport.js"

@@ -1,5 +1,5 @@
 import { CliError } from "@wirecat/cli-base"
-import { defineSetup, type SetupCheck } from "@wirecat/cli-core/cli"
+import { defineSetup, type SetupCheck } from "@wirecat/cli-core"
 import { appStorage } from "../bitrix/oauth.js"
 import { checkedWebhook, refuseSignInHere } from "../commands/session.js"
 import { configuration } from "../config.js"

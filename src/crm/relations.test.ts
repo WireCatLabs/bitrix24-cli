@@ -1,5 +1,4 @@
-import { crmGapsOf } from "@wirecat/cli-core/crm"
-import { type MessageStore, openCache, openStore } from "@wirecat/cli-core/store"
+import { crmGapsOf, type MessageStore, openCache, openStore } from "@wirecat/cli-core"
 import { afterEach, describe, expect, it } from "vitest"
 import { fakeCrm } from "../testing/fake-crm.js"
 import { b24, synced } from "../testing/harness.js"

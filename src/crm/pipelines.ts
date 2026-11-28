@@ -1,5 +1,4 @@
-import type { CrmPipeline, CrmStage } from "@wirecat/cli-core"
-import { crmValues } from "@wirecat/cli-core/crm"
+import { type CrmPipeline, type CrmStage, crmValues } from "@wirecat/cli-core"
 import type { BitrixCaller } from "../bitrix/transport.js"
 import { LEAD_PIPELINE } from "./lead.js"
 import { outcomeOf, type Raw } from "./values.js"

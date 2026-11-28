@@ -1,4 +1,4 @@
-import { crmValues } from "@wirecat/cli-core/crm"
+import { crmValues } from "@wirecat/cli-core"
 import type { BitrixCaller, BitrixTransport } from "../bitrix/transport.js"
 import { rest3Rows } from "./rows.js"
 

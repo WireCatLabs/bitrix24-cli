@@ -8,9 +8,10 @@ import {
   type MeetingStore,
   type MeetingTranscriptionSource,
   type MeetingTranscriptReceiptStore,
+  type Pcm,
+  type TimedText,
   transcribeMeeting,
-} from "@wirecat/cli-core/meetings"
-import type { Pcm, TimedText } from "@wirecat/cli-core/speech"
+} from "@wirecat/cli-core"
 import { attachmentOf, type Recordings } from "./recordings.js"
 import type { CallRecord } from "./source.js"
 

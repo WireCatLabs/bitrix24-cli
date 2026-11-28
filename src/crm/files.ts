@@ -1,7 +1,7 @@
 import { CliError, isCliError } from "@wirecat/cli-base"
-import type { CrmField } from "@wirecat/cli-core"
 import {
   type CrmCallContext,
+  type CrmField,
   type CrmFileOwner,
   type CrmFileSourceKind,
   type CrmFiles,
@@ -9,7 +9,7 @@ import {
   crmFileId,
   crmValues,
   walk,
-} from "@wirecat/cli-core/crm"
+} from "@wirecat/cli-core"
 import type { BitrixCaller } from "../bitrix/transport.js"
 import { EVERY, rest2Rows } from "./rows.js"
 import type { Raw } from "./values.js"

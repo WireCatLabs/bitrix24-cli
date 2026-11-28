@@ -1,7 +1,12 @@
 import { CliError, isCliError } from "@wirecat/cli-base"
-import { e164Of } from "@wirecat/cli-core"
-import type { MeetingSave, MeetingSource, SourceMeeting, SourceParticipant } from "@wirecat/cli-core/meetings"
-import type { AccountKey } from "@wirecat/cli-core/store"
+import {
+  type AccountKey,
+  e164Of,
+  type MeetingSave,
+  type MeetingSource,
+  type SourceMeeting,
+  type SourceParticipant,
+} from "@wirecat/cli-core"
 import type { BitrixCaller } from "../bitrix/transport.js"
 import { portalTime } from "../crm/values.js"
 import type { Recordings } from "./recordings.js"

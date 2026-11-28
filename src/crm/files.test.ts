@@ -1,4 +1,4 @@
-import { crmFilesContract } from "@wirecat/cli-core/crm/testing"
+import { crmFilesContract } from "@wirecat/cli-core/testing"
 import { describe, expect, it } from "vitest"
 import { BitrixTransport } from "../bitrix/transport.js"
 import { FAKE_FILE_TOKEN, fakeCrm } from "../testing/fake-crm.js"

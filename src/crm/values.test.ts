@@ -1,4 +1,4 @@
-import { crmValues } from "@wirecat/cli-core/crm"
+import { crmValues } from "@wirecat/cli-core"
 import { describe, expect, it } from "vitest"
 import { fullName } from "./values.js"
 

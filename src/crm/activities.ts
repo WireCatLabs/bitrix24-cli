@@ -1,6 +1,5 @@
 import { isCliError } from "@wirecat/cli-base"
-import type { CrmActivity, CrmActivityKind } from "@wirecat/cli-core"
-import { type CrmCallContext, type CrmPage, crmValues } from "@wirecat/cli-core/crm"
+import { type CrmActivity, type CrmActivityKind, type CrmCallContext, type CrmPage, crmValues } from "@wirecat/cli-core"
 import { htmlToText } from "@wirecat/cli-core/mail"
 import type { BitrixCaller } from "../bitrix/transport.js"
 import { rest3Rows } from "./rows.js"

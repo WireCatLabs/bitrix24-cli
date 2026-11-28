@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs"
 import { dirname } from "node:path"
-import { DAILY_FOREIGN_CONTACTS, foreignContactsPathFor } from "@wirecat/cli-core/crm"
+import { DAILY_FOREIGN_CONTACTS, foreignContactsPathFor } from "@wirecat/cli-core"
 import { describe, expect, it } from "vitest"
 import { IDENTITY } from "../identity.js"
 import { PROVIDER } from "../store.js"

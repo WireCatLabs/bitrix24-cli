@@ -1,5 +1,5 @@
 import { CliError } from "@wirecat/cli-base"
-import { parseApiJson } from "@wirecat/cli-core/cli"
+import { parseApiJson } from "@wirecat/cli-core"
 
 export type Body = Readonly<Record<string, unknown>>
 

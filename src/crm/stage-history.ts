@@ -1,6 +1,4 @@
-import type { CrmStageEntry } from "@wirecat/cli-core"
-import type { CrmCallContext, CrmPage } from "@wirecat/cli-core/crm"
-import { crmValues } from "@wirecat/cli-core/crm"
+import { type CrmCallContext, type CrmPage, type CrmStageEntry, crmValues } from "@wirecat/cli-core"
 import type { BitrixCaller } from "../bitrix/transport.js"
 import { LEAD_PIPELINE } from "./lead.js"
 import { portalTime, type Raw } from "./values.js"

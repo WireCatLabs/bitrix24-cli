@@ -1,6 +1,5 @@
 import { isCliError } from "@wirecat/cli-base"
-import type { CrmField } from "@wirecat/cli-core"
-import { crmValues } from "@wirecat/cli-core/crm"
+import { type CrmField, crmValues } from "@wirecat/cli-core"
 import type { BitrixCaller } from "../bitrix/transport.js"
 import type { ItemType } from "./items.js"
 import { rowsOf } from "./rows.js"

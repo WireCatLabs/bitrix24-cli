@@ -1,5 +1,5 @@
 import { metaOf } from "@wirecat/cli-base/commands"
-import { type HelpSection, inSection } from "@wirecat/cli-core/cli"
+import { type HelpSection, inSection } from "@wirecat/cli-core"
 import type { Command } from "commander"
 
 const SECTIONS: Record<string, HelpSection> = {

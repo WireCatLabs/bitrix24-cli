@@ -1,15 +1,18 @@
 import { CliError, isCliError } from "@wirecat/cli-base"
-import type { CrmItem, CrmKind, CrmRecords, DealKind } from "@wirecat/cli-core"
 import {
   type CrmFields,
+  type CrmItem,
+  type CrmKind,
   type CrmOrganizationFields,
   type CrmPersonFields,
+  type CrmRecords,
   type CrmWriteOptions,
   type CrmWriter,
   crmValues,
+  type DealKind,
   fieldNamed,
   optionOf,
-} from "@wirecat/cli-core/crm"
+} from "@wirecat/cli-core"
 import type { BitrixTransport } from "../bitrix/transport.js"
 import { foldCode } from "../body.js"
 import { BITRIX_WRITES } from "./capabilities.js"

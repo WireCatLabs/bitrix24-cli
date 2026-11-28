@@ -1,7 +1,5 @@
 import { CliError } from "@wirecat/cli-base"
-import type { CrmKind } from "@wirecat/cli-core"
-import type { CrmVerb } from "@wirecat/cli-core/crm"
-import type { Level } from "@wirecat/cli-core/sends"
+import type { CrmKind, CrmVerb, Level } from "@wirecat/cli-core"
 import { type Effect, KNOWN_METHODS, methodOf } from "./bitrix/methods.js"
 import { type Body, foldCode, isRecord, jsonNumber } from "./body.js"
 

@@ -1,6 +1,5 @@
 import { CliError, isCliError } from "@wirecat/cli-base"
 import { annotate } from "@wirecat/cli-base/commands"
-import { readSecret } from "@wirecat/cli-core"
 import {
   commandWords,
   environmentOf,
@@ -17,8 +16,10 @@ import {
   profileFree,
   profilesHere,
   REMOTE_READ,
+  readSecret,
   refuseCommandName,
   refuseOffline,
+  refuseTakenCrmAccount,
   refuseUnderReadOnly,
   rememberAccount,
   renderAnswer,
@@ -27,8 +28,7 @@ import {
   signInSteps,
   storageOf,
   type TokenStorage,
-} from "@wirecat/cli-core/cli"
-import { refuseTakenCrmAccount } from "@wirecat/cli-core/crm/cli"
+} from "@wirecat/cli-core"
 import { Command } from "commander"
 import { appSignIn, appSourceOf, appStorage, portalHost } from "../bitrix/oauth.js"
 import { parseWebhook } from "../bitrix/webhook.js"

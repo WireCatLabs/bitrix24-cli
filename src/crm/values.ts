@@ -1,6 +1,5 @@
 import { CliError } from "@wirecat/cli-base"
-import type { StageOutcome } from "@wirecat/cli-core"
-import { crmValues } from "@wirecat/cli-core/crm"
+import { crmValues, type StageOutcome } from "@wirecat/cli-core"
 import { fileIdsOf } from "../file-links.js"
 
 export type Raw = crmValues.CrmRaw

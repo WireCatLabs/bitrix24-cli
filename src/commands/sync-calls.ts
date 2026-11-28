@@ -1,4 +1,4 @@
-import { fromFile, outputFor } from "@wirecat/cli-core/cli"
+import { fromFile, outputFor } from "@wirecat/cli-core"
 import type { Command } from "commander"
 import { PHONE_REGION, SYNC_CALLS } from "../config.js"
 import { IDENTITY } from "../identity.js"

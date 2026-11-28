@@ -1,7 +1,7 @@
 import { chmod, mkdir, readdir, rename, stat, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { CliError, resolvePaths } from "@wirecat/cli-base"
-import type { MeetingSave } from "@wirecat/cli-core/meetings"
+import type { MeetingSave } from "@wirecat/cli-core"
 import { IDENTITY } from "../identity.js"
 import type { CallRecord } from "./source.js"
 

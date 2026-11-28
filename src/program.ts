@@ -5,6 +5,7 @@ import {
   appCompleteCommand,
   appDoctorCommand,
   appMcpCommand,
+  appUpdate,
   commandsCommand,
   configCommand,
   createProgram as createSharedProgram,
@@ -19,8 +20,7 @@ import {
   setupCommand,
   skillCommand,
   upgradeCommand,
-} from "@wirecat/cli-core/cli"
-import { appUpdate } from "@wirecat/cli-core/update"
+} from "@wirecat/cli-core"
 import type { Command } from "commander"
 import { appSourceOf } from "./bitrix/oauth.js"
 import { apiCommand } from "./commands/api.js"

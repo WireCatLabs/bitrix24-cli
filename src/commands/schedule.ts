@@ -1,4 +1,4 @@
-import { baseContext, scheduleCommandFor } from "@wirecat/cli-core/cli"
+import { baseContext, scheduleCommandFor } from "@wirecat/cli-core"
 import type { Command } from "commander"
 import { configuration } from "../config.js"
 import { IDENTITY } from "../identity.js"
