@@ -2,6 +2,21 @@
 
 Notable changes to `@wirecat/bitrix24-cli`. One section per version, newest first.
 
+## 0.29.0 — 28.11.2026
+
+### Changed — may break callers
+
+- **b24 is built on cli-core 2.0.0.** The first run moves the store to version 78, and after that only tools on
+  cli-core 2.0 open it: upgrade every WireCat CLI and WireCat Desktop on this computer the same day, with `serve`,
+  `mcp` and syncs stopped. The migration keeps a rollback copy first. In the JSON output, the `type` of an agent
+  author (`author`, `created_by`, `confirmed_by`, `decided_by`) is `"agent"` where it was `"bot"`.
+- The first help screen names `b24 session list`.
+- **`session list` rows have `state`**: `saved`, `missing` or `unknown`, as in the other WireCat CLIs. A profile whose
+  sign-in cannot be read stays `signed_in: null` and keeps its `error`.
+- **`session start --credential-storage` with another value** says which value it got:
+  `--credential-storage takes keyring or file; got <value>`.
+- The deadline of each Bitrix24 request and of the token request is cli-core's `timeLimit`, not a copy of it.
+
 ## 0.28.0 — 25.11.2026
 
 ### Added
