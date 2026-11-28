@@ -16,7 +16,7 @@ export DBUS_SESSION_BUS_ADDRESS=disabled:
 mkdir -p "$HOME"
 npm install -g --prefix "$scratch/prefix" --cache "$npm_cache" --fetch-retries 6 --fetch-retry-mintimeout 20000 \
   --fetch-retry-maxtimeout 120000 --maxsockets 4 --ignore-scripts --no-audit --no-fund --loglevel error \
-  @wirecat/tg-cli @wirecat/max-cli @wirecat/whatsapp-cli @wirecat/cli-memo @wirecat/drive-cli @wirecat/zoom-cli \
+  @wirecat/tg-cli @wirecat/max-cli @wirecat/whatsapp-cli @wirecat/wirecat @wirecat/drive-cli @wirecat/zoom-cli \
   @wirecat/gcal-cli
 bin="$scratch/prefix/bin"
 others=()
@@ -25,7 +25,7 @@ others=()
 # max on npm still words `doctor reports` as an older cli-core did (its summaries came in 0.647.0), and an audit
 # across releases would block on that wording alone. Put it back once it is published on cli-core 0.647.0 or later.
 # memo 0.132.0 words `mcp` and `mcp serve` "serve <cli>'s commands", an unfilled placeholder, where cli-core and
-# every other CLI say "serve this profile's commands". Put memo back once it publishes the shared wording.
+# every other CLI say "serve this profile's commands". Add wcat-wirecat once it publishes the shared wording.
 for cli in tg wa drive zm gcal; do
   [ "$cli" = "$command" ] || others+=(--cli "$bin/$cli")
 done

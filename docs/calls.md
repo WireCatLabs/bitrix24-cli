@@ -76,7 +76,7 @@ calls from another phone system that have the same number. A landline joins nobo
 everyone's who works there.
 
 ```sh
-memo context person:12        # the client's history: messages, mail and calls, newest first
+wcat context person:12        # the client's history: messages, mail and calls, newest first
 ```
 
 ## Recordings
@@ -148,7 +148,7 @@ b24 work calls export --since-time 7d
 ```
 
 A call lands only when its client is linked to exactly one contact of this portal, and its employee to one portal
-user (`memo people link` links them). Any other call is listed as skipped, with the reason. The portal's own calls
+user (`wcat people link` links them). Any other call is listed as skipped, with the reason. The portal's own calls
 are skipped: they are in Bitrix24 already.
 
 Each call is registered and finished with `telephony.externalCall.register` and `telephony.externalCall.finish`, with

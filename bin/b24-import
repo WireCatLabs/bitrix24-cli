@@ -105,6 +105,7 @@ echo
 echo "stored for profile $profile ($portal):"
 b24 "$profile" store status --json | json 'j.items.map((k) => `  ${k.kind}: ${k.stored}`).join("\n")'
 
-if ! command -v memo >/dev/null; then
-  echo "note: Desktop's Clients page reads the store through memo, which is not installed; install it from Desktop"
+# Every WireCat CLI writes a `wcat` launcher, so only `wcat-wirecat` shows that wcat itself is installed.
+if ! command -v wcat-wirecat >/dev/null; then
+  echo "note: Desktop's Clients page reads the store through wcat, which is not installed; install it from Desktop"
 fi

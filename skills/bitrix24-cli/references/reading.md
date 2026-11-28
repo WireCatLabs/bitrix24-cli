@@ -65,8 +65,8 @@ only when it is also bound to a kept deal or lead.
 `sync` also stores relationships. A contact is a person, a member of each of its companies with the role `contact`
 (job title beside it, never as a role). A deal's contacts have the role `contact` and its responsible employee the
 role `owner`. Employees are members of the own company ("My companies") as `employee`, and report to their
-department's head. They are `reported`: Bitrix24 says so, the owner has not confirmed them. memo reads them
-(`memo context person:<id>`, `memo deals context deal:<id>`); that needs a memo version that has them.
+department's head. They are `reported`: Bitrix24 says so, the owner has not confirmed them. `wcat` reads them
+(`wcat context person:<id>`, `wcat deals context deal:<id>`); that needs a `wcat` version that has them.
 
 **What Bitrix24 does not have:** contact roles on a deal (decision-maker, influencer), reporting lines between
 contacts, a parent company, and the dates a relationship started or ended. Never infer them; say they are unknown

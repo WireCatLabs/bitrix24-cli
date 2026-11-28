@@ -142,7 +142,7 @@ b24 work config set crm.bitrix24:example.bitrix24.ru.company-types CUSTOMER=cust
 When the webhook lacks the `user` or the `department` scope, the sync reads the rest and says what it could not read
 in `issues`. Nothing it stored before is ended for that. Without `user_basic` the employees come without their e-mail
 addresses, so an employee is not joined to the same person in your mail. A portal that refuses its own companies
-leaves its employees in no company. The sync keeps these two as gaps of the account, which memo's answers name, not
+leaves its employees in no company. The sync keeps these two as gaps of the account, which `wcat`'s answers name, not
 in `issues`.
 
 ### Calls
@@ -203,14 +203,14 @@ The portal gives comments one deal or lead per request, so a sync asks each open
 closed one that changed since the last sync. A comment does not change its deal: one left on a deal already won or
 lost, with nothing else changed, is read once the deal changes. An edited comment keeps its first text.
 
-### Ask memo about a client
+### Ask `wcat` about a client
 
-`memo` answers from the relationships the sync stores:
+`wcat` answers from the relationships the sync stores:
 
 ```sh
-memo context person:12                    # a person's companies, deals and reporting lines, with what was not read
-memo organizations context organization:4 # a company's people, deals and open work
-memo deals context deal:7 --brief         # a deal's people with their parts, its owner and stage
+wcat context person:12                    # a person's companies, deals and reporting lines, with what was not read
+wcat organizations context organization:4 # a company's people, deals and open work
+wcat deals context deal:7 --brief         # a deal's people with their parts, its owner and stage
 ```
 
 ## Read
