@@ -29,10 +29,22 @@ export const DESKTOP: ManifestIdentity = {
   userHosts: "your Bitrix24 portal, and your telephony provider's server where a call recording link leads",
   tagline: "Bitrix24 CRM: deals, leads, contacts and companies",
   syncs: "deals, leads, contacts and companies",
+  mcpPort: 8764,
   signIn: {
     gives:
       "Lets your agent read and change the portal's CRM with the rights of the employee who made the webhook, or who signed in through a local application.",
-    asks: "An inbound webhook address, from Developer resources → Common use cases → Other → Inbound webhook, with the crm, user_basic and department scopes, task for tasks, telephony for calls, disk and documentgenerator for files; or a local application's code and key.",
+    asks: "An incoming webhook address, from Developer resources → Common use cases → Other → Incoming webhook, with the crm, user_basic and department scopes. Add task for tasks, telephony for calls, and disk and documentgenerator for files. Or a local application's ID and key, signed in in the browser.",
+    methods: [
+      { id: "webhook", label: "Incoming webhook", words: ["{profile}", "session", "start", "--json"], stdin: true },
+      {
+        id: "app",
+        label: "Local application",
+        words: ["{profile}", "session", "start", "--json"],
+        stdin: true,
+        portal: "--portal",
+        appId: "--client-id",
+      },
+    ],
   },
 }
 
